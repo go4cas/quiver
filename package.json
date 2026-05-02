@@ -1,0 +1,29 @@
+{
+  "name": "quiver",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "docs:dev": "vitepress dev docs --open",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "dependencies": {
+    "@arrow-js/core": "^1.0.6",
+    "@arrow-js/framework": "^1.0.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@tailwindcss/vite": "^4.2.4",
+    "jsdom": "^29.1.0",
+    "tailwindcss": "^4.2.4",
+    "vite": "^8.0.10",
+    "vitepress": "^1.6.4",
+    "vitest": "^4.1.5"
+  }
+}

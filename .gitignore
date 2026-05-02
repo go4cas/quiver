@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# VitePress build & cache
+.vitepress/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# Playwright
+test-results/
+playwright-report/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
