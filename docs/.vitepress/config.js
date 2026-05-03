@@ -4,6 +4,7 @@ export default defineConfig({
   title: 'Quiver',
   description: 'Arrow.js + Vite + Tailwind CSS starter template',
   base: '/quiver/',
+  ignoreDeadLinks: [/localhost/],
 
   head: [
     ['link', { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' }],
