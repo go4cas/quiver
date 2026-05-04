@@ -1,5 +1,11 @@
 # Getting Started
 
+::: tip Try it online
+Open the full Quiver starter in your browser — no installation needed.
+
+[Open in StackBlitz →](https://stackblitz.com/github/go4cas/quiver)
+:::
+
 ## Prerequisites
 
 - Node.js 18+

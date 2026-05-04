@@ -1,5 +1,7 @@
 # Quiver
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/go4cas/quiver)
+
 An [Arrow.js](https://arrow-js.com) starter template with file-based routing, layouts, reactive state, composables, and a full testing setup.
 
 **Stack:** Arrow.js · Vite · Tailwind CSS v4 · Vitest · Playwright
