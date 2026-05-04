@@ -1,0 +1,89 @@
+# AI Tooling
+
+Quiver ships with context files and slash commands that make it easy to use AI coding assistants — whether you are building an app on top of Quiver or contributing to the starter itself.
+
+---
+
+## Always-on context files
+
+These files are automatically loaded by their respective tools whenever you open the project. You do not need to do anything to activate them.
+
+| File | Tool | Purpose |
+|---|---|---|
+| `CLAUDE.md` | Claude Code | Full project context, conventions, and Arrow.js rules |
+| `AGENTS.md` | OpenAI Codex | Same context formatted for Codex |
+| `.github/copilot-instructions.md` | GitHub Copilot | Concise rules applied inline during completions |
+
+All three files cover the same ground:
+- Folder structure and what belongs where
+- Development and test commands
+- Arrow.js-specific rules that trip up AI assistants
+- Page, state, component, and composable patterns
+- What belongs in the repo vs a fork
+
+---
+
+## Claude Code skills
+
+When working in Claude Code, five slash commands are available. Type `/` in the chat input to see them.
+
+| Command | What it does |
+|---|---|
+| `/add-page <path>` | Creates a new page at the given route path |
+| `/add-state <name>` | Creates a new reactive state module |
+| `/add-component <Name>` | Creates a new reusable component and registers it |
+| `/add-feature <name — description>` | Plans and implements a complete feature end-to-end |
+| `/add-test <file path>` | Writes unit or E2E tests for an existing file |
+
+### Examples
+
+```
+/add-page blog/[slug]
+```
+Creates `src/pages/blog/[slug].js`, maps to `/blog/:slug`, shows how to read the param with `useRoute()`.
+
+```
+/add-state post
+```
+Creates `src/state/postState.js` with `createStore`, reactive `posts` array, and `addPost`/`removePost`/`updatePost` actions.
+
+```
+/add-component PostCard
+```
+Creates `src/components/PostCard.js` and adds the export to `src/components/index.js`.
+
+```
+/add-feature blog — list posts, read a single post, markdown rendering
+```
+Presents a plan (pages, state, components, nav link, tests) and waits for your confirmation before writing any code.
+
+```
+/add-test src/composables/useForm.js
+```
+Detects the file type, writes Vitest unit tests in `tests/composables/useForm.test.js`, runs them, and fixes any failures.
+
+---
+
+## Key rules for any AI assistant
+
+If you are using a tool that does not read `CLAUDE.md` automatically, paste these rules into your system prompt or first message:
+
+::: warning Arrow.js rules — required context
+**1. Reactive slots must be arrow functions.**
+Use `${() => value}` for any interpolation that references state. Static values don't need `() =>`.
+
+**2. No HTML comments inside templates.**
+Never write `<!-- -->` inside `` html`...` `` — Arrow.js uses comment nodes as slot markers and this throws `Invalid HTML position`.
+
+**3. `.disabled` is not a DOM property.**
+`.disabled="${() => bool}"` sets a literal attribute named `.disabled`. Use `aria-disabled="true/false"` + CSS (`opacity-50 cursor-not-allowed`) instead.
+
+**4. Use `.key()` in loops.**
+`` items.map(i => Card(i).key(i.id)) `` prevents DOM re-creation on state changes.
+:::
+
+---
+
+## Contributor note
+
+Contributors working on Quiver itself get the same AI support. `CLAUDE.md` explains which files are framework internals, what the testing conventions are, and what scope changes should stay within. The `/add-test` skill is especially useful for improving test coverage on existing framework utilities and composables.

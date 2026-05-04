@@ -76,6 +76,19 @@ tests/
 
 ---
 
+## AI tooling
+
+Quiver ships with context files and Claude Code slash commands that make AI assistants immediately productive in this codebase:
+
+- **`CLAUDE.md`** — loaded automatically by Claude Code; covers conventions, Arrow.js rules, and folder structure
+- **`AGENTS.md`** — same context for OpenAI Codex
+- **`.github/copilot-instructions.md`** — same context for GitHub Copilot
+- **`/add-page`**, **`/add-state`**, **`/add-component`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks
+
+See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
+
+---
+
 ## Contributing
 
 Bug reports, fixes, and documentation improvements are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.

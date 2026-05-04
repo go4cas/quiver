@@ -33,6 +33,7 @@ export default defineConfig({
           text: 'Guide',
           items: [
             { text: 'Getting Started', link: '/guide/getting-started' },
+            { text: 'AI Tooling',      link: '/guide/ai' },
             { text: 'Feature Workflow', link: '/guide/workflow' },
             { text: 'Routing',         link: '/guide/routing' },
             { text: 'Layouts',         link: '/guide/layouts' },
