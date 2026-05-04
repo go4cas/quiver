@@ -2,7 +2,6 @@
 layout: home
 
 hero:
-  name: Quiver
   tagline: Arrow.js · Vite · Tailwind CSS starter template with routing, layouts, state, composables, and testing.
   actions:
     - theme: brand
