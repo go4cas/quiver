@@ -35,6 +35,7 @@ export default defineConfig({
             { text: 'State',           link: '/guide/state' },
             { text: 'Composables',     link: '/guide/composables' },
             { text: 'Testing',         link: '/guide/testing' },
+            { text: 'Contributing',    link: '/guide/contributing' },
           ],
         },
       ],

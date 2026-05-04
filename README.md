@@ -76,6 +76,12 @@ tests/
 
 ---
 
+## Contributing
+
+Bug reports, fixes, and documentation improvements are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
+
+---
+
 ## Licence
 
 MIT
