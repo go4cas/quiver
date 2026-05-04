@@ -18,6 +18,10 @@ export default defineConfig({
   },
 
   themeConfig: {
+    search: {
+      provider: 'local',
+    },
+
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'API', link: '/api/framework' },
