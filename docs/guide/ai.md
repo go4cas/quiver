@@ -32,6 +32,8 @@ When working in Claude Code, five slash commands are available. Type `/` in the 
 | `/add-page <path>` | Creates a new page at the given route path |
 | `/add-state <name>` | Creates a new reactive state module |
 | `/add-component <Name>` | Creates a new reusable component and registers it |
+| `/add-layout <name>` | Creates a new layout and registers it |
+| `/add-composable <name>` | Creates a new composable with a unit test |
 | `/add-feature <name — description>` | Plans and implements a complete feature end-to-end |
 | `/add-test <file path>` | Writes unit or E2E tests for an existing file |
 
@@ -51,6 +53,16 @@ Creates `src/state/postState.js` with `createStore`, reactive `posts` array, and
 /add-component PostCard
 ```
 Creates `src/components/PostCard.js` and adds the export to `src/components/index.js`.
+
+```
+/add-layout sidebar
+```
+Creates `src/layouts/SidebarLayout.js`, registers it under key `'sidebar'`, and notes any DI keys it reads.
+
+```
+/add-composable useTheme
+```
+Creates `src/composables/useTheme.js` with reactive accessors and actions, plus a unit test in `tests/composables/useTheme.test.js`.
 
 ```
 /add-feature blog — list posts, read a single post, markdown rendering
