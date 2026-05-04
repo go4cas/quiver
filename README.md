@@ -1,6 +1,12 @@
-# Quiver
+<p align="center">
+  <img src="docs/public/logo.svg" alt="Quiver" height="56">
+</p>
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/go4cas/quiver)
+<p align="center">
+  <a href="https://stackblitz.com/github/go4cas/quiver">
+    <img src="https://developer.stackblitz.com/img/open_in_stackblitz.svg" alt="Open in StackBlitz">
+  </a>
+</p>
 
 An [Arrow.js](https://arrow-js.com) starter template with file-based routing, layouts, reactive state, composables, and a full testing setup.
 
