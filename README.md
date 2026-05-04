@@ -1,12 +1,6 @@
-<p align="center">
-  <img src="docs/public/logo.svg" alt="Quiver" height="56">
-</p>
+<img src="docs/public/logo.svg" alt="Quiver" height="56">
 
-<p align="center">
-  <a href="https://stackblitz.com/github/go4cas/quiver">
-    <img src="https://developer.stackblitz.com/img/open_in_stackblitz.svg" alt="Open in StackBlitz">
-  </a>
-</p>
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/go4cas/quiver)
 
 An [Arrow.js](https://arrow-js.com) starter template with file-based routing, layouts, reactive state, composables, and a full testing setup.
 
@@ -31,15 +25,15 @@ Open [http://localhost:5173](http://localhost:5173).
 
 ## Scripts
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start the Vite dev server |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Preview the production build locally |
-| `npm test` | Run unit tests (Vitest) |
-| `npm run test:e2e` | Run end-to-end tests (Playwright) |
-| `npm run docs:dev` | Start the documentation site locally |
-| `npm run docs:build` | Build the documentation site |
+| Command                | Description                          |
+| ---------------------- | ------------------------------------ |
+| `npm run dev`          | Start the Vite dev server            |
+| `npm run build`        | Production build to `dist/`          |
+| `npm run preview`      | Preview the production build locally |
+| `npm test`             | Run unit tests (Vitest)              |
+| `npm run test:e2e`     | Run end-to-end tests (Playwright)    |
+| `npm run docs:dev`     | Start the documentation site locally |
+| `npm run docs:build`   | Build the documentation site         |
 | `npm run docs:preview` | Preview the built documentation site |
 
 ---
@@ -68,6 +62,7 @@ tests/
 ## Documentation
 
 ### Developer guide
+
 - [Getting started](docs/guide/getting-started.md) — what to add, what to leave alone
 - [Feature workflow](docs/guide/workflow.md) — step-by-step walkthrough for adding a feature
 - [Routing](docs/guide/routing.md) — file-based routing, dynamic segments, navigation guards
@@ -77,6 +72,7 @@ tests/
 - [Testing](docs/guide/testing.md) — unit tests and E2E tests
 
 ### API reference
+
 - [Framework](docs/api/framework.md) — createApp, createStore, provide, inject, useMeta
 - [Router](docs/api/router.md) — initRouter, go, beforeEach, resolveRoute and utilities
 - [Composables](docs/api/composables.md) — useRoute, useRouter, useForm

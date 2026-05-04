@@ -10,7 +10,7 @@ export default {
         h('img', {
           src: '/quiver/logo.svg',
           alt: 'Quiver',
-          style: 'height: 72px; width: auto; margin-bottom: 1.5rem;',
+          style: 'height: 96px; width: auto; margin-bottom: 1.5rem;',
         }),
     })
   },
