@@ -15,8 +15,8 @@ export function MenuLayout(content) {
     <div class="grid min-h-screen grid-cols-1 lg:grid-cols-[256px_1fr]">
       <aside class="flex flex-col border-b border-slate-800 bg-slate-900 lg:border-b-0 lg:border-r lg:border-slate-800">
         <div class="px-5 py-6">
-          <div class="font-audiowide text-4xl text-brand">${app.name}</div>
-          <div class="mt-1 text-lg text-slate-500">${app.tagline}</div>
+          <img src="/logo.svg" alt="${app.name}" class="h-9 w-auto" />
+          <div class="mt-1 text-sm text-slate-500">${app.tagline}</div>
         </div>
 
         <nav class="flex-1 space-y-0.5 px-3">${Link({ to: '/', children: 'Dashboard', class: navItem })} ${Link({ to: '/users', children: 'Team', class: navItem })}</nav>

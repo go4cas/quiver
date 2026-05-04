@@ -18,6 +18,9 @@ export default defineConfig({
   },
 
   themeConfig: {
+    logo: '/logo.svg',
+    siteTitle: false,
+
     search: {
       provider: 'local',
     },
