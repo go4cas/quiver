@@ -60,11 +60,23 @@ Seed data for the Users demo. Demonstrates `createStore()` with methods.
 
 ### `uiState` — `src/state/uiState.js`
 
-Lightweight UI state.
+UI state for the theming system. Both fields are persisted to `localStorage` and restored on the next visit.
 
-| Property | Description |
-|---|---|
-| `uiState.theme` | `'light'` or `'dark'`; initialised from `prefers-color-scheme` and synced to `document.documentElement.dataset.theme` by a `watch()` side effect |
+| Property | Values | Description |
+|---|---|---|
+| `uiState.theme` | `'default'` · `'mono'` · `'glass'` · `'retro'` · `'brutalist'` | Active visual theme; synced to `document.documentElement.dataset.theme` |
+| `uiState.mode`  | `'light'` · `'dark'` | Active brightness mode; initialised from `prefers-color-scheme` and synced to `document.documentElement.dataset.mode` |
+
+Mutate either field directly to change the active theme or mode:
+
+```js
+import { uiState } from '../state/uiState.js'
+
+uiState.theme = 'glass'   // switch to Liquid Glass theme
+uiState.mode  = 'dark'    // switch to dark mode
+```
+
+The `watch()` in `uiState.js` handles all DOM sync and localStorage persistence automatically — no manual DOM manipulation needed.
 
 ### `routerState` — `src/state/routerState.js`
 

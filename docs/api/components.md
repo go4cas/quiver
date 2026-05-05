@@ -74,7 +74,7 @@ State resets to zero when the component unmounts (e.g. navigating away from the 
 
 ## `ThemeToggle`
 
-A sliding pill toggle button that switches `uiState.theme` between `'light'` and `'dark'`. The DOM side effect (`document.documentElement.dataset.theme`) is handled by the `watch()` in `uiState.js`, not inside this component.
+A sliding pill toggle button that switches `uiState.mode` between `'light'` and `'dark'`. The DOM side effect (`document.documentElement.dataset.mode`) is handled by the `watch()` in `uiState.js`, not inside this component.
 
 **Source:** `src/components/ThemeToggle.js`
 
@@ -84,7 +84,33 @@ import { ThemeToggle } from '../components/index.js'
 ${ThemeToggle()}
 ```
 
-No props. Renders an accessible `<button aria-label="Toggle theme">`.
+No props. Renders an accessible `<button aria-label="Toggle light/dark mode">`.
+
+---
+
+## `ThemeSelector`
+
+A row of five colour-swatch buttons for picking the active visual theme. Sets `uiState.theme` to one of the five theme identifiers; the `watch()` in `uiState.js` syncs the change to `document.documentElement.dataset.theme` and `localStorage`.
+
+**Source:** `src/components/ThemeSelector.js`
+
+```js
+import { ThemeSelector } from '../components/index.js'
+
+${ThemeSelector()}
+```
+
+No props. Renders a `<div role="group" aria-label="Select theme">` containing one `<button>` per theme. Each button carries `aria-label` (theme name) and `aria-pressed` (active state). The active swatch is scaled up and gains a visible ring.
+
+| Theme identifier | Button label |
+|---|---|
+| `'default'` | `Default` |
+| `'mono'` | `Monochrome` |
+| `'glass'` | `Liquid Glass` |
+| `'retro'` | `Retro / Y2K` |
+| `'brutalist'` | `Neo Brutalism` |
+
+`ThemeSelector` and `ThemeToggle` are independent — selecting a theme does not affect light/dark mode, and toggling the mode does not affect the selected theme.
 
 ---
 

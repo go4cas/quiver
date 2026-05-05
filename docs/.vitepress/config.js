@@ -41,6 +41,7 @@ export default defineConfig({
             { text: 'Routing',         link: '/guide/routing' },
             { text: 'Layouts',         link: '/guide/layouts' },
             { text: 'State',           link: '/guide/state' },
+            { text: 'Theming',         link: '/guide/theming' },
             { text: 'Composables',     link: '/guide/composables' },
             { text: 'Testing',         link: '/guide/testing' },
             { text: 'Contributing',    link: '/guide/contributing' },

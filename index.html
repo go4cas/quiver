@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Quiver</title>
+    <script>
+      // Apply stored theme/mode before first paint to prevent flash
+      var t = localStorage.getItem('ui-theme') || 'default'
+      var m = localStorage.getItem('ui-mode') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.dataset.theme = t
+      document.documentElement.dataset.mode  = m
+    </script>
   </head>
-  <body class="bg-slate-100 text-slate-900 antialiased">
+  <body class="antialiased">
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

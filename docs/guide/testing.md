@@ -59,7 +59,7 @@ tests/e2e/
 ├── users.test.js       # Users list, add/remove, user detail page
 ├── login.test.js       # Login form, validation, loading state, redirect
 ├── not-found.test.js   # 404 page content and back navigation
-├── theme.test.js       # Theme toggle and dark mode persistence
+├── theme.test.js       # Light/dark toggle, theme selection (5 themes), persistence
 └── dashboard.test.js   # Metric card counts, cross-route reactivity
 ```
 
