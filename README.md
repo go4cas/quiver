@@ -1,4 +1,4 @@
-<img src="docs/public/logo.svg" alt="Quiver" height="56">
+<img src="docs/public/logo.svg" alt="Quiver" height="96">
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/go4cas/quiver)
 
