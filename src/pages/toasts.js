@@ -100,7 +100,9 @@ function ToastsPage() {
                 @change="${(e) => { form.position = e.target.value }}"
               >
                 ${POSITIONS.map((p) =>
-                  html`<option value="${p}" ${p === form.position ? 'selected' : ''}>${p}</option>`
+                  p === form.position
+                    ? html`<option value="${p}" selected>${p}</option>`
+                    : html`<option value="${p}">${p}</option>`
                 )}
               </select>
             </label>
@@ -109,7 +111,7 @@ function ToastsPage() {
               <input
                 type="checkbox"
                 class="h-4 w-4 rounded border-line accent-brand"
-                ${() => form.dismissible ? 'checked' : ''}
+                checked="${() => form.dismissible ? '' : null}"
                 @change="${(e) => { form.dismissible = e.target.checked }}"
               />
               <span class="text-sm text-fg-soft">Dismissible</span>
