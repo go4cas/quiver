@@ -1,4 +1,5 @@
 import { html } from '@arrow-js/core'
+import { ToastContainer } from '../components/ToastContainer.js'
 
 export function BasicLayout(content) {
   return html`
@@ -7,5 +8,6 @@ export function BasicLayout(content) {
         ${content}
       </main>
     </div>
+    ${ToastContainer()}
   `
 }

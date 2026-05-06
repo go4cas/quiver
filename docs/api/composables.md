@@ -115,6 +115,46 @@ function PostsPage() {
 
 ---
 
+## `useToast()`
+
+Returns shortcut methods for triggering global toast notifications via `toastState`.
+
+**Source:** `src/composables/useToast.js`
+
+```js
+import { useToast } from '../composables/useToast.js'
+
+function MyPage() {
+  const toast = useToast()
+
+  return html`
+    <button @click="${() => toast.success('Saved!')}">Save</button>
+    <button @click="${() => toast.error('Failed.', { duration: 0 })}">Fail</button>
+  `
+}
+```
+
+**Returns:** `{ success, error, warning, info, dismiss }`
+
+| Method | Signature | Description |
+|---|---|---|
+| `success` | `(msg, opts?) => string` | Add a success toast; returns its id |
+| `error` | `(msg, opts?) => string` | Add an error toast; returns its id |
+| `warning` | `(msg, opts?) => string` | Add a warning toast; returns its id |
+| `info` | `(msg, opts?) => string` | Add an info toast; returns its id |
+| `dismiss` | `(id) => void` | Immediately remove the toast with the given id |
+
+**`opts` object**
+
+| Name | Type | Default | Description |
+|---|---|---|---|
+| `duration` | `number` | `toastState.config.duration` (4000) | Auto-dismiss delay in ms; `0` = never auto-dismiss |
+| `dismissible` | `boolean` | `toastState.config.dismissible` (true) | Whether to render a close button on the toast |
+
+**Global defaults** can be changed at any time via `toastState.configure({ position, duration, dismissible })`. Defaults apply to all subsequent calls unless overridden per-call.
+
+---
+
 ## `useForm(initialValues, options?)`
 
 Manages form field values, validation, submission state, and error display.

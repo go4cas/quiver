@@ -60,6 +60,27 @@ Uses the browser's [Navigation API](https://developer.mozilla.org/en-US/docs/Web
 
 ---
 
+## `useToast()`
+
+Triggers global toast notifications backed by the reactive `toastState` singleton. Call it inside any page or component.
+
+```js
+import { useToast } from '../composables/useToast.js'
+
+function MyPage() {
+  const toast = useToast()
+
+  return html`
+    <button @click="${() => toast.success('Changes saved.')}">Save</button>
+    <button @click="${() => toast.error('Something went wrong.', { duration: 0 })}">Error</button>
+  `
+}
+```
+
+Four type shortcuts — `success`, `error`, `warning`, `info` — each accept an optional `opts` object with `duration` (ms, `0` = permanent) and `dismissible` (show close button). Call `toast.dismiss(id)` to remove a toast immediately. Adjust global defaults with `toastState.configure({ position, duration, dismissible })`.
+
+---
+
 ## `useForm(initialValues, options)`
 
 Manages form state, validation, and submission. **Must be called inside a page function** — not at module scope — so state resets on each navigation.

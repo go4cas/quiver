@@ -2,9 +2,10 @@ import { html } from '@arrow-js/core'
 import { inject } from '../framework/index.js'
 import { go } from '../framework/router.js'
 import { routerState } from '../state/routerState.js'
-import { ThemeSelector } from '../components/ThemeSelector.js'
-import { ThemeToggle } from '../components/ThemeToggle.js'
-import { Link } from '../components/Link.js'
+import { ThemeSelector }  from '../components/ThemeSelector.js'
+import { ThemeToggle }    from '../components/ThemeToggle.js'
+import { ToastContainer } from '../components/ToastContainer.js'
+import { Link }           from '../components/Link.js'
 
 const navItem = 'flex items-center rounded-control px-3 py-2 text-sm text-fg-faint transition-colors hover:bg-surface-inset hover:text-fg-soft [&[aria-current=page]]:bg-brand-tint [&[aria-current=page]]:font-semibold [&[aria-current=page]]:text-brand'
 
@@ -20,7 +21,7 @@ export function MenuLayout(content) {
           <div class="mt-1 text-sm text-fg-faint">${app.tagline}</div>
         </div>
 
-        <nav class="flex-1 space-y-0.5 px-3">${Link({ to: '/', children: 'Dashboard', class: navItem })} ${Link({ to: '/users', children: 'Team', class: navItem })} ${Link({ to: '/posts', children: 'Posts', class: navItem })}</nav>
+        <nav class="flex-1 space-y-0.5 px-3">${Link({ to: '/', children: 'Dashboard', class: navItem })} ${Link({ to: '/users', children: 'Team', class: navItem })} ${Link({ to: '/posts', children: 'Posts', class: navItem })} ${Link({ to: '/toasts', children: 'Toasts', class: navItem })}</nav>
 
         <div class="border-t border-line px-5 py-4">
           <p class="font-mono text-xs text-fg-faint">quiver starter · v1.0</p>
@@ -60,5 +61,6 @@ export function MenuLayout(content) {
         <main class="flex-1 p-6 lg:p-8">${content}</main>
       </div>
     </div>
+    ${ToastContainer()}
   `
 }
