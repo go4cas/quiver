@@ -2,7 +2,8 @@ import { createStore } from '../framework/index.js'
 
 export const toastState = createStore((reactive) =>
   reactive({
-    toasts: [],
+    toasts:     [],
+    dismissing: [],
     config: {
       position:    'bottom-right',
       duration:    4000,
@@ -23,7 +24,12 @@ export const toastState = createStore((reactive) =>
     },
 
     dismiss(id) {
-      this.toasts = this.toasts.filter((t) => t.id !== id)
+      if (this.dismissing.includes(id)) return
+      this.dismissing = [...this.dismissing, id]
+      setTimeout(() => {
+        this.toasts     = this.toasts.filter((t) => t.id !== id)
+        this.dismissing = this.dismissing.filter((d) => d !== id)
+      }, 200)
     },
   })
 )

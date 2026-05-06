@@ -8,8 +8,9 @@ import { useToast }   from '../../src/composables/useToast.js'
 
 beforeEach(() => {
   vi.useFakeTimers()
-  toastState.toasts = []
-  toastState.config = { position: 'bottom-right', duration: 4000, dismissible: true }
+  toastState.toasts     = []
+  toastState.dismissing = []
+  toastState.config     = { position: 'bottom-right', duration: 4000, dismissible: true }
 })
 
 afterEach(() => {
@@ -33,10 +34,10 @@ describe('toastState.add()', () => {
     expect(toastState.toasts[0].type).toBe('info')
   })
 
-  it('auto-dismisses after the specified duration', () => {
+  it('auto-dismisses after duration + exit animation', () => {
     toastState.add('Bye', { type: 'info', duration: 1000 })
     expect(toastState.toasts).toHaveLength(1)
-    vi.advanceTimersByTime(1000)
+    vi.advanceTimersByTime(1200) // 1000ms duration + 200ms exit
     expect(toastState.toasts).toHaveLength(0)
   })
 
@@ -55,12 +56,28 @@ describe('toastState.add()', () => {
 })
 
 describe('toastState.dismiss()', () => {
-  it('removes only the targeted toast', () => {
+  it('marks the toast as dismissing immediately', () => {
+    const id = toastState.add('Test', { duration: 0 })
+    toastState.dismiss(id)
+    expect(toastState.dismissing).toContain(id)
+    expect(toastState.toasts).toHaveLength(1)
+  })
+
+  it('removes only the targeted toast after the exit animation', () => {
     const id1 = toastState.add('First',  { duration: 0 })
     const id2 = toastState.add('Second', { duration: 0 })
     toastState.dismiss(id1)
+    vi.advanceTimersByTime(200)
     expect(toastState.toasts).toHaveLength(1)
     expect(toastState.toasts[0].id).toBe(id2)
+    expect(toastState.dismissing).not.toContain(id1)
+  })
+
+  it('is idempotent when called twice on the same id', () => {
+    const id = toastState.add('Test', { duration: 0 })
+    toastState.dismiss(id)
+    toastState.dismiss(id)
+    expect(toastState.dismissing.filter((d) => d === id)).toHaveLength(1)
   })
 })
 
@@ -89,7 +106,7 @@ describe('useToast() shortcut methods', () => {
   })
 
   it('dismiss() delegates to toastState.dismiss()', () => {
-    const spy  = vi.spyOn(toastState, 'dismiss')
+    const spy   = vi.spyOn(toastState, 'dismiss')
     const toast = useToast()
     toast.dismiss('some-id')
     expect(spy).toHaveBeenCalledWith('some-id')

@@ -111,7 +111,7 @@ function ToastsPage() {
               <input
                 type="checkbox"
                 class="h-4 w-4 rounded border-line accent-brand"
-                checked="${() => form.dismissible ? '' : null}"
+                checked
                 @change="${(e) => { form.dismissible = e.target.checked }}"
               />
               <span class="text-sm text-fg-soft">Dismissible</span>

@@ -23,7 +23,7 @@ export const ToastContainer = component(() =>
       ${() => toastState.toasts.map((toast) =>
         html`
           <div
-            class="${`pointer-events-auto flex min-w-64 max-w-sm items-start gap-3 rounded-panel border px-4 py-3 text-sm shadow-panel animate-toast-in ${TYPE[toast.type] ?? TYPE.info}`}"
+            class="${() => `pointer-events-auto flex w-80 items-start gap-3 rounded-panel border px-4 py-3 text-sm shadow-float ${TYPE[toast.type] ?? TYPE.info} ${toastState.dismissing.includes(toast.id) ? 'animate-toast-out' : 'animate-toast-in'}`}"
             role="alert"
           >
             <span class="flex-1">${toast.message}</span>
