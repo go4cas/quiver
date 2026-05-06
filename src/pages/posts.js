@@ -31,7 +31,7 @@ function PostsPage() {
         <button
           type="button"
           class="rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover shadow-panel theme-brutalist:border-2 theme-brutalist:border-fg"
-          @click="${() => posts.refetch()}"
+          @click="${() => { posts.refetch(); broken.reset() }}"
         >
           Refresh
         </button>
@@ -60,7 +60,13 @@ function PostsPage() {
               <p class="mt-1 font-mono text-xs text-red-600 dark:text-red-500">${() => posts.error() || broken.error()}</p>
             </div>
           `
-        : ''}
+        : !posts.loading() && posts.data()
+          ? html`
+              <div class="rounded-panel border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950">
+                <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Success — ${() => posts.data().length} posts loaded</p>
+              </div>
+            `
+          : ''}
 
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         ${() => posts.loading()

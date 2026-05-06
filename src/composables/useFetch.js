@@ -30,11 +30,18 @@ export function useFetch(url, options = {}) {
   try { onCleanup(() => controller?.abort()) } catch {}
   if (immediate) execute()
 
+  function reset() {
+    state.data   = null
+    state.error  = null
+    state.status = null
+  }
+
   return {
     data:    () => state.data,
     loading: () => state.loading,
     error:   () => state.error,
     status:  () => state.status,
     refetch: execute,
+    reset,
   }
 }
