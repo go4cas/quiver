@@ -75,7 +75,9 @@ function PostsPage() {
                 </div>
               `.key(`s${i}`)
             )
-          : (posts.data() ?? []).map((post) =>
+          : broken.error()
+            ? []
+            : (posts.data() ?? []).map((post) =>
               html`
                 <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
                   <div class="flex items-start justify-between gap-2">
