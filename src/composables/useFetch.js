@@ -1,7 +1,7 @@
 import { reactive, onCleanup } from '@arrow-js/core'
 
 export function useFetch(url, options = {}) {
-  const { immediate = true, transform, ...fetchOptions } = options
+  const { immediate = true, transform, delay = 0, ...fetchOptions } = options
 
   const state = reactive({ data: null, loading: false, error: null, status: null })
   let controller = null
@@ -18,6 +18,7 @@ export function useFetch(url, options = {}) {
       state.status = res.status
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const raw = await res.json()
+      if (delay) await new Promise((r) => setTimeout(r, delay))
       state.data = transform ? transform(raw) : raw
     } catch (err) {
       if (err.name !== 'AbortError') state.error = err.message
