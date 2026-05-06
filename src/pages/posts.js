@@ -69,39 +69,46 @@ function PostsPage() {
             `
           : ''}
 
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 ${() => posts.loading() ? '' : 'hidden'}">
-        ${() => [...Array(6)].map((_, i) =>
-          html`
-            <div class="animate-pulse rounded-panel border border-line bg-surface-raised p-5">
-              <div class="h-4 w-3/4 rounded bg-surface-inset"></div>
-              <div class="mt-3 space-y-2">
-                <div class="h-3 rounded bg-surface-inset"></div>
-                <div class="h-3 w-5/6 rounded bg-surface-inset"></div>
-              </div>
+      ${() => posts.loading()
+        ? html`
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              ${() => [...Array(6)].map((_, i) =>
+                html`
+                  <div class="animate-pulse rounded-panel border border-line bg-surface-raised p-5">
+                    <div class="h-4 w-3/4 rounded bg-surface-inset"></div>
+                    <div class="mt-3 space-y-2">
+                      <div class="h-3 rounded bg-surface-inset"></div>
+                      <div class="h-3 w-5/6 rounded bg-surface-inset"></div>
+                    </div>
+                  </div>
+                `.key(`s${i}`)
+              )}
             </div>
-          `.key(`s${i}`)
-        )}
-      </div>
+          `
+        : ''}
 
-      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 ${() => {
+      ${() => {
         const loading   = posts.loading()
         const forcedErr = ui.forcedError
         const postErr   = posts.error()
         const brokenErr = broken.error()
-        return (loading || forcedErr || postErr || brokenErr) ? 'hidden' : ''
-      }}">
-        ${() => (posts.data() ?? []).map((post) =>
-          html`
-            <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
-              <div class="flex items-start justify-between gap-2">
-                <h2 class="text-sm font-semibold capitalize text-fg">${() => post.title}</h2>
-                <span class="shrink-0 rounded-full bg-surface-inset px-2 py-0.5 font-mono text-xs text-fg-faint">#${() => post.id}</span>
-              </div>
-              <p class="mt-2 flex-1 text-sm text-fg-soft">${() => post.body}</p>
-            </article>
-          `.key(post.id)
-        )}
-      </div>
+        if (loading || forcedErr || postErr || brokenErr) return ''
+        return html`
+          <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            ${() => (posts.data() ?? []).map((post) =>
+              html`
+                <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
+                  <div class="flex items-start justify-between gap-2">
+                    <h2 class="text-sm font-semibold capitalize text-fg">${() => post.title}</h2>
+                    <span class="shrink-0 rounded-full bg-surface-inset px-2 py-0.5 font-mono text-xs text-fg-faint">#${() => post.id}</span>
+                  </div>
+                  <p class="mt-2 flex-1 text-sm text-fg-soft">${() => post.body}</p>
+                </article>
+              `.key(post.id)
+            )}
+          </div>
+        `
+      }}
     </div>
   `
 }
