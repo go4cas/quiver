@@ -26,7 +26,7 @@ export function useFetch(url, options = {}) {
     }
   }
 
-  onCleanup(() => controller?.abort())
+  try { onCleanup(() => controller?.abort()) } catch {}
   if (immediate) execute()
 
   return {
