@@ -31,14 +31,14 @@ function PostsPage() {
         <button
           type="button"
           class="rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover shadow-panel theme-brutalist:border-2 theme-brutalist:border-fg"
-          @click="${() => { posts.refetch(); broken.reset() }}"
+          @click="${() => { broken.reset(); posts.refetch() }}"
         >
           Refresh
         </button>
         <button
           type="button"
           class="rounded-control bg-surface-inset px-4 py-2 text-sm font-semibold text-fg-soft hover:bg-line"
-          @click="${() => broken.refetch()}"
+          @click="${() => { posts.reset(); broken.refetch() }}"
         >
           Force error
         </button>
@@ -81,9 +81,7 @@ function PostsPage() {
                 </div>
               `.key(`s${i}`)
             )
-          : broken.error()
-            ? []
-            : (posts.data() ?? []).map((post) =>
+          : (posts.data() ?? []).map((post) =>
               html`
                 <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
                   <div class="flex items-start justify-between gap-2">
