@@ -1,4 +1,4 @@
-import { html } from '@arrow-js/core'
+import { html, reactive } from '@arrow-js/core'
 import { useFetch } from '../composables/useFetch.js'
 
 export const meta = {
@@ -12,6 +12,7 @@ const BROKEN = 'https://jsonplaceholder.typicode.com/does-not-exist-404'
 function PostsPage() {
   const posts  = useFetch(API, { transform: (data) => data.slice(0, 12), delay: 1500 })
   const broken = useFetch(BROKEN, { immediate: false })
+  const ui     = reactive({ forcedError: false })
 
   return html`
     <div class="space-y-10">
@@ -31,14 +32,14 @@ function PostsPage() {
         <button
           type="button"
           class="rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover shadow-panel theme-brutalist:border-2 theme-brutalist:border-fg"
-          @click="${() => { broken.reset(); posts.refetch() }}"
+          @click="${() => { ui.forcedError = false; broken.reset(); posts.refetch() }}"
         >
           Refresh
         </button>
         <button
           type="button"
           class="rounded-control bg-surface-inset px-4 py-2 text-sm font-semibold text-fg-soft hover:bg-line"
-          @click="${() => { posts.reset(); broken.refetch() }}"
+          @click="${() => { ui.forcedError = true; broken.refetch() }}"
         >
           Force error
         </button>
@@ -69,29 +70,36 @@ function PostsPage() {
           : ''}
 
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        ${() => posts.loading()
-          ? [...Array(6)].map((_, i) =>
-              html`
-                <div class="animate-pulse rounded-panel border border-line bg-surface-raised p-5">
-                  <div class="h-4 w-3/4 rounded bg-surface-inset"></div>
-                  <div class="mt-3 space-y-2">
-                    <div class="h-3 rounded bg-surface-inset"></div>
-                    <div class="h-3 w-5/6 rounded bg-surface-inset"></div>
-                  </div>
+        ${() => {
+          const loading   = posts.loading()
+          const forcedErr = ui.forcedError
+          const postErr   = posts.error()
+          const brokenErr = broken.error()
+          const data      = posts.data()
+          if (loading) return [...Array(6)].map((_, i) =>
+            html`
+              <div class="animate-pulse rounded-panel border border-line bg-surface-raised p-5">
+                <div class="h-4 w-3/4 rounded bg-surface-inset"></div>
+                <div class="mt-3 space-y-2">
+                  <div class="h-3 rounded bg-surface-inset"></div>
+                  <div class="h-3 w-5/6 rounded bg-surface-inset"></div>
                 </div>
-              `.key(`s${i}`)
-            )
-          : (posts.data() ?? []).map((post) =>
-              html`
-                <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
-                  <div class="flex items-start justify-between gap-2">
-                    <h2 class="text-sm font-semibold capitalize text-fg">${() => post.title}</h2>
-                    <span class="shrink-0 rounded-full bg-surface-inset px-2 py-0.5 font-mono text-xs text-fg-faint">#${() => post.id}</span>
-                  </div>
-                  <p class="mt-2 flex-1 text-sm text-fg-soft">${() => post.body}</p>
-                </article>
-              `.key(post.id)
-            )}
+              </div>
+            `.key(`s${i}`)
+          )
+          if (forcedErr || postErr || brokenErr) return []
+          return (data ?? []).map((post) =>
+            html`
+              <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
+                <div class="flex items-start justify-between gap-2">
+                  <h2 class="text-sm font-semibold capitalize text-fg">${() => post.title}</h2>
+                  <span class="shrink-0 rounded-full bg-surface-inset px-2 py-0.5 font-mono text-xs text-fg-faint">#${() => post.id}</span>
+                </div>
+                <p class="mt-2 flex-1 text-sm text-fg-soft">${() => post.body}</p>
+              </article>
+            `.key(post.id)
+          )
+        }}
       </div>
     </div>
   `
