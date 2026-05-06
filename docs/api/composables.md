@@ -65,6 +65,56 @@ function MyPage() {
 
 ---
 
+## `useFetch(url, options?)`
+
+Fetches a JSON endpoint and exposes reactive `data`, `loading`, `error`, and `status` accessors. Uses `AbortController` to cancel in-flight requests on `refetch()` or component unmount.
+
+**Must be called inside a page or `component()` factory** — not at module scope.
+
+**Source:** `src/composables/useFetch.js`
+
+```js
+import { useFetch } from '../composables/useFetch.js'
+
+function PostsPage() {
+  const posts = useFetch('https://jsonplaceholder.typicode.com/posts', {
+    transform: (data) => data.slice(0, 10),
+  })
+
+  return html`
+    ${() => posts.loading() ? html`<p>Loading…</p>` : ''}
+    ${() => posts.error()   ? html`<p>Error: ${() => posts.error()}</p>` : ''}
+    ${() => (posts.data() ?? []).map((post) =>
+      html`<h2>${() => post.title}</h2>`.key(post.id)
+    )}
+    <button @click="${() => posts.refetch()}">Refresh</button>
+  `
+}
+```
+
+**Parameters**
+
+| Name | Type | Default | Description |
+|---|---|---|---|
+| `url` | `string` | — | URL to fetch |
+| `options.immediate` | `boolean` | `true` | Fetch on mount; `false` for manual-only trigger |
+| `options.transform` | `(data) => any` | identity | Transform applied to parsed JSON before storing in `data` |
+| `options.method` | `string` | `'GET'` | HTTP method |
+| `options.headers` | `object` | `{}` | Request headers |
+| `options.body` | `string` | — | Request body |
+
+**Returns**
+
+| Name | Type | Description |
+|---|---|---|
+| `data()` | `() => any \| null` | Reactive accessor — parsed JSON response (or transformed value); `null` until the first successful fetch |
+| `loading()` | `() => boolean` | Reactive accessor — `true` while a request is in flight |
+| `error()` | `() => string \| null` | Reactive accessor — error message string on failure; `null` on success or before the first attempt |
+| `status()` | `() => number \| null` | Reactive accessor — HTTP status code of the last response; `null` before the first attempt |
+| `refetch()` | `() => Promise<void>` | Re-triggers the fetch; aborts any in-flight request before starting a new one |
+
+---
+
 ## `useForm(initialValues, options?)`
 
 Manages form field values, validation, submission state, and error display.

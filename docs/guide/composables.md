@@ -128,6 +128,49 @@ function LoginPage() {
 
 ---
 
+## `useFetch(url, options?)`
+
+Fetches a JSON endpoint and returns reactive accessors for `data`, `loading`, `error`, and `status`. Cancels any in-flight request when `refetch()` is called or the component unmounts.
+
+**Must be called inside a page or `component()` factory** — not at module scope.
+
+```js
+import { useFetch } from '../composables/useFetch.js'
+
+function PostsPage() {
+  const posts = useFetch('https://jsonplaceholder.typicode.com/posts', {
+    transform: (data) => data.slice(0, 10),
+  })
+
+  return html`
+    ${() => posts.loading() ? html`<p>Loading…</p>` : ''}
+    ${() => posts.error()   ? html`<p>Error: ${() => posts.error()}</p>` : ''}
+    ${() => (posts.data() ?? []).map((post) =>
+      html`<article><h2>${() => post.title}</h2></article>`.key(post.id)
+    )}
+    <button @click="${() => posts.refetch()}">Refresh</button>
+  `
+}
+```
+
+| Return value | Type | Description |
+|---|---|---|
+| `data()` | `() => any \| null` | Parsed JSON response (or transformed value) |
+| `loading()` | `() => boolean` | `true` while the request is in flight |
+| `error()` | `() => string \| null` | Error message, or `null` on success |
+| `status()` | `() => number \| null` | HTTP status code of the last response |
+| `refetch()` | `() => Promise<void>` | Re-triggers the fetch; cancels any in-flight request first |
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `immediate` | `boolean` | `true` | Fetch on mount; set `false` for manual trigger |
+| `transform` | `(data) => any` | identity | Applied to the parsed JSON before storing |
+| `method` | `string` | `'GET'` | HTTP method |
+| `headers` | `object` | `{}` | Request headers |
+| `body` | `string` | — | Request body |
+
+---
+
 ## `provide` / `inject`
 
 App-level dependency injection for passing configuration or services down to any layout or component without prop-drilling.

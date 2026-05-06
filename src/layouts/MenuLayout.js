@@ -20,7 +20,7 @@ export function MenuLayout(content) {
           <div class="mt-1 text-sm text-fg-faint">${app.tagline}</div>
         </div>
 
-        <nav class="flex-1 space-y-0.5 px-3">${Link({ to: '/', children: 'Dashboard', class: navItem })} ${Link({ to: '/users', children: 'Team', class: navItem })}</nav>
+        <nav class="flex-1 space-y-0.5 px-3">${Link({ to: '/', children: 'Dashboard', class: navItem })} ${Link({ to: '/users', children: 'Team', class: navItem })} ${Link({ to: '/posts', children: 'Posts', class: navItem })}</nav>
 
         <div class="border-t border-line px-5 py-4">
           <p class="font-mono text-xs text-fg-faint">quiver starter · v1.0</p>
