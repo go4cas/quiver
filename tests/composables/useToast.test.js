@@ -79,6 +79,16 @@ describe('toastState.dismiss()', () => {
     toastState.dismiss(id)
     expect(toastState.dismissing.filter((d) => d === id)).toHaveLength(1)
   })
+
+  it('cancels the auto-dismiss timer on manual dismiss (no ghost re-dismiss)', () => {
+    const id = toastState.add('Test', { duration: 1000 })
+    toastState.dismiss(id)
+    vi.advanceTimersByTime(200) // exit animation completes, toast removed
+    expect(toastState.toasts).toHaveLength(0)
+
+    vi.advanceTimersByTime(2000) // past the original auto-dismiss time
+    expect(toastState.dismissing).toHaveLength(0) // stale timer never fired
+  })
 })
 
 describe('toastState.configure()', () => {

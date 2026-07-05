@@ -126,12 +126,14 @@ describe('useForm — submission lifecycle', () => {
     expect(form.submitting).toBe(false)
   })
 
-  it('resets form.submitting to false when onSubmit throws', async () => {
+  it('surfaces a throwing onSubmit as form.message and resets submitting', async () => {
     const { form, handleSubmit } = useForm(
       { x: '' },
       { onSubmit: () => { throw new Error('Server error') } }
     )
-    await handleSubmit(fakeSubmitEvent()).catch(() => {})
+    await handleSubmit(fakeSubmitEvent()) // resolves — no unhandled rejection
+    expect(form.message).toBe('Server error')
+    expect(form.submitted).toBe(false)
     expect(form.submitting).toBe(false)
   })
 

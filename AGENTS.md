@@ -144,7 +144,7 @@ Call these inside a page or component function, never at module scope:
 
 - `useRoute()` → `{ path(), params(), status(), meta() }` — reactive route accessors
 - `useRouter()` → `{ go(path), back(), forward() }` — navigation
-- `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` — form state; `validate` may be sync or async, return `{}` when valid or `{ fieldName: 'message' }` on errors
+- `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` — form state; `validate` may be sync or async, return `{}` when valid or `{ fieldName: 'message' }` on errors; a thrown `onSubmit` error is caught and written to `form.message`
 - `useFetch(url, options)` → `{ data(), loading(), error(), status(), refetch(), reset() }` — HTTP with reactive state; options: `{ immediate = true, transform, delay, ...fetchOptions }`; refetch aborts the previous in-flight request. **Use this for API calls — do not hand-roll fetch + loading/error state.**
 - `useToast()` → `{ success(msg, opts), error(msg, opts), warning(msg, opts), info(msg, opts), dismiss(id) }` — **use this for user notifications — do not build ad-hoc banners.** Options per call: `{ duration, dismissible }`
 

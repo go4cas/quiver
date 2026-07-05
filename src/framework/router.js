@@ -83,7 +83,13 @@ export function matchPath(routePath, urlPath) {
     const urlPart = urlParts[i]
 
     if (routePart.startsWith(':')) {
-      params[routePart.slice(1)] = decodeURIComponent(urlPart)
+      try {
+        params[routePart.slice(1)] = decodeURIComponent(urlPart)
+      } catch {
+        // Malformed percent-escape (e.g. '%zz') — use the raw segment
+        // rather than turning the whole route into an error page.
+        params[routePart.slice(1)] = urlPart
+      }
       continue
     }
 

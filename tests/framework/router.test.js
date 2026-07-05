@@ -107,6 +107,10 @@ describe('matchPath', () => {
     expect(matchPath('/users/:id', '/users/hello%20world')).toEqual({ id: 'hello world' })
   })
 
+  it('falls back to the raw segment on a malformed percent-escape', () => {
+    expect(matchPath('/users/:id', '/users/%zz')).toEqual({ id: '%zz' })
+  })
+
   it('returns null when route has more segments than url', () => {
     expect(matchPath('/users/:id/profile', '/users/42')).toBeNull()
   })

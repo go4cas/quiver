@@ -138,7 +138,7 @@ function LoginPage() {
 | `form.errors` | object | Validation errors keyed by field name |
 | `form.submitting` | boolean | `true` while `onSubmit` is running |
 | `form.submitted` | boolean | `true` after a successful submission |
-| `form.message` | string | Set inside `onSubmit` to display a status message |
+| `form.message` | string | Set inside `onSubmit` to display a status message; if `onSubmit` throws, the error message is written here |
 
 **`field(name)` accessors:**
 

@@ -52,6 +52,11 @@ export function useForm(initialValues = {}, { onSubmit, validate } = {}) {
     try {
       if (onSubmit) await onSubmit(form.values, form)
       if (!Object.keys(form.errors).length) form.submitted = true
+    } catch (err) {
+      // @submit handlers discard the returned promise, so a throwing
+      // onSubmit would otherwise become an unhandled rejection with no
+      // UI feedback — surface it as the form's status message instead.
+      form.message = err instanceof Error ? err.message : String(err)
     } finally {
       form.submitting = false
     }

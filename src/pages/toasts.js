@@ -99,10 +99,11 @@ function ToastsPage() {
                 class="rounded-control border border-line bg-surface px-3 py-1.5 font-mono text-sm text-fg focus:border-brand focus:outline-none"
                 @change="${/** @param {any} e */ (e) => { form.position = e.target.value }}"
               >
-                ${POSITIONS.map((p) =>
-                  p === form.position
+                ${() => POSITIONS.map((p) =>
+                  (p === form.position
                     ? html`<option value="${p}" selected>${p}</option>`
                     : html`<option value="${p}">${p}</option>`
+                  ).key(p)
                 )}
               </select>
             </label>

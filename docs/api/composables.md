@@ -223,7 +223,7 @@ Reactive state object.
 | `form.errors` | `object` | Validation errors keyed by field name |
 | `form.submitting` | `boolean` | `true` while `onSubmit` is awaiting |
 | `form.submitted` | `boolean` | `true` after a successful submission |
-| `form.message` | `string` | Set inside `onSubmit` to display a status or success message |
+| `form.message` | `string` | Set inside `onSubmit` to display a status or success message; if `onSubmit` throws, the error message is written here |
 
 ### `handleSubmit`
 

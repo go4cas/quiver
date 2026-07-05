@@ -5,6 +5,15 @@ All notable changes to Quiver are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- A malformed percent-escape in a URL (e.g. `/users/%zz`) now matches the route with the raw segment instead of rendering the error page
+- A toast's auto-dismiss timer is cancelled on manual dismiss, so a stale timer can no longer fire against a removed toast
+- A throwing `onSubmit` is caught and surfaced as `form.message` instead of becoming an unhandled promise rejection
+- The toast demo page's position `<select>` now follows the template's own reactive-slot and `.key()` rules
+
 ## [1.1.0] - 2026-07-05
 
 ### Added
