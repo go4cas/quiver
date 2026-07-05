@@ -2,13 +2,16 @@ import { component, html } from '@arrow-js/core'
 import { go } from '../framework/router.js'
 import { userState } from '../state/userState.js'
 
+/** @typedef {import('../state/userState.js').User} User */
+
+/** @type {Record<string, string>} */
 const STATUS_CLASSES = {
   online: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
   away:   'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
 }
-const statusClass = (s) => STATUS_CLASSES[s] ?? 'bg-surface-inset text-fg-soft'
+const statusClass = /** @param {string} s */ (s) => STATUS_CLASSES[s] ?? 'bg-surface-inset text-fg-soft'
 
-export const UserCard = component((user) => html`
+export const UserCard = component(/** @param {User} user */ (user) => html`
   <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel transition-shadow hover:shadow-float theme-glass:backdrop-blur-md theme-brutalist:border-2">
     <div class="flex items-start justify-between gap-3">
       <div class="flex items-center gap-3">

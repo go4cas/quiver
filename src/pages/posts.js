@@ -95,7 +95,7 @@ function PostsPage() {
         if (loading || forcedErr || postErr || brokenErr) return ''
         return html`
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            ${() => (posts.data() ?? []).map((post) =>
+            ${() => (posts.data() ?? []).map(/** @param {{ id: number, title: string, body: string }} post */ (post) =>
               html`
                 <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
                   <div class="flex items-start justify-between gap-2">

@@ -20,7 +20,7 @@ function ToastsPage() {
   const toast = useToast()
   const form  = reactive({ position: 'bottom-right', duration: 4000, dismissible: true })
 
-  const fire = (type) => {
+  const fire = /** @param {'success' | 'error' | 'warning' | 'info'} type */ (type) => {
     const messages = {
       success: 'Changes saved successfully.',
       error:   'Something went wrong. Please try again.',
@@ -89,7 +89,7 @@ function ToastsPage() {
                 step="500"
                 class="rounded-control border border-line bg-surface px-3 py-1.5 font-mono text-sm text-fg focus:border-brand focus:outline-none"
                 value="${() => form.duration}"
-                @input="${(e) => { form.duration = Number(e.target.value) }}"
+                @input="${/** @param {any} e */ (e) => { form.duration = Number(e.target.value) }}"
               />
             </label>
 
@@ -97,7 +97,7 @@ function ToastsPage() {
               <span class="text-xs font-medium text-fg-soft">Position</span>
               <select
                 class="rounded-control border border-line bg-surface px-3 py-1.5 font-mono text-sm text-fg focus:border-brand focus:outline-none"
-                @change="${(e) => { form.position = e.target.value }}"
+                @change="${/** @param {any} e */ (e) => { form.position = e.target.value }}"
               >
                 ${POSITIONS.map((p) =>
                   p === form.position
@@ -112,7 +112,7 @@ function ToastsPage() {
                 type="checkbox"
                 class="h-4 w-4 rounded border-line accent-brand"
                 checked
-                @change="${(e) => { form.dismissible = e.target.checked }}"
+                @change="${/** @param {any} e */ (e) => { form.dismissible = e.target.checked }}"
               />
               <span class="text-sm text-fg-soft">Dismissible</span>
             </label>

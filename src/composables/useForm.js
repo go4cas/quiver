@@ -9,15 +9,28 @@ import { reactive } from '@arrow-js/core'
 //   get  — () => current value (reactive)
 //   set  — (event) => update from input event
 //   error — () => validation error string or undefined
+/**
+ * @typedef {Record<string, any>} FormValues
+ * @typedef {Record<string, string>} FormErrors
+ * @typedef {{ values: FormValues, errors: FormErrors, submitting: boolean, submitted: boolean, message: string }} FormState
+ */
+/**
+ * @param {FormValues} [initialValues]
+ * @param {{
+ *   onSubmit?: (values: FormValues, form: FormState) => any,
+ *   validate?: (values: FormValues) => FormErrors | Promise<FormErrors> | undefined,
+ * }} [options]
+ */
 export function useForm(initialValues = {}, { onSubmit, validate } = {}) {
-  const form = reactive({
+  const form = reactive(/** @type {FormState} */ ({
     values: { ...initialValues },
     errors: {},
     submitting: false,
     submitted: false,
     message: '',
-  })
+  }))
 
+  /** @param {{ preventDefault: () => void }} e */
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (form.submitting) return
@@ -42,9 +55,10 @@ export function useForm(initialValues = {}, { onSubmit, validate } = {}) {
     }
   }
 
+  /** @param {string} name */
   const field = (name) => ({
     get: () => form.values[name],
-    set: (e) => { form.values[name] = e.target.value },
+    set: /** @param {{ target: { value: any } }} e */ (e) => { form.values[name] = e.target.value },
     error: () => form.errors[name],
   })
 

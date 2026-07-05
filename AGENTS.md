@@ -33,12 +33,22 @@ tests/
 npm run dev           # Start Vite dev server
 npm test -- --run     # Run unit tests once
 npm run test:e2e      # Run E2E tests (Playwright)
+npm run typecheck     # Type-check all JS via JSDoc (tsc --noEmit, checkJs)
 npm run build         # Production build
 npm run docs:dev      # Start docs site locally
 npm run docs:build    # Build docs site
 ```
 
-Always run `npm test -- --run && npm run test:e2e` before completing a task.
+Always run `npm run typecheck && npm test -- --run && npm run test:e2e` before completing a task.
+
+## Types
+
+The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict` (see `jsconfig.json`). CI enforces a clean `npm run typecheck`. When adding code:
+
+- Annotate exported functions with `@param`/`@returns`; use `@typedef` for shared shapes and `@template` for generics
+- Reuse existing typedefs via import syntax: `/** @typedef {import('../state/userState.js').User} User */`
+- Prefer a JSDoc cast `/** @type {X} */ (expr)` over restructuring code to satisfy the checker
+- Do not convert files to TypeScript — the plain-JS + JSDoc setup is deliberate
 
 ---
 

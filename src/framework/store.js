@@ -7,6 +7,11 @@ import { reactive } from '@arrow-js/core'
 //     const increment = () => state.count++
 //     return { state, increment }
 //   })
+/**
+ * @template T
+ * @param {(reactiveFn: typeof reactive) => T} setup
+ * @returns {T}
+ */
 export function createStore(setup) {
   return setup(reactive)
 }

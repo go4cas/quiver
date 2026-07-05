@@ -7,7 +7,7 @@ import { routerState } from '../state/routerState.js'
 //   to       — target path string
 //   children — ArrowTemplate or string for link content
 //   class    — base class string (active item gets aria-current="page" for CSS targeting)
-export const Link = component(({ to, children, class: cls = '' }) => {
+export const Link = component(/** @param {{ to: string, children?: any, class?: string }} props */ ({ to, children, class: cls = '' }) => {
   const isActive = () =>
     routerState.path === to || (to !== '/' && routerState.path.startsWith(to + '/'))
 
@@ -16,7 +16,7 @@ export const Link = component(({ to, children, class: cls = '' }) => {
       href="${to}"
       class="${cls}"
       aria-current="${() => (isActive() ? 'page' : undefined)}"
-      @click="${(e) => { e.preventDefault(); go(to) }}"
+      @click="${/** @param {Event} e */ (e) => { e.preventDefault(); go(to) }}"
     >${children}</a>
   `
 })

@@ -1,6 +1,7 @@
 import { html } from '@arrow-js/core'
 import { ToastContainer } from '../components/ToastContainer.js'
 
+/** @param {any} content */
 export function BasicLayout(content) {
   return html`
     <div class="flex min-h-screen items-center justify-center bg-surface p-6">

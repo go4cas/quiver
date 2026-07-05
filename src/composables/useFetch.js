@@ -1,9 +1,26 @@
 import { reactive, onCleanup } from '@arrow-js/core'
 
+/**
+ * Reactive HTTP fetching. refetch() aborts the previous in-flight request.
+ * @param {string} url
+ * @param {{ immediate?: boolean, transform?: (raw: any) => any, delay?: number } & RequestInit} [options]
+ * @returns {{
+ *   data: () => any,
+ *   loading: () => boolean,
+ *   error: () => string | null,
+ *   status: () => number | null,
+ *   refetch: () => Promise<void>,
+ *   reset: () => void,
+ * }}
+ */
 export function useFetch(url, options = {}) {
   const { immediate = true, transform, delay = 0, ...fetchOptions } = options
 
-  const state = reactive({ data: null, loading: false, error: null, status: null })
+  const state = reactive(
+    /** @type {{ data: any, loading: boolean, error: string | null, status: number | null }} */
+    ({ data: null, loading: false, error: null, status: null })
+  )
+  /** @type {AbortController | null} */
   let controller = null
 
   async function execute() {
@@ -28,7 +45,8 @@ export function useFetch(url, options = {}) {
       if (controller !== own) return
       state.data = transform ? transform(raw) : raw
     } catch (err) {
-      if (controller === own && err.name !== 'AbortError') state.error = err.message
+      const e = /** @type {Error} */ (err)
+      if (controller === own && e.name !== 'AbortError') state.error = e.message
     } finally {
       // Only the current request may touch loading — a stale aborted request
       // must not clear it while a newer one is still in flight.

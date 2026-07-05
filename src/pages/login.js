@@ -15,7 +15,7 @@ function LoginPage() {
     { email: '', password: '' },
     {
       validate: (values) => {
-        const errors = {}
+        const errors = /** @type {Record<string, string>} */ ({})
         if (!values.email.trim()) {
           errors.email = 'Email is required.'
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
@@ -28,7 +28,7 @@ function LoginPage() {
       },
 
       onSubmit: async (values, f) => {
-        const match = userState.users.find((u) => u.email.toLowerCase() === values.email.trim().toLowerCase())
+        const match = userState.users.find((u) => u.email?.toLowerCase() === values.email.trim().toLowerCase())
 
         if (!match) {
           f.errors = { email: 'No account found for this email.' }
@@ -62,13 +62,13 @@ function LoginPage() {
       <form class="mt-6 space-y-4" novalidate @submit="${handleSubmit}">
         <label class="block">
           <span class="text-sm font-medium text-fg-soft">Email <span class="text-brand">*</span></span>
-          <input class="mt-1.5 w-full rounded-control border border-line bg-surface-inset px-3 py-2.5 text-sm text-fg outline-none placeholder:text-fg-faint transition focus:border-brand focus:bg-surface-raised" type="email" placeholder="alice@example.com" @input="${emailField.set}" />
+          <input class="mt-1.5 w-full rounded-control border border-line bg-surface-inset px-3 py-2.5 text-sm text-fg outline-none placeholder:text-fg-faint transition focus:border-brand focus:bg-surface-raised" type="email" placeholder="alice@example.com" @input="${/** @type {any} */ (emailField.set)}" />
           ${() => (emailField.error() ? html`<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">${() => emailField.error()}</p>` : '')}
         </label>
 
         <label class="block">
           <span class="text-sm font-medium text-fg-soft">Password <span class="text-brand">*</span></span>
-          <input class="mt-1.5 w-full rounded-control border border-line bg-surface-inset px-3 py-2.5 text-sm text-fg outline-none placeholder:text-fg-faint transition focus:border-brand focus:bg-surface-raised" type="password" placeholder="••••••••" @input="${passwordField.set}" />
+          <input class="mt-1.5 w-full rounded-control border border-line bg-surface-inset px-3 py-2.5 text-sm text-fg outline-none placeholder:text-fg-faint transition focus:border-brand focus:bg-surface-raised" type="password" placeholder="••••••••" @input="${/** @type {any} */ (passwordField.set)}" />
           ${() => (passwordField.error() ? html`<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">${() => passwordField.error()}</p>` : '')}
         </label>
 

@@ -1,7 +1,7 @@
 import { component, html, onCleanup, watch } from '@arrow-js/core'
 import { hmrState } from '../utils/hmrState.js'
 
-export const Counter = component((props) => {
+export const Counter = component(/** @param {{ label: string }} props */ (props) => {
   const state = hmrState(`counter-${props.label}`, { count: 0 })
 
   const [, stopWatch] = watch(() => {

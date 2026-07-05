@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test",
+    "typecheck": "tsc --project jsconfig.json",
     "docs:dev": "vitepress dev docs --open",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
@@ -25,6 +26,7 @@
     "@tailwindcss/vite": "^4.3.0",
     "jsdom": "^29.1.0",
     "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3",
     "vite": "^8.0.10",
     "vitepress": "^1.6.4",
     "vitest": "^4.1.5"

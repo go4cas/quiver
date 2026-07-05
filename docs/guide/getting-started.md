@@ -57,6 +57,7 @@ Open [http://localhost:5173](http://localhost:5173). The app hot-reloads on ever
 | `npm run preview` | Preview the production build locally |
 | `npm test` | Run unit tests (Vitest) |
 | `npm run test:e2e` | Run end-to-end tests (Playwright) |
+| `npm run typecheck` | Type-check all JS via JSDoc annotations (tsc `checkJs`, no build step) |
 | `npm run docs:dev` | Start the documentation site locally |
 | `npm run docs:build` | Build the documentation site |
 | `npm run docs:preview` | Preview the built documentation site locally |

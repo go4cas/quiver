@@ -1,6 +1,7 @@
 import { component, html } from '@arrow-js/core'
 import { toastState }      from '../state/toastState.js'
 
+/** @type {Record<string, string>} */
 const POSITION = {
   'top-left':      'top-4 left-4',
   'top-center':    'top-4 left-1/2 -translate-x-1/2',

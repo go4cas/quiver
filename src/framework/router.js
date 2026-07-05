@@ -1,6 +1,12 @@
 import { nextTick } from '@arrow-js/core'
 import { routerState } from '../state/routerState.js'
 
+/**
+ * @typedef {{ from: string | null, to: string }} GuardContext
+ * @typedef {(ctx: GuardContext) => false | string | void | Promise<false | string | void>} NavigationGuard
+ * @typedef {{ default?: any, meta?: Record<string, any> }} PageModule
+ */
+
 const pageModules = import.meta.glob('../pages/**/*.js')
 
 const routeRecords = Object.entries(pageModules)
@@ -11,8 +17,13 @@ const routeRecords = Object.entries(pageModules)
   }))
   .sort((a, b) => scoreRoute(b.path) - scoreRoute(a.path))
 
+/** @type {NavigationGuard[]} */
 const guards = []
 
+/**
+ * @param {string} file
+ * @returns {string}
+ */
 export function fileToRoutePath(file) {
   let path = file
     .replace('../pages', '')
@@ -24,6 +35,10 @@ export function fileToRoutePath(file) {
   return path.replace(/\[([^\]]+)\]/g, ':$1')
 }
 
+/**
+ * @param {string} path
+ * @returns {number}
+ */
 export function scoreRoute(path) {
   if (path === '/') return 0
 
@@ -33,12 +48,21 @@ export function scoreRoute(path) {
     .reduce((score, part) => score + (part.startsWith(':') ? 1 : 10), 0)
 }
 
+/**
+ * @param {string} [path]
+ * @returns {string}
+ */
 export function normalizePath(path = '/') {
   const clean = path.split('?')[0].split('#')[0] || '/'
   if (clean.length > 1 && clean.endsWith('/')) return clean.slice(0, -1)
   return clean
 }
 
+/**
+ * @param {string} routePath
+ * @param {string} urlPath
+ * @returns {Record<string, string> | null} matched params, or null if no match
+ */
 export function matchPath(routePath, urlPath) {
   const normalizedRoute = normalizePath(routePath)
   const normalizedUrl = normalizePath(urlPath)
@@ -50,6 +74,7 @@ export function matchPath(routePath, urlPath) {
 
   if (routeParts.length !== urlParts.length) return null
 
+  /** @type {Record<string, string>} */
   const params = {}
 
   for (let i = 0; i < routeParts.length; i++) {
@@ -67,6 +92,10 @@ export function matchPath(routePath, urlPath) {
   return params
 }
 
+/**
+ * @param {string} [path]
+ * @returns {Promise<void>}
+ */
 export async function resolveRoute(path = window.location.pathname) {
   const cleanPath = normalizePath(path)
 
@@ -84,7 +113,7 @@ export async function resolveRoute(path = window.location.pathname) {
       const params = matchPath(route.path, cleanPath)
 
       if (params) {
-        const module = await route.loader()
+        const module = /** @type {PageModule} */ (await route.loader())
         const page = module.default
 
         if (typeof page !== 'function') {
@@ -103,7 +132,7 @@ export async function resolveRoute(path = window.location.pathname) {
       }
     }
 
-    const notFoundModule = await pageModules['../pages/not-found.js']?.()
+    const notFoundModule = /** @type {PageModule | undefined} */ (await pageModules['../pages/not-found.js']?.())
     const notFoundMeta = notFoundModule?.meta || {}
 
     routerState.page = notFoundModule?.default ?? null
@@ -121,6 +150,7 @@ export async function resolveRoute(path = window.location.pathname) {
 }
 
 // go() is now a thin wrapper — the navigate event handler owns everything.
+/** @param {string} path */
 export function go(path) {
   return window.navigation.navigate(normalizePath(path)).finished
 }
@@ -128,6 +158,10 @@ export function go(path) {
 // beforeEach(fn) registers a navigation guard.
 // Guard receives { from, to }. Return false to cancel, a path string to redirect.
 // Returns an unregister function.
+/**
+ * @param {NavigationGuard} fn
+ * @returns {() => void} unregister function
+ */
 export function beforeEach(fn) {
   guards.push(fn)
   return () => {
@@ -138,6 +172,11 @@ export function beforeEach(fn) {
 
 // Runs the guard chain. Returns true to proceed, false to cancel,
 // or a path string to redirect.
+/**
+ * @param {string | null} from
+ * @param {string} to
+ * @returns {Promise<true | false | string>}
+ */
 async function runGuards(from, to) {
   for (const guard of guards) {
     const result = await guard({ from, to })
@@ -146,6 +185,7 @@ async function runGuards(from, to) {
   return true
 }
 
+/** @param {NavigateEvent} event */
 function handleNavigate(event) {
   // Skip cross-origin navigations, downloads, etc.
   if (!event.canIntercept) return

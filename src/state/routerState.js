@@ -1,6 +1,17 @@
 import { reactive } from '@arrow-js/core'
 
-export const routerState = reactive({
+/**
+ * @typedef {Object} RouterState
+ * @property {string} path
+ * @property {Record<string, string>} params
+ * @property {(((...args: any[]) => unknown) & { layout?: string }) | null} page
+ * @property {string} layout
+ * @property {'idle' | 'loading' | 'ready' | 'not-found' | 'error'} status
+ * @property {string} error
+ * @property {Record<string, any>} meta
+ */
+
+export const routerState = reactive(/** @type {RouterState} */ ({
   path: window.location.pathname || '/',
   params: {},
   page: null,
@@ -8,4 +19,4 @@ export const routerState = reactive({
   status: 'idle',
   error: '',
   meta: {},
-})
+}))

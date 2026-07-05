@@ -2,6 +2,7 @@ import { reactive, watch } from '@arrow-js/core'
 
 // localStorage access can throw (blocked cookies in embedded iframes, strict
 // privacy modes). Fall back to defaults instead of crashing at import time.
+/** @param {string} key */
 function readStored(key) {
   try { return localStorage.getItem(key) } catch { return null }
 }

@@ -20,6 +20,11 @@ function RouteOutlet() {
   return Layout(Page()).key(routerState.path)
 }
 
+/**
+ * Mount the app: install plugins, then render the route outlet into the root element.
+ * @param {{ root?: string, plugins?: Array<{ install?: () => void }> }} [options]
+ * @returns {Promise<void>}
+ */
 export async function createApp({ root = '#app', plugins = [] } = {}) {
   for (const plugin of plugins) plugin.install?.()
 

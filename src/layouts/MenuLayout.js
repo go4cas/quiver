@@ -9,6 +9,7 @@ import { Link }           from '../components/Link.js'
 
 const navItem = 'flex items-center rounded-control px-3 py-2 text-sm text-fg-faint transition-colors hover:bg-surface-inset hover:text-fg-soft [&[aria-current=page]]:bg-brand-tint [&[aria-current=page]]:font-semibold [&[aria-current=page]]:text-brand'
 
+/** @param {any} content */
 export function MenuLayout(content) {
   const app = inject('app', { name: 'Quiver', tagline: '' })
   const currentUser = inject('currentUser', { name: 'Guest', email: 'guest@example.com', avatar: '' })
