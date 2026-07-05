@@ -136,6 +136,16 @@ export function beforeEach(fn) {
   }
 }
 
+// Runs the guard chain. Returns true to proceed, false to cancel,
+// or a path string to redirect.
+async function runGuards(from, to) {
+  for (const guard of guards) {
+    const result = await guard({ from, to })
+    if (result === false || typeof result === 'string') return result
+  }
+  return true
+}
+
 function handleNavigate(event) {
   // Skip cross-origin navigations, downloads, etc.
   if (!event.canIntercept) return
@@ -147,16 +157,14 @@ function handleNavigate(event) {
 
   event.intercept({
     handler: async () => {
-      for (const guard of guards) {
-        const result = await guard({ from, to })
-        if (result === false) {
-          navigation.navigate(from, { history: 'replace' })
-          return
-        }
-        if (typeof result === 'string') {
-          navigation.navigate(normalizePath(result), { history: 'replace' })
-          return
-        }
+      const result = await runGuards(from, to)
+      if (result === false) {
+        navigation.navigate(from, { history: 'replace' })
+        return
+      }
+      if (typeof result === 'string') {
+        navigation.navigate(normalizePath(result), { history: 'replace' })
+        return
       }
 
       await resolveRoute(to)
@@ -165,15 +173,28 @@ function handleNavigate(event) {
   })
 }
 
-export function initRouter() {
+export async function initRouter() {
   if (!window.navigation) {
     throw new Error('Navigation API is not supported in this browser.')
   }
 
   navigation.addEventListener('navigate', handleNavigate)
 
-  // The navigate event does not fire for the initial page load.
-  return resolveRoute(window.location.pathname)
+  // The navigate event does not fire for the initial page load, so run the
+  // guard chain here too. There is no previous page to stay on, so a guard
+  // returning false redirects to '/' instead of cancelling. Redirects re-run
+  // the guards for the new destination, capped to avoid an infinite loop.
+  let to = normalizePath(window.location.pathname)
+  for (let i = 0; i < 10; i++) {
+    const result = await runGuards(null, to)
+    if (result === true) break
+    const next = normalizePath(typeof result === 'string' ? result : '/')
+    if (next === to) break
+    history.replaceState(null, '', next)
+    to = next
+  }
+
+  return resolveRoute(to)
 }
 
 export function destroyRouter() {

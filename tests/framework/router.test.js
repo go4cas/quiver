@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   fileToRoutePath,
   scoreRoute,
   normalizePath,
   matchPath,
+  initRouter,
+  destroyRouter,
+  beforeEach as beforeEachGuard,
 } from '../../src/framework/router.js'
 
 describe('fileToRoutePath', () => {
@@ -103,5 +106,35 @@ describe('matchPath', () => {
 
   it('returns null when route has more segments than url', () => {
     expect(matchPath('/users/:id/profile', '/users/42')).toBeNull()
+  })
+})
+
+describe('initRouter — guards on initial load', () => {
+  afterEach(() => {
+    destroyRouter()
+    vi.unstubAllGlobals()
+    history.replaceState(null, '', '/')
+  })
+
+  it('runs guards for the first load with from=null and follows a redirect', async () => {
+    vi.stubGlobal('navigation', {
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })
+    history.replaceState(null, '', '/users/42')
+
+    const seen = []
+    const off = beforeEachGuard(({ from, to }) => {
+      seen.push({ from, to })
+      if (to === '/users/42') return '/'
+    })
+
+    await initRouter()
+    off()
+
+    expect(seen[0]).toEqual({ from: null, to: '/users/42' })
+    // Guards re-ran for the redirect target, then the router settled on it.
+    expect(seen[1]).toEqual({ from: null, to: '/' })
+    expect(window.location.pathname).toBe('/')
   })
 })
