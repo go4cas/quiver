@@ -69,6 +69,20 @@ describe('useForm — validation', () => {
     expect(form.errors.email).toBeUndefined()
   })
 
+  it('awaits an async validate() and blocks submit on errors', async () => {
+    const onSubmit = vi.fn()
+    const { form, handleSubmit } = useForm(
+      { email: '' },
+      {
+        validate: async (v) => (v.email ? {} : { email: 'Required.' }),
+        onSubmit,
+      }
+    )
+    await handleSubmit(fakeSubmitEvent())
+    expect(form.errors.email).toBe('Required.')
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
   it('proceeds to onSubmit when validate() returns empty object', async () => {
     const onSubmit = vi.fn()
     const { handleSubmit } = useForm(

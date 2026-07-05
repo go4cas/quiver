@@ -23,7 +23,8 @@ export function useForm(initialValues = {}, { onSubmit, validate } = {}) {
     if (form.submitting) return
 
     if (validate) {
-      const errs = validate(form.values)
+      // validate may be sync or async — await handles both.
+      const errs = await validate(form.values)
       if (errs && Object.keys(errs).length) {
         form.errors = errs
         return

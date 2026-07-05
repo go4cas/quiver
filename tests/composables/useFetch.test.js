@@ -126,6 +126,68 @@ describe('useFetch — refetch', () => {
   })
 })
 
+describe('useFetch — stale requests', () => {
+  it('keeps loading true when an aborted request settles while a newer one is in flight', async () => {
+    const calls = []
+    const slowFetch = vi.fn((_url, options) =>
+      new Promise((resolve, reject) => {
+        const i = calls.length
+        calls.push(() => resolve({ ok: true, status: 200, json: () => Promise.resolve({ call: i }) }))
+        options?.signal?.addEventListener('abort', () => {
+          const err = new Error('aborted')
+          err.name = 'AbortError'
+          reject(err)
+        })
+      })
+    )
+    vi.stubGlobal('fetch', slowFetch)
+
+    const f = useFetch('/api/slow')
+    f.refetch() // aborts request 0; its rejection settles while request 1 is pending
+    await new Promise((r) => setTimeout(r, 0))
+    expect(f.loading()).toBe(true) // the stale request must not clear loading
+
+    calls[1]()
+    await vi.waitFor(() => expect(f.loading()).toBe(false))
+    expect(f.data()).toEqual({ call: 1 })
+  })
+
+  it('reset() aborts an in-flight request and clears loading', () => {
+    const abortSpy = vi.fn()
+    const slowFetch = vi.fn((_url, options) => {
+      options?.signal?.addEventListener('abort', abortSpy)
+      return new Promise(() => {})
+    })
+    vi.stubGlobal('fetch', slowFetch)
+
+    const f = useFetch('/api/slow')
+    expect(f.loading()).toBe(true)
+    f.reset()
+    expect(abortSpy).toHaveBeenCalledOnce()
+    expect(f.loading()).toBe(false)
+  })
+
+  it('honours a caller-supplied abort signal', async () => {
+    const userController = new AbortController()
+    const slowFetch = vi.fn((_url, options) =>
+      new Promise((_resolve, reject) => {
+        options.signal.addEventListener('abort', () => {
+          const err = new Error('aborted')
+          err.name = 'AbortError'
+          reject(err)
+        })
+      })
+    )
+    vi.stubGlobal('fetch', slowFetch)
+
+    const f = useFetch('/api/slow', { signal: userController.signal })
+    expect(f.loading()).toBe(true)
+    userController.abort()
+    await vi.waitFor(() => expect(f.loading()).toBe(false))
+    expect(f.error()).toBeNull()
+  })
+})
+
 describe('useFetch — abort', () => {
   it('aborts the previous request when refetch is called before it resolves', async () => {
     const abortSpy = vi.fn()
