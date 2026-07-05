@@ -1,4 +1,9 @@
 import { defineConfig } from 'vitepress'
+import { createRequire } from 'module'
+
+// Read the version at build time so the navbar badge can never drift
+// from package.json — the release flow bumps it before tagging.
+const pkg = createRequire(import.meta.url)('../../package.json')
 
 export default defineConfig({
   title: 'Quiver',
@@ -28,6 +33,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'API', link: '/api/framework' },
+      { text: `v${pkg.version}`, link: 'https://github.com/go4cas/quiver/releases' },
     ],
 
     sidebar: {
