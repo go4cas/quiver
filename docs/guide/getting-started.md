@@ -8,13 +8,34 @@ Open the full Quiver starter in your browser — no installation needed.
 
 ## Prerequisites
 
-- Node.js 18+
-- npm 9+
+- Node.js 20.19+ (required by Vite 8)
+- npm 10+
+
+## Browser support
+
+Quiver's router is built on the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API), so the apps you build with it run in modern browsers only:
+
+| Browser | Minimum version |
+|---|---|
+| Chrome | 102 |
+| Edge | 102 |
+| Safari | 26.2 |
+| Firefox | 147 |
 
 ## Installation
 
+Scaffold a fresh project without Quiver's git history:
+
 ```bash
-git clone <your-repo-url> quiver
+npx degit go4cas/quiver my-app
+cd my-app
+npm install
+```
+
+Or clone the repository directly (keeps the full history), or click **Use this template** on [GitHub](https://github.com/go4cas/quiver):
+
+```bash
+git clone https://github.com/go4cas/quiver
 cd quiver
 npm install
 ```
