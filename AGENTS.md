@@ -92,7 +92,7 @@ export default MyPage
 
 - `[param].js` → dynamic segment; read params with `useRoute().params()` inside the function
 - `not-found.js` handles 404
-- `useMeta` also accepts functions for reactive values: `` useMeta({ title: () => `Team (${userState.users.length})` }) ``
+- `useMeta` also accepts functions for reactive values: `` useMeta({ title: () => `Team (${userState.users.length})` }) `` — the router stops these watchers automatically on every navigation (see `src/pages/users/[id].js` for a working example)
 
 ### Navigation guards
 
@@ -134,7 +134,7 @@ export function MyCard({ title }) {
 }
 ```
 
-Register in `src/components/index.js`. Apply all Arrow.js rules above.
+Import components directly from their files (e.g. `import { MyCard } from '../components/MyCard.js'`) — there is no barrel file. Apply all Arrow.js rules above.
 
 For local component state that should survive Vite hot reloads in dev, use `hmrState(key, initialState)` from `src/utils/hmrState.js`. The key must be unique per component instance on the page (derive it from a prop, e.g. `` `counter-${props.label}` ``) — duplicate keys silently link state between instances in dev mode.
 

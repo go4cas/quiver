@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The user detail page demonstrates a reactive document title via `useMeta` (`src/pages/users/[id].js`)
+
+### Removed
+
+- `src/components/index.js` barrel file — import components directly from their source files
+
 ### Fixed
+
+- Reactive `useMeta` watchers are now cleared by the router on every navigation, so a reactive title can no longer leak onto the next page
 
 - Rapid navigation can no longer render a stale page: `resolveRoute` now ignores writes from superseded navigations
 - A guard cancelling a navigation no longer remounts the current page (and can no longer cause a navigate loop)

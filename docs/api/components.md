@@ -1,6 +1,6 @@
 # Components API
 
-Framework-provided components in `src/components/`. Import from the barrel file or directly.
+Framework-provided components in `src/components/`. Import each directly from its source file.
 
 ---
 
@@ -11,7 +11,7 @@ A navigation anchor with reactive active state. Renders an `<a>` tag that uses t
 **Source:** `src/components/Link.js`
 
 ```js
-import { Link } from '../components/index.js'
+import { Link } from '../components/Link.js'
 
 ${Link({ to: '/users', children: 'Users', class: navClass })}
 ```
@@ -57,7 +57,7 @@ A self-contained click counter with local reactive state. Demonstrates `componen
 **Source:** `src/components/Counter.js`
 
 ```js
-import { Counter } from '../components/index.js'
+import { Counter } from '../components/Counter.js'
 
 ${Counter({ label: 'Tickets Resolved' })}
 ```
@@ -79,7 +79,7 @@ A sliding pill toggle button that switches `uiState.mode` between `'light'` and 
 **Source:** `src/components/ThemeToggle.js`
 
 ```js
-import { ThemeToggle } from '../components/index.js'
+import { ThemeToggle } from '../components/ThemeToggle.js'
 
 ${ThemeToggle()}
 ```
@@ -95,7 +95,7 @@ A row of five colour-swatch buttons for picking the active visual theme. Sets `u
 **Source:** `src/components/ThemeSelector.js`
 
 ```js
-import { ThemeSelector } from '../components/index.js'
+import { ThemeSelector } from '../components/ThemeSelector.js'
 
 ${ThemeSelector()}
 ```
@@ -121,7 +121,7 @@ Displays a user's avatar, name, role, team, and status badge. Provides "View pro
 **Source:** `src/components/UserCard.js`
 
 ```js
-import { UserCard } from '../components/index.js'
+import { UserCard } from '../components/UserCard.js'
 
 ${() => userState.users.map((user) => UserCard(user).key(user.id))}
 ```
@@ -149,7 +149,7 @@ A full-screen error panel rendered by the router when a page module fails to loa
 **Source:** `src/components/ErrorCard.js`
 
 ```js
-import { ErrorCard } from '../components/index.js'
+import { ErrorCard } from '../components/ErrorCard.js'
 
 ${ErrorCard('Something went wrong.')}
 ```
@@ -167,7 +167,7 @@ A full-screen loading panel rendered by the router while a page module is being 
 **Source:** `src/components/LoadingCard.js`
 
 ```js
-import { LoadingCard } from '../components/index.js'
+import { LoadingCard } from '../components/LoadingCard.js'
 
 ${LoadingCard()}
 ```

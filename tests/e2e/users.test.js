@@ -30,7 +30,8 @@ test('view profile navigates to user detail page', async ({ page }) => {
   await page.goto('/users')
   await page.locator('article').filter({ hasText: 'Alice Nkosi' }).getByRole('button', { name: 'View profile' }).click()
   await expect(page.url()).toMatch(/\/users\/[^/]+$/)
-  await expect(page).toHaveTitle('Profile')
+  // Reactive title via useMeta — includes the user's name from state.
+  await expect(page).toHaveTitle('Alice Nkosi — Profile')
   await expect(page.getByRole('heading', { name: 'Alice Nkosi' })).toBeVisible()
 })
 

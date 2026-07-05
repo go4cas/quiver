@@ -56,7 +56,7 @@ Creates `src/state/postState.js` with `createStore`, reactive `posts` array, and
 ```
 /add-component PostCard
 ```
-Creates `src/components/PostCard.js` and adds the export to `src/components/index.js`.
+Creates `src/components/PostCard.js`, ready to import directly where needed.
 
 ```
 /add-layout sidebar

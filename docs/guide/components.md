@@ -115,22 +115,16 @@ export const Counter = component((props) => {
 
 ---
 
-## Registering a component
+## Importing a component
 
-`src/components/index.js` is a barrel file that re-exports everything:
+Import components directly from their source files — one file per component, no barrel:
 
 ```js
-// src/components/index.js
-export { Counter }       from './Counter.js'
-export { ErrorCard }     from './ErrorCard.js'
-export { Link }          from './Link.js'
-export { LoadingCard }   from './LoadingCard.js'
-export { ThemeSelector } from './ThemeSelector.js'
-export { ThemeToggle }   from './ThemeToggle.js'
-export { UserCard }      from './UserCard.js'
+import { UserCard } from '../components/UserCard.js'
+import { Link } from '../components/Link.js'
 ```
 
-Import from the barrel when using a component in multiple places. For a component used in only one file, importing directly from its source file is fine.
+Direct imports keep the dependency graph explicit and avoid import cycles through an index file.
 
 ---
 

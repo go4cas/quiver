@@ -26,18 +26,12 @@ export function <Name>({ /* props */ }) {
    - Use Tailwind CSS utility classes for styling; match the visual style of existing components in `src/components/`
    - Annotate the component's props with JSDoc, e.g. `/** @param {{ title: string }} props */` — strict `checkJs` is enforced and untyped props fail `npm run typecheck`
 
-2. Register the component in `src/components/index.js` by adding a named export:
-```js
-export { <Name> } from './<Name>.js'
-```
-
-3. Verify — run and fix any failures:
+2. Verify — run and fix any failures:
 ```
 npm run typecheck && npm test && npm run test:e2e
 ```
 
-4. Report:
+3. Report:
    - The file created
-   - The export added to `index.js`
-   - A one-line usage example: `import { <Name> } from '../components/index.js'`
+   - A one-line usage example: `import { <Name> } from '../components/<Name>.js'` (import directly — there is no barrel file)
    - Any props the component accepts

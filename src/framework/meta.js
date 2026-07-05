@@ -7,12 +7,19 @@ let activeStops = []
 
 /** @typedef {string | (() => string)} MetaValue */
 
+// Stops any watchers registered by the previous page's useMeta() call.
+// The router calls this on every navigation, so reactive titles never
+// leak onto pages that don't use useMeta themselves.
+export function clearMeta() {
+  activeStops.forEach((stop) => stop())
+  activeStops = []
+}
+
 // useMeta({ title, description }) — call at the top of any page function.
 // Pass static strings for one-shot assignment, or arrow functions for reactive updates.
 /** @param {{ title?: MetaValue, description?: MetaValue }} [config] */
 export function useMeta({ title, description } = {}) {
-  activeStops.forEach((stop) => stop())
-  activeStops = []
+  clearMeta()
 
   if (title) {
     if (typeof title === 'function') {

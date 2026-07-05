@@ -21,7 +21,7 @@ Execute the plan in this order:
 
 1. **State module(s)** — create `src/state/<name>.js` using `createStore(reactive)`. Export as singleton. See existing `src/state/userState.js` as the reference pattern.
 
-2. **Component(s)** — create each in `src/components/<Name>.js` and register in `src/components/index.js`.
+2. **Component(s)** — create each in `src/components/<Name>.js`; import them directly from their files where used (there is no barrel).
 
 3. **Pages** — create each in `src/pages/<path>.js`. Structure:
    ```js

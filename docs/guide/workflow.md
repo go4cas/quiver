@@ -77,15 +77,10 @@ export const TicketCard = component((ticket) => html`
 `)
 ```
 
-```js
-// src/components/index.js — add the export
-export { TicketCard } from './TicketCard.js'
-```
-
-Use it in the page:
+Use it in the page — import directly from the component file:
 
 ```js
-import { TicketCard } from '../components/index.js'
+import { TicketCard } from '../components/TicketCard.js'
 
 // Inside a reactive expression, use .key() for stable list identity
 ${() => ticketState.tickets.map((t) => TicketCard(t).key(t.id))}

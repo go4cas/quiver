@@ -1,5 +1,6 @@
 import { nextTick } from '@arrow-js/core'
 import { routerState } from '../state/routerState.js'
+import { clearMeta } from './meta.js'
 
 /**
  * @typedef {{ from: string | null, to: string }} GuardContext
@@ -104,6 +105,10 @@ let resolveEpoch = 0
 export async function resolveRoute(path = window.location.pathname) {
   const epoch = ++resolveEpoch
   const cleanPath = normalizePath(path)
+
+  // The router owns the meta lifecycle: stop the previous page's useMeta
+  // watchers so reactive titles don't keep firing after navigation.
+  clearMeta()
 
   routerState.status = 'loading'
   routerState.path = cleanPath

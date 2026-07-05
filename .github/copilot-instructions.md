@@ -42,7 +42,7 @@ export function MyCard({ title }) {
   return html`<div>${title}</div>`
 }
 ```
-Register in `src/components/index.js`.
+Import directly from the component file (no barrel): `import { MyCard } from '../components/MyCard.js'`
 
 ## File-based routing
 

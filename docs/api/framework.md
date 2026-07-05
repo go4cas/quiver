@@ -133,4 +133,6 @@ function MyPage() {
 
 **Returns:** `void`
 
-> **Note:** For static page titles you do not need `useMeta` — declare `export const meta = { title }` in your page module and the router sets `document.title` automatically on every navigation. Use `useMeta` only when the title must be reactive (e.g. derived from route params or state).
+> **Note:** For static page titles you do not need `useMeta` — declare `export const meta = { title }` in your page module and the router sets `document.title` automatically on every navigation. Use `useMeta` only when the title must be reactive (e.g. derived from route params or state) — see `src/pages/users/[id].js` for a working example.
+
+Reactive `useMeta` watchers are owned by the router: they are stopped automatically on every navigation, so a reactive title never leaks onto the next page.

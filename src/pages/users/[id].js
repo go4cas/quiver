@@ -2,6 +2,7 @@ import { html } from '@arrow-js/core'
 import { userState } from '../../state/userState.js'
 import { useRoute } from '../../composables/useRoute.js'
 import { useRouter } from '../../composables/useRouter.js'
+import { useMeta } from '../../framework/index.js'
 
 export const meta = {
   layout: 'menu',
@@ -11,6 +12,15 @@ export const meta = {
 function UserDetailPage() {
   const route = useRoute()
   const router = useRouter()
+
+  // Reactive document title — updates with the route param and user data.
+  // The router clears this watcher automatically on the next navigation.
+  useMeta({
+    title: () => {
+      const user = userState.users.find((u) => String(u.id) === String(route.params().id))
+      return user ? `${user.name} — Profile` : 'Profile'
+    },
+  })
 
   return html`
     <div class="space-y-6">
@@ -29,6 +39,7 @@ function UserDetailPage() {
           <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">/users/:id</span>
           <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">useRoute()</span>
           <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">useRouter()</span>
+          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">useMeta()</span>
         </div>
       </div>
 
