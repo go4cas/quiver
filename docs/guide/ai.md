@@ -26,7 +26,7 @@ The context covers:
 
 ---
 
-## Claude Code skills
+## Claude Code slash commands
 
 When working in Claude Code, eight slash commands are available. Type `/` in the chat input to see them.
 
@@ -107,4 +107,4 @@ Never write `<!-- -->` inside `` html`...` `` — Arrow.js uses comment nodes as
 
 ## Contributor note
 
-Contributors working on Quiver itself get the same AI support. `CLAUDE.md` explains which files are framework internals, what the testing conventions are, and what scope changes should stay within. The `/add-test` skill is especially useful for improving test coverage on existing framework utilities and composables.
+Contributors working on Quiver itself get the same AI support. `AGENTS.md` explains which files are framework internals, what the testing and typing conventions are, and what scope changes should stay within. The `/add-test` command is especially useful for improving test coverage on existing framework utilities and composables.

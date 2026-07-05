@@ -31,15 +31,16 @@ tests/
 
 ```
 npm run dev           # Start Vite dev server
-npm test -- --run     # Run unit tests once
+npm test              # Run unit tests once
+npm run test:watch    # Run unit tests in watch mode
 npm run test:e2e      # Run E2E tests (Playwright)
-npm run typecheck     # Type-check all JS via JSDoc (tsc --noEmit, checkJs)
+npm run typecheck     # Type-check src/ via JSDoc (tsc --noEmit, checkJs)
 npm run build         # Production build
 npm run docs:dev      # Start docs site locally
 npm run docs:build    # Build docs site
 ```
 
-Always run `npm run typecheck && npm test -- --run && npm run test:e2e` before completing a task.
+Always run `npm run typecheck && npm test && npm run test:e2e` before completing a task.
 
 ## Types
 

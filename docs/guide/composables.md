@@ -92,6 +92,7 @@ function LoginPage() {
   const { form, handleSubmit, field } = useForm(
     { email: '', password: '' },
     {
+      // validate may be sync or async — it is awaited either way
       validate(values) {
         const errors = {}
         if (!values.email) errors.email = 'Email is required.'
@@ -181,11 +182,13 @@ function PostsPage() {
 | `error()` | `() => string \| null` | Error message, or `null` on success |
 | `status()` | `() => number \| null` | HTTP status code of the last response |
 | `refetch()` | `() => Promise<void>` | Re-triggers the fetch; cancels any in-flight request first |
+| `reset()` | `() => void` | Aborts any in-flight request and clears `data`, `error`, `status`, and `loading` |
 
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `immediate` | `boolean` | `true` | Fetch on mount; set `false` for manual trigger |
 | `transform` | `(data) => any` | identity | Applied to the parsed JSON before storing |
+| `delay` | `number` | `0` | Artificial delay in ms after the response resolves — handy for demoing loading states |
 | `method` | `string` | `'GET'` | HTTP method |
 | `headers` | `object` | `{}` | Request headers |
 | `body` | `string` | — | Request body |

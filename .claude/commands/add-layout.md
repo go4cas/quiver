@@ -1,6 +1,6 @@
 Create a new Quiver layout named: $ARGUMENTS
 
-The argument is a layout name in any case (e.g. `sidebar`, `BlankLayout`, `full-width`). Normalise to PascalCase with a `Layout` suffix (e.g. `SidebarLayout`). The registration key is the lowercase base name without the suffix (e.g. `sidebar`).
+The argument is a layout name in any case (e.g. `sidebar`, `BlankLayout`, `full-width`). Normalise to PascalCase with a `Layout` suffix — `<Name>` below means this full suffixed name (e.g. `SidebarLayout`). The registration key is the lowercase base name without the suffix (e.g. `sidebar`).
 
 Follow these steps exactly:
 
@@ -9,7 +9,7 @@ Follow these steps exactly:
 ```js
 import { html } from '@arrow-js/core'
 
-export function <Name>Layout(content) {
+export function <Name>(content) {
   return html`
     <div class="min-h-screen">
       ${content}
@@ -26,15 +26,21 @@ export function <Name>Layout(content) {
      const app = inject('app', { name: 'Quiver', tagline: '' })
      ```
    - Apply Arrow.js rules: wrap reactive values in `() =>`, no `<!-- -->` HTML comments inside template literals
+   - Annotate the exported layout function with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `npm run typecheck`
 
 2. Register in `src/layouts/index.js`:
 ```js
-import { <Name>Layout } from './<Name>Layout.js'
+import { <Name> } from './<Name>.js'
 // add to the layouts object:
-<key>: <Name>Layout,
+<key>: <Name>,
 ```
 
-3. Report:
+3. Verify — run and fix any failures:
+```
+npm run typecheck && npm test && npm run test:e2e
+```
+
+4. Report:
    - The file created
    - The key to use in `meta.layout` (e.g. `export const meta = { layout: '<key>' }`)
    - Any DI keys the layout reads and where to `provide()` them in `src/main.js`

@@ -44,10 +44,11 @@ The `bg` value is the swatch color shown in the selector — pick the theme's br
 
 ## Step 4 — Test
 
-Extend `tests/e2e/theme.test.js` with a case matching the existing ones: selecting the new theme applies `data-theme="<id>"`. Then run:
+Extend `tests/e2e/theme.test.js` with a case matching the existing ones: selecting the new theme applies `data-theme="<id>"`. Iterate with the targeted run, then finish with the full gate:
 
 ```
-npm run test:e2e -- --grep "theme"
+npm run test:e2e -- --grep "theme"                  # while iterating
+npm run typecheck && npm test && npm run test:e2e   # full gate before done
 ```
 
 ## Step 5 — Verify visually

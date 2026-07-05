@@ -7,7 +7,7 @@ The project has two test suites that serve different purposes and run independen
 ## Unit tests
 
 **Tool:** Vitest  
-**Command:** `npm test`  
+**Command:** `npm test` (one-shot) · `npm run test:watch` (watch mode)  
 **Location:** `tests/framework/` and `tests/composables/`
 
 Unit tests cover pure utility functions and composables. They run in a jsdom environment and complete in under a second.
@@ -19,8 +19,10 @@ tests/framework/
 └── store.test.js     # createStore
 
 tests/composables/
+├── useFetch.test.js  # fetching, errors, transform, abort, reset
 ├── useForm.test.js   # validation, field accessors, submission lifecycle
-└── useRoute.test.js  # path, params, status, meta accessors
+├── useRoute.test.js  # path, params, status, meta accessors
+└── useToast.test.js  # toast lifecycle and configuration
 ```
 
 ### Adding unit tests

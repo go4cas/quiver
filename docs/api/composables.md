@@ -102,6 +102,7 @@ function PostsPage() {
 | `options.method` | `string` | `'GET'` | HTTP method |
 | `options.headers` | `object` | `{}` | Request headers |
 | `options.body` | `string` | — | Request body |
+| `options.delay` | `number` | `0` | Artificial delay in ms applied after the response resolves — useful for demoing loading/skeleton states |
 
 **Returns**
 
@@ -112,6 +113,7 @@ function PostsPage() {
 | `error()` | `() => string \| null` | Reactive accessor — error message string on failure; `null` on success or before the first attempt |
 | `status()` | `() => number \| null` | Reactive accessor — HTTP status code of the last response; `null` before the first attempt |
 | `refetch()` | `() => Promise<void>` | Re-triggers the fetch; aborts any in-flight request before starting a new one |
+| `reset()` | `() => void` | Aborts any in-flight request and clears `data`, `error`, `status`, and `loading` |
 
 ---
 
@@ -206,7 +208,7 @@ function LoginPage() {
 | Name | Type | Description |
 |---|---|---|
 | `initialValues` | `object` | Initial values for each field, keyed by field name |
-| `options.validate` | `(values) => object` | Called before submit. Return an object of `{ fieldName: errorMessage }` to block submission. |
+| `options.validate` | `(values) => object \| Promise<object>` | Called before submit — may be sync or async (it is awaited). Return an object of `{ fieldName: errorMessage }` to block submission, or an empty object to allow it. |
 | `options.onSubmit` | `async (values, form) => void` | Called on successful validation. Receives the current values and the reactive `form` object. |
 
 **Returns:** `{ form, handleSubmit, field }`

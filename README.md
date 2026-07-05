@@ -45,9 +45,10 @@ See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 | `npm run dev`          | Start the Vite dev server            |
 | `npm run build`        | Production build to `dist/`          |
 | `npm run preview`      | Preview the production build locally |
-| `npm test`             | Run unit tests (Vitest)              |
+| `npm test`             | Run unit tests once (Vitest)         |
+| `npm run test:watch`   | Run unit tests in watch mode         |
 | `npm run test:e2e`     | Run end-to-end tests (Playwright)    |
-| `npm run typecheck`    | Type-check via JSDoc (tsc, checkJs)  |
+| `npm run typecheck`    | Type-check `src/` via JSDoc (tsc)    |
 | `npm run docs:dev`     | Start the documentation site locally |
 | `npm run docs:build`   | Build the documentation site         |
 | `npm run docs:preview` | Preview the built documentation site |

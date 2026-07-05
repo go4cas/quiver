@@ -63,8 +63,11 @@ test.describe('FeatureName', () => {
 
 ## Step 4 — Run and fix
 
-Run the tests and fix any failures before reporting done:
+Iterate with the targeted commands, then finish with the full gate — fix any failures before reporting done:
 ```
-npm test -- --run                        # unit tests
-npm run test:e2e -- --grep "TestName"   # specific E2E test
+npm test                                 # unit tests (one-shot)
+npm run test:e2e -- --grep "TestName"    # specific E2E test while iterating
+npm run typecheck && npm test && npm run test:e2e   # full gate before done
 ```
+
+Annotate any test helpers with JSDoc `@param`/`@returns` if they have parameters — strict `checkJs` is enforced on `src/`; keep test files consistent with that style.

@@ -133,23 +133,25 @@ html`
 
    ```css
    /* Ocean — light */
-   [data-theme="ocean"]:where([data-mode="light"], [data-mode="light"] *) {
+   [data-theme="ocean"] {
      --color-surface: oklch(97% 0.02 220);
      --color-brand: oklch(55% 0.18 220);
      /* …remaining tokens */
    }
 
    /* Ocean — dark */
-   [data-theme="ocean"]:where([data-mode="dark"], [data-mode="dark"] *) {
+   [data-theme="ocean"][data-mode="dark"] {
      --color-surface: oklch(15% 0.03 220);
      --color-brand: oklch(65% 0.18 220);
    }
    ```
 
+   This matches the pattern the built-in themes use in `src/style.css`.
+
 3. Register a Tailwind variant if you need per-theme utility overrides:
 
    ```css
-   @variant theme-ocean (&:where([data-theme="ocean"], [data-theme="ocean"] *));
+   @variant theme-ocean (&:where([data-theme=ocean] *));
    ```
 
 4. Add the theme to the `THEMES` array in `src/components/ThemeSelector.js`:

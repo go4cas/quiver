@@ -5,6 +5,22 @@ All notable changes to Quiver are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Rapid navigation can no longer render a stale page: `resolveRoute` now ignores writes from superseded navigations
+- A guard cancelling a navigation no longer remounts the current page (and can no longer cause a navigate loop)
+- `go()` no longer leaks unhandled `AbortError` rejections when a navigation is preempted or cancelled
+- `useForm` ignores repeat submits while an async `validate` is still pending
+- Inactive nav links no longer render `aria-current="undefined"` (announced as current by screen readers); the attribute is now omitted entirely
+
+### Changed
+
+- `npm test` now runs the unit suite once; use `npm run test:watch` for watch mode
+- CI workflow token is scoped to `contents: read`
+- Docs: guard initial-load behaviour, `useFetch` `reset()`/`delay`, and async `validate` are now documented; routing guide notes that client-side guards are UX, not authorization
+
 ## [1.0.0] - 2026-07-05
 
 First tagged release.

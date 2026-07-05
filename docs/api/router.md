@@ -76,11 +76,13 @@ const unregister = beforeEach(({ from, to }) => {
 
 | Name | Type | Description |
 |---|---|---|
-| `guard` | `({ from: string, to: string }) => string \| false \| void` | Guard function. Return a path string to redirect, `false` to cancel, or nothing to allow. |
+| `guard` | `({ from: string \| null, to: string }) => string \| false \| void` | Guard function. Return a path string to redirect, `false` to cancel, or nothing to allow. May be async. |
 
 **Returns:** `() => void` — call the returned function to unregister the guard.
 
 Guards run in registration order. The first guard that returns `false` or a redirect path short-circuits the rest.
+
+Guards also run on the initial page load with `from: null`. On first load, returning `false` redirects to `/` (there is no previous page to stay on); redirect strings re-run the guards for the new destination (capped at 10 hops).
 
 ---
 
@@ -148,7 +150,7 @@ matchPath('/users', '/users')          // → {}
 Returns a specificity score for a route path. Used to sort routes so static segments are matched before dynamic ones.
 
 ```js
-scoreRoute('/')           // → 100
+scoreRoute('/')           // → 0 (checked last)
 scoreRoute('/users')      // → 10
 scoreRoute('/users/:id')  // → 11
 ```

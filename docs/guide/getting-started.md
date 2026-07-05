@@ -55,9 +55,10 @@ Open [http://localhost:5173](http://localhost:5173). The app hot-reloads on ever
 | `npm run dev` | Start the Vite dev server |
 | `npm run build` | Production build to `dist/` |
 | `npm run preview` | Preview the production build locally |
-| `npm test` | Run unit tests (Vitest) |
+| `npm test` | Run unit tests once (Vitest) |
+| `npm run test:watch` | Run unit tests in watch mode |
 | `npm run test:e2e` | Run end-to-end tests (Playwright) |
-| `npm run typecheck` | Type-check all JS via JSDoc annotations (tsc `checkJs`, no build step) |
+| `npm run typecheck` | Type-check `src/` via JSDoc annotations (tsc `checkJs`, no build step) |
 | `npm run docs:dev` | Start the documentation site locally |
 | `npm run docs:build` | Build the documentation site |
 | `npm run docs:preview` | Preview the built documentation site locally |
@@ -79,7 +80,8 @@ src/
 └── main.js          # App entry point
 
 tests/
-├── framework/       # Unit tests (Vitest)
+├── framework/       # Unit tests for framework utilities (Vitest)
+├── composables/     # Unit tests for composables (Vitest)
 └── e2e/             # End-to-end tests (Playwright)
 
 docs/
@@ -123,6 +125,7 @@ These directories are yours — add, edit, and delete files here freely.
 | `src/utils/` | Pure helper functions |
 | `tests/e2e/` | End-to-end tests for your features |
 | `tests/framework/` | Unit tests for any pure utilities you write |
+| `tests/composables/` | Unit tests for composables you write |
 
 ## What to leave as-is
 

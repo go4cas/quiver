@@ -58,20 +58,22 @@ git checkout -b fix/route-scoring
 
 One concern per PR. Avoid mixing bug fixes with refactors or unrelated doc edits.
 
-**3. Make your changes and run the tests:**
+**3. Make your changes and run the checks:**
 
 ```bash
-npm test              # unit tests
+npm run typecheck     # JSDoc type check (tsc, checkJs)
+npm test              # unit tests (one-shot; use npm run test:watch while developing)
 npm run test:e2e      # end-to-end tests
 ```
 
-Both suites must pass before opening a PR.
+All three must pass before opening a PR — CI runs them on every push.
 
 **4. Match the existing code style:**
 
 - No unnecessary comments — only add one when the *why* is non-obvious
 - No new abstractions beyond what the change requires
 - Keep components, composables, and state modules in their respective folders
+- Type new code with JSDoc (`@param`/`@returns`) — CI enforces a clean `npm run typecheck`
 
 **5. Open the PR:**
 
@@ -86,8 +88,10 @@ Both suites must pass before opening a PR.
 | Command | Description |
 |---|---|
 | `npm run dev` | Start the Vite dev server |
-| `npm test` | Run unit tests (Vitest) |
+| `npm test` | Run unit tests once (Vitest) |
+| `npm run test:watch` | Run unit tests in watch mode |
 | `npm run test:e2e` | Run end-to-end tests (Playwright) |
+| `npm run typecheck` | Type-check `src/` via JSDoc (tsc, checkJs) |
 | `npm run docs:dev` | Start the documentation site locally |
 
 ---

@@ -107,6 +107,12 @@ beforeEach(({ to }) => {
 
 `beforeEach` returns an unregister function if you need to remove the guard later.
 
+Guards also run on the initial page load with `from: null`. On first load, returning `false` redirects to `/` (there is no previous page to stay on); redirect strings re-run the guards for the new destination (capped at 10 hops).
+
+::: warning Client-side only
+Guards control client-side navigation UX only — a user can bypass them with DevTools. Always enforce authorization on the server for anything sensitive.
+:::
+
 ::: tip Import path
 `beforeEach`, `go`, `destroyRouter`, and the route utilities are exported from `src/framework/router.js` **only** — they are not re-exported from `src/framework/index.js`. Always import them directly from `router.js`.
 :::
