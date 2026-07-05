@@ -5,7 +5,7 @@ All notable changes to Quiver are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-07-05
 
 ### Added
 
@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `npm test` now runs the unit suite once; use `npm run test:watch` for watch mode
 - CI workflow token is scoped to `contents: read`
 - Docs: guard initial-load behaviour, `useFetch` `reset()`/`delay`, and async `validate` are now documented; routing guide notes that client-side guards are UX, not authorization
+- Dev dependencies bumped (Vite 8.1.3, Vitest 4.1.9, Playwright 1.61.1, Tailwind 4.3.2) and GitHub Actions updated (checkout v7, setup-node v6, Pages actions) via Dependabot
 
 ## [1.0.0] - 2026-07-05
 
@@ -54,4 +55,5 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[1.1.0]: https://github.com/go4cas/quiver/releases/tag/v1.1.0
 [1.0.0]: https://github.com/go4cas/quiver/releases/tag/v1.0.0
