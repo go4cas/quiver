@@ -92,11 +92,17 @@ export function matchPath(routePath, urlPath) {
   return params
 }
 
+// Supersession token: rapid navigations run resolveRoute concurrently (the
+// Navigation API aborts the *navigation*, not already-running JS). Only the
+// most recent call may write routerState after an await.
+let resolveEpoch = 0
+
 /**
  * @param {string} [path]
  * @returns {Promise<void>}
  */
 export async function resolveRoute(path = window.location.pathname) {
+  const epoch = ++resolveEpoch
   const cleanPath = normalizePath(path)
 
   routerState.status = 'loading'
@@ -114,6 +120,7 @@ export async function resolveRoute(path = window.location.pathname) {
 
       if (params) {
         const module = /** @type {PageModule} */ (await route.loader())
+        if (epoch !== resolveEpoch) return // superseded by a newer navigation
         const page = module.default
 
         if (typeof page !== 'function') {
@@ -133,6 +140,7 @@ export async function resolveRoute(path = window.location.pathname) {
     }
 
     const notFoundModule = /** @type {PageModule | undefined} */ (await pageModules['../pages/not-found.js']?.())
+    if (epoch !== resolveEpoch) return // superseded by a newer navigation
     const notFoundMeta = notFoundModule?.meta || {}
 
     routerState.page = notFoundModule?.default ?? null
@@ -141,6 +149,7 @@ export async function resolveRoute(path = window.location.pathname) {
     routerState.status = 'not-found'
     if (notFoundMeta.title) document.title = notFoundMeta.title
   } catch (error) {
+    if (epoch !== resolveEpoch) return // superseded by a newer navigation
     routerState.page = null
     routerState.layout = 'basic'
     routerState.meta = {}
@@ -150,9 +159,13 @@ export async function resolveRoute(path = window.location.pathname) {
 }
 
 // go() is now a thin wrapper — the navigate event handler owns everything.
+// AbortError is expected whenever a navigation is preempted by a newer one
+// or cancelled by a guard — swallow it so call sites don't leak rejections.
 /** @param {string} path */
 export function go(path) {
-  return window.navigation.navigate(normalizePath(path)).finished
+  return window.navigation.navigate(normalizePath(path)).finished?.catch((err) => {
+    if (err.name !== 'AbortError') throw err
+  })
 }
 
 // beforeEach(fn) registers a navigation guard.
@@ -191,6 +204,9 @@ function handleNavigate(event) {
   if (!event.canIntercept) return
   // Let hash-only changes pass through without a route update.
   if (event.hashChange) return
+  // Guard-cancel rollback: URL-only correction, the page never changed —
+  // don't re-run guards or resolveRoute (which would remount the page).
+  if (/** @type {{ rollback?: boolean } | undefined} */ (event.info)?.rollback) return
 
   const to = normalizePath(new URL(event.destination.url).pathname)
   const from = routerState.path
@@ -199,7 +215,7 @@ function handleNavigate(event) {
     handler: async () => {
       const result = await runGuards(from, to)
       if (result === false) {
-        navigation.navigate(from, { history: 'replace' })
+        navigation.navigate(from, { history: 'replace', info: { rollback: true } })
         return
       }
       if (typeof result === 'string') {
