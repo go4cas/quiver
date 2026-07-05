@@ -10,16 +10,18 @@ An [Arrow.js](https://arrow-js.com) starter template with file-based routing, la
 
 ## Getting started
 
-**Prerequisites:** Node.js 18+
+**Prerequisites:** Node.js 20.19+
 
 ```bash
-git clone https://github.com/go4cas/quiver
-cd quiver
+npx degit go4cas/quiver my-app
+cd my-app
 npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
+Open [http://localhost:5173](http://localhost:5173). You can also click **Use this template** on GitHub, or clone the repository directly.
+
+**Browser support:** the router is built on the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API) — Chrome/Edge 102+, Safari 26.2+, Firefox 147+.
 
 ---
 
