@@ -7,8 +7,12 @@
     <title>Quiver</title>
     <script>
       // Apply stored theme/mode before first paint to prevent flash
-      var t = localStorage.getItem('ui-theme') || 'default'
-      var m = localStorage.getItem('ui-mode') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      var t = 'default'
+      var m = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      try {
+        t = localStorage.getItem('ui-theme') || t
+        m = localStorage.getItem('ui-mode') || m
+      } catch (e) { /* storage blocked — defaults apply */ }
       document.documentElement.dataset.theme = t
       document.documentElement.dataset.mode  = m
     </script>
