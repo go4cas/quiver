@@ -50,12 +50,21 @@ Register in `src/components/index.js`.
 - `src/pages/users/index.js` → `/users`
 - `src/pages/users/[id].js` → `/users/:id` (read with `useRoute().params()`)
 - `src/pages/not-found.js` → 404 handler
+- Guards: `beforeEach(({ from, to }) => ...)` — return `false` to cancel or a path to redirect; also runs on initial load with `from: null`
 
 ## Composables
 
+Call inside page/component functions, not module scope:
+
 - `useRoute()` → `{ path(), params(), status(), meta() }`
 - `useRouter()` → `{ go(path), back(), forward() }`
-- `useForm(values, { validate, onSubmit })` — call inside page function, not module scope
+- `useForm(values, { validate, onSubmit })` — `validate` may be sync or async
+- `useFetch(url, options)` → `{ data(), loading(), error(), status(), refetch(), reset() }` — use for API calls, don't hand-roll fetch state
+- `useToast()` → `{ success(), error(), warning(), info(), dismiss() }` — use for notifications, don't build ad-hoc banners
+
+## Theming
+
+Semantic tokens only (`bg-surface`, `text-fg`, `border-line`, `bg-brand`, `rounded-panel`, `shadow-panel`) — never hard-code colors; five themes (`default`, `mono`, `glass`, `retro`, `brutalist`) restyle via `data-theme`/`data-mode` on `<html>`.
 
 ## Testing
 

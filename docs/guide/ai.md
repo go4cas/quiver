@@ -10,22 +10,25 @@ These files are automatically loaded by their respective tools whenever you open
 
 | File | Tool | Purpose |
 |---|---|---|
-| `CLAUDE.md` | Claude Code | Full project context, conventions, and Arrow.js rules |
-| `AGENTS.md` | OpenAI Codex | Same context formatted for Codex |
-| `.github/copilot-instructions.md` | GitHub Copilot | Concise rules applied inline during completions |
+| `AGENTS.md` | Codex and other AGENTS.md-aware tools | **The single source of truth** — full project context, conventions, and Arrow.js rules |
+| `CLAUDE.md` | Claude Code | Imports `AGENTS.md` — same content, zero drift |
+| `.github/copilot-instructions.md` | GitHub Copilot | Condensed rules applied inline during completions |
 
-All three files cover the same ground:
+To change a convention, edit `AGENTS.md` — Claude Code picks it up through the import automatically. Only the Copilot file is maintained separately (it is a deliberately condensed variant).
+
+The context covers:
 - Folder structure and what belongs where
 - Development and test commands
 - Arrow.js-specific rules that trip up AI assistants
-- Page, state, component, and composable patterns
+- Pages, navigation guards, state, components, layouts
+- All five composables (`useRoute`, `useRouter`, `useForm`, `useFetch`, `useToast`), toasts, and theming
 - What belongs in the repo vs a fork
 
 ---
 
 ## Claude Code skills
 
-When working in Claude Code, five slash commands are available. Type `/` in the chat input to see them.
+When working in Claude Code, eight slash commands are available. Type `/` in the chat input to see them.
 
 | Command | What it does |
 |---|---|
@@ -34,6 +37,7 @@ When working in Claude Code, five slash commands are available. Type `/` in the 
 | `/add-component <Name>` | Creates a new reusable component and registers it |
 | `/add-layout <name>` | Creates a new layout and registers it |
 | `/add-composable <name>` | Creates a new composable with a unit test |
+| `/add-theme <id — description>` | Adds a visual theme: CSS tokens, selector entry, E2E test |
 | `/add-feature <name — description>` | Plans and implements a complete feature end-to-end |
 | `/add-test <file path>` | Writes unit or E2E tests for an existing file |
 
@@ -63,6 +67,11 @@ Creates `src/layouts/SidebarLayout.js`, registers it under key `'sidebar'`, and 
 /add-composable useTheme
 ```
 Creates `src/composables/useTheme.js` with reactive accessors and actions, plus a unit test in `tests/composables/useTheme.test.js`.
+
+```
+/add-theme ocean — cool blues, soft shadows
+```
+Adds light and dark token blocks to `src/style.css`, registers the theme in `ThemeSelector`, and extends the theme E2E test.
 
 ```
 /add-feature blog — list posts, read a single post, markdown rendering

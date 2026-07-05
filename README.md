@@ -29,10 +29,10 @@ Open [http://localhost:5173](http://localhost:5173). You can also click **Use th
 
 Quiver ships with context files and Claude Code slash commands that make AI assistants immediately productive in this codebase:
 
-- **`CLAUDE.md`** — loaded automatically by Claude Code; covers conventions, Arrow.js rules, and folder structure
-- **`AGENTS.md`** — same context for OpenAI Codex
-- **`.github/copilot-instructions.md`** — same context for GitHub Copilot
-- **`/add-page`**, **`/add-layout`**, **`/add-component`**, **`/add-state`**, **`/add-composable`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks
+- **`AGENTS.md`** — the single source of truth: conventions, Arrow.js rules, composables, theming, folder structure
+- **`CLAUDE.md`** — loaded automatically by Claude Code; imports `AGENTS.md` so both tools share one context
+- **`.github/copilot-instructions.md`** — condensed rules for GitHub Copilot
+- **`/add-page`**, **`/add-layout`**, **`/add-component`**, **`/add-state`**, **`/add-composable`**, **`/add-theme`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks
 
 See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 
