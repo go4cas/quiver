@@ -36,6 +36,7 @@ export default defineConfig({
           text: 'Guide',
           items: [
             { text: 'Getting Started', link: '/guide/getting-started' },
+            { text: 'Why Quiver',      link: '/guide/why-quiver' },
             { text: 'AI Tooling',      link: '/guide/ai' },
             { text: 'Feature Workflow', link: '/guide/workflow' },
             { text: 'Components',      link: '/guide/components' },
@@ -45,6 +46,7 @@ export default defineConfig({
             { text: 'Theming',         link: '/guide/theming' },
             { text: 'Composables',     link: '/guide/composables' },
             { text: 'Testing',         link: '/guide/testing' },
+            { text: 'Troubleshooting', link: '/guide/troubleshooting' },
             { text: 'Contributing',    link: '/guide/contributing' },
           ],
         },

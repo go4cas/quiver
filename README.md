@@ -2,7 +2,7 @@
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/go4cas/quiver)
 
-An [Arrow.js](https://arrow-js.com) starter template with file-based routing, layouts, reactive state, composables, and a full testing setup.
+An [Arrow.js](https://arrow-js.com) starter template with file-based routing, layouts, reactive state, composables, and a full testing setup — built for AI-assisted development, with context files and slash commands for Claude Code, Codex, and Copilot included.
 
 **Stack:** Arrow.js · Vite · Tailwind CSS v4 · Vitest · Playwright
 
@@ -22,6 +22,19 @@ npm run dev
 Open [http://localhost:5173](http://localhost:5173). You can also click **Use this template** on GitHub, or clone the repository directly.
 
 **Browser support:** the router is built on the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API) — Chrome/Edge 102+, Safari 26.2+, Firefox 147+.
+
+---
+
+## AI tooling
+
+Quiver ships with context files and Claude Code slash commands that make AI assistants immediately productive in this codebase:
+
+- **`CLAUDE.md`** — loaded automatically by Claude Code; covers conventions, Arrow.js rules, and folder structure
+- **`AGENTS.md`** — same context for OpenAI Codex
+- **`.github/copilot-instructions.md`** — same context for GitHub Copilot
+- **`/add-page`**, **`/add-layout`**, **`/add-component`**, **`/add-state`**, **`/add-composable`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks
+
+See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 
 ---
 
@@ -66,12 +79,14 @@ tests/
 ### Developer guide
 
 - [Getting started](docs/guide/getting-started.md) — what to add, what to leave alone
+- [Why Quiver](docs/guide/why-quiver.md) — an honest comparison with the alternatives
 - [Feature workflow](docs/guide/workflow.md) — step-by-step walkthrough for adding a feature
 - [Routing](docs/guide/routing.md) — file-based routing, dynamic segments, navigation guards
 - [Layouts](docs/guide/layouts.md) — page layouts, DI keys, creating new layouts
 - [State](docs/guide/state.md) — reactive stores, built-in state modules
 - [Composables](docs/guide/composables.md) — useRoute, useRouter, useForm, provide/inject
 - [Testing](docs/guide/testing.md) — unit tests and E2E tests
+- [Troubleshooting](docs/guide/troubleshooting.md) — common gotchas and their fixes
 
 ### API reference
 
@@ -79,19 +94,6 @@ tests/
 - [Router](docs/api/router.md) — initRouter, go, beforeEach, resolveRoute and utilities
 - [Composables](docs/api/composables.md) — useRoute, useRouter, useForm
 - [Components](docs/api/components.md) — Link, Counter, ThemeToggle, UserCard, ErrorCard, LoadingCard
-
----
-
-## AI tooling
-
-Quiver ships with context files and Claude Code slash commands that make AI assistants immediately productive in this codebase:
-
-- **`CLAUDE.md`** — loaded automatically by Claude Code; covers conventions, Arrow.js rules, and folder structure
-- **`AGENTS.md`** — same context for OpenAI Codex
-- **`.github/copilot-instructions.md`** — same context for GitHub Copilot
-- **`/add-page`**, **`/add-state`**, **`/add-component`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks
-
-See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 
 ---
 
