@@ -142,6 +142,32 @@ describe('useForm — submission lifecycle', () => {
     expect(e.preventDefault).toHaveBeenCalled()
   })
 
+  it('ignores a second submit while an async validate is pending', async () => {
+    /** @type {(errs: object) => void} */
+    let resolveValidate
+    const validate = vi.fn(() => new Promise((r) => { resolveValidate = r }))
+    const onSubmit = vi.fn()
+    const { handleSubmit } = useForm({ x: '' }, { validate, onSubmit })
+
+    const first = handleSubmit(fakeSubmitEvent())
+    handleSubmit(fakeSubmitEvent()) // fired while validate is still pending
+    expect(validate).toHaveBeenCalledTimes(1)
+
+    resolveValidate({})
+    await first
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+  })
+
+  it('resets submitting when async validate fails', async () => {
+    const { form, handleSubmit } = useForm(
+      { email: '' },
+      { validate: async () => ({ email: 'Required.' }) }
+    )
+    await handleSubmit(fakeSubmitEvent())
+    expect(form.submitting).toBe(false)
+    expect(form.errors.email).toBe('Required.')
+  })
+
   it('ignores a second submit while already submitting', async () => {
     let resolveSubmit
     const onSubmit = vi.fn(() => new Promise((r) => { resolveSubmit = r }))

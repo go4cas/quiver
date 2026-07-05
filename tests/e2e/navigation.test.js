@@ -23,16 +23,18 @@ test('sign out from user menu navigates to login page', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
 })
 
-test('active nav link has aria-current="page" and inactive links do not', async ({ page }) => {
+test('active nav link has aria-current="page" and inactive links have no aria-current at all', async ({ page }) => {
   await page.goto('/users')
   const teamLink = page.getByRole('link', { name: 'Team' })
   await expect(teamLink).toHaveAttribute('aria-current', 'page')
   const dashboardLink = page.getByRole('link', { name: 'Dashboard' })
-  await expect(dashboardLink).not.toHaveAttribute('aria-current', 'page')
+  // Attribute must be absent, not just ≠ "page" — a stringified "undefined"
+  // would be treated as aria-current="true" by assistive tech.
+  await expect(dashboardLink).not.toHaveAttribute('aria-current')
 
   await page.goto('/')
   await expect(dashboardLink).toHaveAttribute('aria-current', 'page')
-  await expect(teamLink).not.toHaveAttribute('aria-current', 'page')
+  await expect(teamLink).not.toHaveAttribute('aria-current')
 })
 
 test('deeper path activates the parent nav link', async ({ page }) => {

@@ -15,7 +15,7 @@ export const Link = component(/** @param {{ to: string, children?: any, class?: 
     <a
       href="${to}"
       class="${cls}"
-      aria-current="${() => (isActive() ? 'page' : undefined)}"
+      aria-current="${() => (isActive() ? 'page' : false)}"
       @click="${/** @param {Event} e */ (e) => { e.preventDefault(); go(to) }}"
     >${children}</a>
   `

@@ -34,18 +34,20 @@ export function useForm(initialValues = {}, { onSubmit, validate } = {}) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (form.submitting) return
+    // Guard the async validate window too — submitting goes true before any await.
+    form.submitting = true
 
     if (validate) {
       // validate may be sync or async — await handles both.
       const errs = await validate(form.values)
       if (errs && Object.keys(errs).length) {
         form.errors = errs
+        form.submitting = false
         return
       }
     }
 
     form.errors = {}
-    form.submitting = true
 
     try {
       if (onSubmit) await onSubmit(form.values, form)
