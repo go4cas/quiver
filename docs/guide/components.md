@@ -244,7 +244,7 @@ Components participate in the theming system through two Tailwind variant classe
 class="bg-white dark:bg-slate-900"
 ```
 
-**Per-theme variants** (`theme-glass:`, `theme-mono:`, `theme-retro:`, `theme-brutalist:`) — apply only when that specific theme is active. Use for structural differences that go beyond a colour swap:
+**Per-theme variants** (`theme-glass:`, `theme-brutalist:`) — apply only when that specific theme is active. Use for structural differences that go beyond a colour swap:
 
 ```js
 class="rounded-panel shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2"

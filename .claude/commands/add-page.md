@@ -41,11 +41,11 @@ export default <PageName>Page
    - Wrap reactive values in `() =>`
    - No `<!-- -->` comments inside template literals
    - Use `aria-disabled` not `.disabled` for disabled states
-   - Annotate any helper functions with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `npm run typecheck`
+   - Annotate any helper functions with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `bun run typecheck`
 
 4. Verify — run and fix any failures:
 ```
-npm run typecheck && npm test && npm run test:e2e
+bun run typecheck && bun run test && bun run test:e2e
 ```
 
 5. Report:

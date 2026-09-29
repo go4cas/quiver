@@ -26,7 +26,7 @@ export function <Name>(content) {
      const app = inject('app', { name: 'Quiver', tagline: '' })
      ```
    - Apply Arrow.js rules: wrap reactive values in `() =>`, no `<!-- -->` HTML comments inside template literals
-   - Annotate the exported layout function with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `npm run typecheck`
+   - Annotate the exported layout function with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `bun run typecheck`
 
 2. Register in `src/layouts/index.js`:
 ```js
@@ -37,7 +37,7 @@ import { <Name> } from './<Name>.js'
 
 3. Verify — run and fix any failures:
 ```
-npm run typecheck && npm test && npm run test:e2e
+bun run typecheck && bun run test && bun run test:e2e
 ```
 
 4. Report:

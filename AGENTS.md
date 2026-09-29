@@ -30,21 +30,21 @@ tests/
 ## Commands
 
 ```
-npm run dev           # Start Vite dev server
-npm test              # Run unit tests once
-npm run test:watch    # Run unit tests in watch mode
-npm run test:e2e      # Run E2E tests (Playwright)
-npm run typecheck     # Type-check src/ via JSDoc (tsc --noEmit, checkJs)
-npm run build         # Production build
-npm run docs:dev      # Start docs site locally
-npm run docs:build    # Build docs site
+bun run dev           # Start Vite dev server
+bun run test              # Run unit tests once
+bun run test:watch    # Run unit tests in watch mode
+bun run test:e2e      # Run E2E tests (Playwright)
+bun run typecheck     # Type-check src/ via JSDoc (tsc --noEmit, checkJs)
+bun run build         # Production build
+bun run docs:dev      # Start docs site locally
+bun run docs:build    # Build docs site
 ```
 
-Always run `npm run typecheck && npm test && npm run test:e2e` before completing a task.
+Always run `bun run typecheck && bun run test && bun run test:e2e` before completing a task.
 
 ## Types
 
-The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict` (see `jsconfig.json`). CI enforces a clean `npm run typecheck`. When adding code:
+The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict` (see `jsconfig.json`). CI enforces a clean `bun run typecheck`. When adding code:
 
 - Annotate exported functions with `@param`/`@returns`; use `@typedef` for shared shapes and `@template` for generics
 - Reuse existing typedefs via import syntax: `/** @typedef {import('../state/userState.js').User} User */`
@@ -111,14 +111,12 @@ Register guards in `main.js` before `initRouter()`.
 ### State modules
 
 ```js
-import { createStore } from '../framework/index.js'
+import { reactive } from '@arrow-js/core'
 
-export const myState = createStore((reactive) => {
-  const state = reactive({ items: [] })
-  return {
-    get items() { return state.items },
-    addItem(item) { state.items.push({ ...item, id: crypto.randomUUID() }) },
-  }
+export const myState = reactive({
+  items: [],
+  /** @param {{ name: string }} item */
+  addItem(item) { this.items.push({ ...item, id: crypto.randomUUID() }) },
 })
 ```
 
@@ -145,12 +143,12 @@ Call these inside a page or component function, never at module scope:
 - `useRoute()` → `{ path(), params(), status(), meta() }` — reactive route accessors
 - `useRouter()` → `{ go(path), back(), forward() }` — navigation
 - `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` — form state; `validate` may be sync or async, return `{}` when valid or `{ fieldName: 'message' }` on errors; a thrown `onSubmit` error is caught and written to `form.message`
-- `useFetch(url, options)` → `{ data(), loading(), error(), status(), refetch(), reset() }` — HTTP with reactive state; options: `{ immediate = true, transform, delay, ...fetchOptions }`; refetch aborts the previous in-flight request. **Use this for API calls — do not hand-roll fetch + loading/error state.**
+- `useFetch(url, options)` → `{ data(), loading(), error(), status(), refetch(), reset() }` — HTTP with reactive state; options: `{ immediate = true, transform, ...fetchOptions }`; refetch aborts the previous in-flight request. **Use this for API calls — do not hand-roll fetch + loading/error state.**
 - `useToast()` → `{ success(msg, opts), error(msg, opts), warning(msg, opts), info(msg, opts), dismiss(id) }` — **use this for user notifications — do not build ad-hoc banners.** Options per call: `{ duration, dismissible }`
 
 ### Toasts
 
-`ToastContainer` is already mounted by the built-in layouts — calling `useToast()` from any page or component just works. Global defaults via `toastState.configure({ position, duration, dismissible })`; positions: `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right`.
+`ToastContainer` is already mounted by the built-in layouts — calling `useToast()` from any page or component just works. Toasts render bottom-right; defaults (`duration: 4000`, `dismissible: true`) live in `toastState.add()`.
 
 ### Layouts
 

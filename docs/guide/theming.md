@@ -104,12 +104,10 @@ All components use semantic CSS custom properties instead of palette utilities. 
 
 ## Per-theme variant classes
 
-Tailwind variants are registered for each non-default theme:
+Tailwind variants are registered for the themes whose components need structural overrides:
 
 ```
-theme-glass:   [data-theme="glass"] &
-theme-retro:   [data-theme="retro"] &
-theme-mono:    [data-theme="mono"] &
+theme-glass:     [data-theme="glass"] &
 theme-brutalist: [data-theme="brutalist"] &
 ```
 

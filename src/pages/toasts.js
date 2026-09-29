@@ -7,18 +7,9 @@ export const meta = {
   title: 'Toasts',
 }
 
-const POSITIONS = [
-  'bottom-right',
-  'bottom-center',
-  'bottom-left',
-  'top-right',
-  'top-center',
-  'top-left',
-]
-
 function ToastsPage() {
   const toast = useToast()
-  const form  = reactive({ position: 'bottom-right', duration: 4000, dismissible: true })
+  const form  = reactive({ duration: 4000, dismissible: true })
 
   const fire = /** @param {'success' | 'error' | 'warning' | 'info'} type */ (type) => {
     const messages = {
@@ -42,7 +33,6 @@ function ToastsPage() {
           <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">useToast()</span>
           <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">add()</span>
           <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">dismiss()</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">configure()</span>
         </div>
       </div>
 
@@ -93,21 +83,6 @@ function ToastsPage() {
               />
             </label>
 
-            <label class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-fg-soft">Position</span>
-              <select
-                class="rounded-control border border-line bg-surface px-3 py-1.5 font-mono text-sm text-fg focus:border-brand focus:outline-none"
-                @change="${/** @param {any} e */ (e) => { form.position = e.target.value }}"
-              >
-                ${() => POSITIONS.map((p) =>
-                  (p === form.position
-                    ? html`<option value="${p}" selected>${p}</option>`
-                    : html`<option value="${p}">${p}</option>`
-                  ).key(p)
-                )}
-              </select>
-            </label>
-
             <label class="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
@@ -118,12 +93,6 @@ function ToastsPage() {
               <span class="text-sm text-fg-soft">Dismissible</span>
             </label>
           </div>
-
-          <button
-            type="button"
-            class="mt-4 rounded-control bg-surface-inset px-4 py-2 text-sm font-semibold text-fg-soft hover:bg-line"
-            @click="${() => toastState.configure({ position: form.position, duration: form.duration, dismissible: form.dismissible })}"
-          >Configure defaults</button>
         </div>
       </div>
     </div>

@@ -10,7 +10,6 @@ beforeEach(() => {
   vi.useFakeTimers()
   toastState.toasts     = []
   toastState.dismissing = []
-  toastState.config     = { position: 'bottom-right', duration: 4000, dismissible: true }
 })
 
 afterEach(() => {
@@ -47,7 +46,7 @@ describe('toastState.add()', () => {
     expect(toastState.toasts).toHaveLength(1)
   })
 
-  it('per-call opts override config defaults', () => {
+  it('per-call opts override defaults', () => {
     toastState.add('x', { duration: 0, dismissible: false })
     const t = toastState.toasts[0]
     expect(t.duration).toBe(0)
@@ -88,23 +87,6 @@ describe('toastState.dismiss()', () => {
 
     vi.advanceTimersByTime(2000) // past the original auto-dismiss time
     expect(toastState.dismissing).toHaveLength(0) // stale timer never fired
-  })
-})
-
-describe('toastState.configure()', () => {
-  it('merges opts into config without touching unmentioned keys', () => {
-    toastState.configure({ position: 'top-left' })
-    expect(toastState.config.position).toBe('top-left')
-    expect(toastState.config.duration).toBe(4000)
-    expect(toastState.config.dismissible).toBe(true)
-  })
-
-  it('new toasts inherit the updated config defaults', () => {
-    toastState.configure({ duration: 0, dismissible: false })
-    toastState.add('After configure')
-    const t = toastState.toasts[0]
-    expect(t.duration).toBe(0)
-    expect(t.dismissible).toBe(false)
   })
 })
 

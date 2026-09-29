@@ -8,8 +8,9 @@ Open the full Quiver starter in your browser — no installation needed.
 
 ## Prerequisites
 
-- Node.js 20.19+ (required by Vite 8)
-- npm 10+
+- [Bun](https://bun.com) 1.4+ — the supported package manager and runtime
+
+No Bun? `npm install && npm run dev` also works on Node.js 20.19+ (required by Vite 8); this is how the StackBlitz button runs the project. `bun.lock` is the only lockfile, so npm resolves fresh versions.
 
 ## Browser support
 
@@ -27,9 +28,9 @@ Quiver's router is built on the [Navigation API](https://developer.mozilla.org/e
 Scaffold a fresh project without Quiver's git history:
 
 ```bash
-npx degit go4cas/quiver my-app
+bunx degit go4cas/quiver my-app
 cd my-app
-npm install
+bun install
 ```
 
 Or clone the repository directly (keeps the full history), or click **Use this template** on [GitHub](https://github.com/go4cas/quiver):
@@ -37,13 +38,13 @@ Or clone the repository directly (keeps the full history), or click **Use this t
 ```bash
 git clone https://github.com/go4cas/quiver
 cd quiver
-npm install
+bun install
 ```
 
 ## Running the app
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173). The app hot-reloads on every save.
@@ -52,16 +53,16 @@ Open [http://localhost:5173](http://localhost:5173). The app hot-reloads on ever
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start the Vite dev server |
-| `npm run build` | Production build to `dist/` |
-| `npm run preview` | Preview the production build locally |
-| `npm test` | Run unit tests once (Vitest) |
-| `npm run test:watch` | Run unit tests in watch mode |
-| `npm run test:e2e` | Run end-to-end tests (Playwright) |
-| `npm run typecheck` | Type-check `src/` via JSDoc annotations (tsc `checkJs`, no build step) |
-| `npm run docs:dev` | Start the documentation site locally |
-| `npm run docs:build` | Build the documentation site |
-| `npm run docs:preview` | Preview the built documentation site locally |
+| `bun run dev` | Start the Vite dev server |
+| `bun run build` | Production build to `dist/` |
+| `bun run preview` | Preview the production build locally |
+| `bun run test` | Run unit tests once (Vitest) |
+| `bun run test:watch` | Run unit tests in watch mode |
+| `bun run test:e2e` | Run end-to-end tests (Playwright) |
+| `bun run typecheck` | Type-check `src/` via JSDoc annotations (tsc `checkJs`, no build step) |
+| `bun run docs:dev` | Start the documentation site locally |
+| `bun run docs:build` | Build the documentation site |
+| `bun run docs:preview` | Preview the built documentation site locally |
 
 ## Folder structure
 
@@ -145,15 +146,10 @@ These are framework internals — no need to touch them for normal development.
 ```js
 provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
 await initRouter()               // from './framework/router.js'
-await createApp({ root: '#app' }) // from './framework/index.js'
+createApp()                     // from './framework/index.js'
 ```
 
-`createApp(options?)` installs plugins, then renders the current route (inside its layout) into the root element. It returns a `Promise<void>` and throws if the root element is missing. Await `initRouter()` first.
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `root` | `string` | `'#app'` | CSS selector for the root DOM element |
-| `plugins` | `array` | `[]` | Objects with an optional `install()` method, called before mounting |
+`createApp()` renders the current route (inside its layout) into the `#app` element from `index.html`, and throws if it is missing. Await `initRouter()` first, and run any other setup code (analytics, error reporting) before calling it.
 
 Ready to build something? See the [feature workflow](./workflow) guide.
 

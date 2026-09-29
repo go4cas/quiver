@@ -1,16 +1,6 @@
 import { component, html } from '@arrow-js/core'
 import { toastState }      from '../state/toastState.js'
 
-/** @type {Record<string, string>} */
-const POSITION = {
-  'top-left':      'top-4 left-4',
-  'top-center':    'top-4 left-1/2 -translate-x-1/2',
-  'top-right':     'top-4 right-4',
-  'bottom-left':   'bottom-4 left-4',
-  'bottom-center': 'bottom-4 left-1/2 -translate-x-1/2',
-  'bottom-right':  'bottom-4 right-4',
-}
-
 const TYPE = {
   success: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
   error:   'border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300',
@@ -20,7 +10,7 @@ const TYPE = {
 
 export const ToastContainer = component(() =>
   html`
-    <div class="${() => `fixed z-50 flex flex-col gap-2 pointer-events-none ${POSITION[toastState.config.position] ?? POSITION['bottom-right']}`}">
+    <div class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
       ${() => toastState.toasts.map((toast) =>
         html`
           <div

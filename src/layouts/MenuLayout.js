@@ -25,7 +25,7 @@ export function MenuLayout(content) {
         <nav class="flex-1 space-y-0.5 px-3">${Link({ to: '/', children: 'Dashboard', class: navItem })} ${Link({ to: '/users', children: 'Team', class: navItem })} ${Link({ to: '/posts', children: 'Posts', class: navItem })} ${Link({ to: '/toasts', children: 'Toasts', class: navItem })}</nav>
 
         <div class="border-t border-line px-5 py-4">
-          <p class="font-mono text-xs text-fg-faint">quiver starter · v1.0</p>
+          <p class="font-mono text-xs text-fg-faint">quiver starter</p>
         </div>
       </aside>
 

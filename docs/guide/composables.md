@@ -87,7 +87,7 @@ function MyPage() {
 | `duration` | `number` | `4000` | Auto-dismiss delay in ms; `0` = never auto-dismiss |
 | `dismissible` | `boolean` | `true` | Render a close button |
 
-Change the global defaults (and `position`, default `'bottom-right'`) with `toastState.configure({ position, duration, dismissible })`; per-call `opts` override them.
+Toasts render bottom-right. To change the defaults for every toast, edit them in `add()` in `src/state/toastState.js`; to move the stack, edit the position classes in `src/components/ToastContainer.js`.
 
 ---
 
@@ -203,7 +203,6 @@ function PostsPage() {
 |---|---|---|---|
 | `immediate` | `boolean` | `true` | Fetch on mount; set `false` for manual trigger |
 | `transform` | `(data) => any` | identity | Applied to the parsed JSON before storing |
-| `delay` | `number` | `0` | Artificial delay in ms after the response resolves — handy for demoing loading states |
 | `method` | `string` | `'GET'` | HTTP method |
 | `headers` | `object` | `{}` | Request headers |
 | `body` | `string` | — | Request body |

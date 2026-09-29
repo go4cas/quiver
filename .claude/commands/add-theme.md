@@ -47,10 +47,10 @@ The `bg` value is the swatch color shown in the selector — pick the theme's br
 Extend `tests/e2e/theme.test.js` with a case matching the existing ones: selecting the new theme applies `data-theme="<id>"`. Iterate with the targeted run, then finish with the full gate:
 
 ```
-npm run test:e2e -- --grep "theme"                  # while iterating
-npm run typecheck && npm test && npm run test:e2e   # full gate before done
+bun run test:e2e -- --grep "theme"                  # while iterating
+bun run typecheck && bun run test && bun run test:e2e   # full gate before done
 ```
 
 ## Step 5 — Verify visually
 
-Run `npm run dev`, switch to the new theme via the selector, and check both light and dark mode on the dashboard and team pages before reporting done.
+Run `bun run dev`, switch to the new theme via the selector, and check both light and dark mode on the dashboard and team pages before reporting done.

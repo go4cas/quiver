@@ -7,7 +7,7 @@ The project has two test suites that serve different purposes and run independen
 ## Unit tests
 
 **Tool:** Vitest  
-**Command:** `npm test` (one-shot) · `npm run test:watch` (watch mode)  
+**Command:** `bun run test` (one-shot) · `bun run test:watch` (watch mode)  
 **Location:** `tests/framework/` and `tests/composables/`
 
 Unit tests cover pure utility functions and composables. They run in a jsdom environment and complete in under a second.
@@ -15,8 +15,7 @@ Unit tests cover pure utility functions and composables. They run in a jsdom env
 ```
 tests/framework/
 ├── router.test.js    # fileToRoutePath, scoreRoute, normalizePath, matchPath
-├── context.test.js   # provide / inject
-└── store.test.js     # createStore
+└── context.test.js   # provide / inject
 
 tests/composables/
 ├── useFetch.test.js  # fetching, errors, transform, abort, reset
@@ -50,7 +49,7 @@ Arrow.js components and pages return `ArrowTemplate` objects — not plain value
 ## End-to-end tests
 
 **Tool:** Playwright (Chromium)  
-**Command:** `npm run test:e2e`  
+**Command:** `bun run test:e2e`  
 **Location:** `tests/e2e/`
 
 E2E tests run against a real browser. Playwright starts the Vite dev server automatically before the tests and shuts it down after. If a dev server is already running locally, it will be reused.
@@ -110,8 +109,8 @@ page.getByPlaceholder('alice@example.com')
 ## Running both suites
 
 ```bash
-npm test          # unit tests only
-npm run test:e2e  # E2E tests only
+bun run test          # unit tests only
+bun run test:e2e  # E2E tests only
 ```
 
 There is no combined command by default — they use different runners and have different startup costs. Run them separately in CI as two distinct steps.
