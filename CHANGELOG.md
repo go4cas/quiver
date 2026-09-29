@@ -5,7 +5,22 @@ All notable changes to Quiver are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-09-29
+
+A smaller API and a Bun toolchain. Every removal below is breaking; each has a one-step replacement.
+
+### Migrating from 1.x
+
+| 1.x | 2.0 |
+|---|---|
+| `createStore((reactive) => reactive({ items: [] }))` | `reactive({ items: [] })` from `@arrow-js/core` |
+| `toastState.configure({ duration: 6000 })` | Pass `{ duration: 6000 }` per toast (`useToast().success('Saved', { duration: 6000 })`), or edit the default in `toastState.add()` |
+| Toast `position` option | Toasts render bottom-right; change the classes in `ToastContainer.js` to move them |
+| `await createApp({ root: '#app', plugins: [p] })` | `p.install()` then `createApp()` |
+| `getRouteRecords()` | No replacement (it had no callers) |
+| `theme-retro:` / `theme-mono:` classes | Register the variant in `src/style.css`, like `theme-glass:` |
+| `useFetch(url, { delay: 1500 })` | `useFetch(url)` |
+| `npm install && npm run dev` | `bun install && bun run dev` (npm still works on Node.js 20.19+, without a lockfile) |
 
 ### Changed
 
@@ -98,6 +113,7 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[2.0.0]: https://github.com/go4cas/quiver/releases/tag/v2.0.0
 [1.1.1]: https://github.com/go4cas/quiver/releases/tag/v1.1.1
 [1.1.0]: https://github.com/go4cas/quiver/releases/tag/v1.1.0
 [1.0.0]: https://github.com/go4cas/quiver/releases/tag/v1.0.0
