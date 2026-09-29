@@ -5,6 +5,13 @@ All notable changes to Quiver are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The npm fallback now needs Node.js 22.12+ (was 20.19+), because Vitest 5 dropped Node 20. Node 20 reached end-of-life in April 2026. Bun users are unaffected
+- Vitest 4 → 5 (dev dependency)
+
 ## [2.0.0] - 2026-09-29
 
 A smaller API and a Bun toolchain. Every removal below is breaking; each has a one-step replacement.

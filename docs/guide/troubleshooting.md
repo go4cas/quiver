@@ -95,7 +95,7 @@ export default function LoginPage() {
 
 ## `npm run dev` fails with a Node error
 
-**Cause:** Node older than 20.19 on the npm fallback path. Vite 8 requires Node 20.19+. Use Bun instead (`bun install && bun run dev`, see [prerequisites](./getting-started#prerequisites)), or check `node --version` and upgrade via your version manager.
+**Cause:** Node older than 22.12 on the npm fallback path. The toolchain (Vitest 5, Vite 8) requires Node 22.12+. Use Bun instead (`bun install && bun run dev`, see [prerequisites](./getting-started#prerequisites)), or check `node --version` and upgrade via your version manager.
 
 ## Still stuck?
 

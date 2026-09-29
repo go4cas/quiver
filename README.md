@@ -10,7 +10,7 @@ An [Arrow.js](https://arrow-js.com) starter template with file-based routing, la
 
 ## Getting started
 
-**Prerequisites:** [Bun](https://bun.com) 1.4+ (or Node.js 20.19+ with npm, without a lockfile)
+**Prerequisites:** [Bun](https://bun.com) 1.4+ (or Node.js 22.12+ with npm, without a lockfile)
 
 ```bash
 bunx degit go4cas/quiver my-app
