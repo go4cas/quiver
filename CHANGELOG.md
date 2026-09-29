@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Breaking:** `createStore()` — state modules are plain `reactive({...})` objects from `@arrow-js/core`, like `routerState` and `uiState` already were
 - **Breaking:** `toastState.configure()`, `toastState.config` and toast positions — toasts render bottom-right; `duration` and `dismissible` remain per-call options (via `useToast()` or `toastState.add()`), and their defaults are edited in `toastState.add()`
+- **Breaking:** `createApp()` options `root` and `plugins` — it always mounts `#app`; run setup code before calling it. `createApp()` is now synchronous
 
 ## [1.1.1] - 2026-09-29
 

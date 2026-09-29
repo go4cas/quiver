@@ -7,4 +7,4 @@ provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
 provide('currentUser', { name: 'Alice Nkosi', email: 'alice@example.com', avatar: aliceAvatar })
 
 await initRouter()
-await createApp({ root: '#app' })
+createApp()

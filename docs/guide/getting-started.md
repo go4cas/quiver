@@ -145,15 +145,10 @@ These are framework internals — no need to touch them for normal development.
 ```js
 provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
 await initRouter()               // from './framework/router.js'
-await createApp({ root: '#app' }) // from './framework/index.js'
+createApp()                     // from './framework/index.js'
 ```
 
-`createApp(options?)` installs plugins, then renders the current route (inside its layout) into the root element. It returns a `Promise<void>` and throws if the root element is missing. Await `initRouter()` first.
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `root` | `string` | `'#app'` | CSS selector for the root DOM element |
-| `plugins` | `array` | `[]` | Objects with an optional `install()` method, called before mounting |
+`createApp()` renders the current route (inside its layout) into the `#app` element from `index.html`, and throws if it is missing. Await `initRouter()` first, and run any other setup code (analytics, error reporting) before calling it.
 
 Ready to build something? See the [feature workflow](./workflow) guide.
 

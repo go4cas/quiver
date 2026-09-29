@@ -19,17 +19,11 @@ function RouteOutlet() {
   return Layout(Page()).key(routerState.path)
 }
 
-/**
- * Mount the app: install plugins, then render the route outlet into the root element.
- * @param {{ root?: string, plugins?: Array<{ install?: () => void }> }} [options]
- * @returns {Promise<void>}
- */
-export async function createApp({ root = '#app', plugins = [] } = {}) {
-  for (const plugin of plugins) plugin.install?.()
+// Mount the route outlet into #app. Run any setup code before calling this.
+export function createApp() {
+  const rootEl = document.querySelector('#app')
 
-  const rootEl = document.querySelector(root)
-
-  if (!rootEl) throw new Error(`Missing root element: ${root}`)
+  if (!rootEl) throw new Error('Missing root element: #app')
 
   html`<div class="min-h-screen">${() => RouteOutlet()}</div>`(rootEl)
 }

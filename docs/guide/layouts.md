@@ -75,7 +75,7 @@ provide('currentUser', {
   email: session.email,
   avatar: session.avatarUrl || '',
 })
-await createApp({ root: '#app' })
+createApp()
 ```
 
 ---
