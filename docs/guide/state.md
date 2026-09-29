@@ -1,6 +1,6 @@
 # State
 
-Global state is managed with `createStore()`, a thin wrapper around Arrow.js's `reactive()`. State modules live in `src/state/` and are imported directly wherever they are needed.
+Global state is a plain Arrow.js `reactive()` object, created once at module scope. State modules live in `src/state/` and are imported directly wherever they are needed.
 
 ---
 
@@ -8,22 +8,18 @@ Global state is managed with `createStore()`, a thin wrapper around Arrow.js's `
 
 ```js
 // src/state/ticketState.js
-import { createStore } from '../framework/index.js'
+import { reactive } from '@arrow-js/core'
 
-export const ticketState = createStore((reactive) =>
-  reactive({
-    tickets: [],
-    addTicket(ticket) {
-      this.tickets.push({ id: crypto.randomUUID(), ...ticket })
-    },
-    removeTicket(id) {
-      this.tickets = this.tickets.filter((t) => t.id !== id)
-    },
-  })
-)
+export const ticketState = reactive({
+  tickets: [],
+  addTicket(ticket) {
+    this.tickets.push({ id: crypto.randomUUID(), ...ticket })
+  },
+  removeTicket(id) {
+    this.tickets = this.tickets.filter((t) => t.id !== id)
+  },
+})
 ```
-
-`createStore(setup)` calls `setup` with Arrow.js's `reactive` and returns whatever `setup` returns — the store object.
 
 Use `crypto.randomUUID()` for IDs — it produces collision-safe values unlike `Date.now()`.
 
@@ -52,7 +48,7 @@ The `() =>` wrapper is mandatory. Arrow.js tracks reactive dependencies **lazily
 
 ### `userState` — `src/state/userState.js`
 
-Seed data for the Users demo. Demonstrates `createStore()` with methods.
+Seed data for the Users demo. Demonstrates a `reactive()` store with methods.
 
 | Property / Method | Description |
 |---|---|

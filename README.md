@@ -86,7 +86,7 @@ tests/
 - [Components](docs/guide/components.md) — component(), local state, built-in components
 - [Routing](docs/guide/routing.md) — file-based routing, guards, useMeta, router API
 - [Layouts](docs/guide/layouts.md) — page layouts, DI keys, creating new layouts
-- [State](docs/guide/state.md) — createStore, built-in state modules
+- [State](docs/guide/state.md) — reactive() stores, built-in state modules
 - [Composables](docs/guide/composables.md) — useRoute, useRouter, useForm, useFetch, useToast, provide/inject
 - [Testing](docs/guide/testing.md) — unit tests and E2E tests
 - [Troubleshooting](docs/guide/troubleshooting.md) — common gotchas and their fixes

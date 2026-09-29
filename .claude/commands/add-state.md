@@ -4,32 +4,26 @@ The argument is either a module name (e.g. `postState`, `cartState`) or a plain 
 
 Follow these steps exactly:
 
-1. Create `src/state/<name>.js` using the `createStore` pattern:
+1. Create `src/state/<name>.js` as a module-scope `reactive()` singleton:
 
 ```js
-import { createStore } from '../framework/index.js'
+import { reactive } from '@arrow-js/core'
 
-export const <name> = createStore((reactive) => {
-  const state = reactive({
-    items: [],
-  })
+export const <name> = reactive({
+  items: [],
 
-  return {
-    get items() { return state.items },
+  add(item) {
+    this.items.push({ ...item, id: crypto.randomUUID() })
+  },
 
-    add(item) {
-      state.items.push({ ...item, id: crypto.randomUUID() })
-    },
+  remove(id) {
+    this.items = this.items.filter(i => i.id !== id)
+  },
 
-    remove(id) {
-      state.items = state.items.filter(i => i.id !== id)
-    },
-
-    update(id, changes) {
-      const idx = state.items.findIndex(i => i.id === id)
-      if (idx !== -1) Object.assign(state.items[idx], changes)
-    },
-  }
+  update(id, changes) {
+    const item = this.items.find(i => i.id === id)
+    if (item) Object.assign(item, changes)
+  },
 })
 ```
 
@@ -37,7 +31,7 @@ export const <name> = createStore((reactive) => {
    - Keep methods generic but rename them to match the domain where it makes the intent clearer (e.g. `addPost`, `removePost`)
    - Add `status: 'idle'` to state if async operations are likely
 
-2. Apply all Arrow.js rules — state returned from `createStore` is already reactive; no extra wrapping needed.
+2. Apply all Arrow.js rules — the exported object is already reactive; no extra wrapping needed.
    - Annotate every method's parameters with JSDoc (e.g. `/** @param {string} id */`) and add a `@typedef` for the item shape — strict `checkJs` is enforced and untyped params fail `npm run typecheck`. See `src/state/userState.js` for the pattern.
 
 3. Verify — run and fix any failures:

@@ -19,7 +19,7 @@ Present the plan to the developer and wait for confirmation before proceeding.
 
 Execute the plan in this order:
 
-1. **State module(s)** — create `src/state/<name>.js` using `createStore(reactive)`. Export as singleton. See existing `src/state/userState.js` as the reference pattern.
+1. **State module(s)** — create `src/state/<name>.js` as a module-scope `reactive({...})` object. Export as singleton. See existing `src/state/userState.js` as the reference pattern.
 
 2. **Component(s)** — create each in `src/components/<Name>.js`; import them directly from their files where used (there is no barrel).
 

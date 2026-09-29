@@ -30,23 +30,21 @@ export default TicketsPage
 
 ## 2. Add state (if needed)
 
-Create a store in `src/state/` using `createStore()`.
+Create a store in `src/state/` as a module-scope `reactive()` object.
 
 ```js
 // src/state/ticketState.js
-import { createStore } from '../framework/index.js'
+import { reactive } from '@arrow-js/core'
 
-export const ticketState = createStore((reactive) =>
-  reactive({
-    tickets: [],
-    addTicket(ticket) {
-      this.tickets.push({ id: crypto.randomUUID(), ...ticket })
-    },
-    removeTicket(id) {
-      this.tickets = this.tickets.filter((t) => t.id !== id)
-    },
-  })
-)
+export const ticketState = reactive({
+  tickets: [],
+  addTicket(ticket) {
+    this.tickets.push({ id: crypto.randomUUID(), ...ticket })
+  },
+  removeTicket(id) {
+    this.tickets = this.tickets.filter((t) => t.id !== id)
+  },
+})
 ```
 
 Import and use it directly in any page or component:

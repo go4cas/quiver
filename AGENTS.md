@@ -111,14 +111,12 @@ Register guards in `main.js` before `initRouter()`.
 ### State modules
 
 ```js
-import { createStore } from '../framework/index.js'
+import { reactive } from '@arrow-js/core'
 
-export const myState = createStore((reactive) => {
-  const state = reactive({ items: [] })
-  return {
-    get items() { return state.items },
-    addItem(item) { state.items.push({ ...item, id: crypto.randomUUID() }) },
-  }
+export const myState = reactive({
+  items: [],
+  /** @param {{ name: string }} item */
+  addItem(item) { this.items.push({ ...item, id: crypto.randomUUID() }) },
 })
 ```
 

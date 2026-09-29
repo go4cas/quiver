@@ -50,7 +50,7 @@ Creates `src/pages/blog/[slug].js`, maps to `/blog/:slug`, shows how to read the
 ```
 /add-state post
 ```
-Creates `src/state/postState.js` with `createStore`, reactive `posts` array, and `addPost`/`removePost`/`updatePost` actions.
+Creates `src/state/postState.js` as a `reactive()` store with a `posts` array, and `addPost`/`removePost`/`updatePost` actions.
 
 ```
 /add-component PostCard

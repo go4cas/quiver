@@ -15,8 +15,7 @@ Unit tests cover pure utility functions and composables. They run in a jsdom env
 ```
 tests/framework/
 ├── router.test.js    # fileToRoutePath, scoreRoute, normalizePath, matchPath
-├── context.test.js   # provide / inject
-└── store.test.js     # createStore
+└── context.test.js   # provide / inject
 
 tests/composables/
 ├── useFetch.test.js  # fetching, errors, transform, abort, reset

@@ -19,7 +19,7 @@ features:
     details: Wrap pages in reusable layout shells. Ships with BasicLayout and MenuLayout. Add your own in three steps.
     link: /guide/layouts
   - title: Reactive State
-    details: Global stores built on Arrow.js reactive(). createStore() keeps the shape clean and mutations explicit.
+    details: Global stores are plain Arrow.js reactive() objects with methods, so mutations stay explicit.
     link: /guide/state
   - title: Composables
     details: useRoute, useRouter, useForm, useFetch, and useToast — the common patterns extracted so you write less boilerplate.
