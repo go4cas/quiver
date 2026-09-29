@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@arrow-js/framework` dependency — `createApp()` mounts the root template with `@arrow-js/core` directly (also drops its nested `jsdom`/`ws` install tree)
 - Undocumented `page.layout` fallback — a page's layout comes from `meta.layout` only
 - Duplicate `docs/guide/contributing.md`; the docs sidebar links to `CONTRIBUTING.md`
+- Separate API reference section (`docs/api/`) — its reference tables are folded into the matching guide pages, so each topic is documented once
+- `.github/copilot-instructions.md` — `AGENTS.md` is the single source for every AI tool, Copilot included
 - Accidentally committed `.claude/worktrees/` gitlink (now ignored)
 
 ### Changed
 
-- Internal simplifications with no behaviour change: `resolveRoute` state writes, redundant root-path special cases in `scoreRoute`/`matchPath`, `hmrState`, the default Vite port setting, and a no-op `nextTick()` in the Team page
+- Internal simplifications with no behaviour change: `resolveRoute` state writes, redundant root-path special cases in `scoreRoute`/`matchPath`, `hmrState`, the default Vite port setting, a no-op `nextTick()` in the Team page, and a redundant `forcedError` flag in the Posts demo
 
 ### Fixed
 

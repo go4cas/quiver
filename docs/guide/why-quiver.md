@@ -9,7 +9,7 @@ That trade — a codebase you can read in an afternoon instead of an ecosystem y
 - **You want a tiny reactive core.** Arrow.js is under 5 KB, uses tagged template literals instead of JSX or a compiler, and its reactivity is plain proxied objects. No virtual DOM, no build-time magic.
 - **You want SPA conventions without assembling them.** File-based routing, layouts, global stores, form/fetch/toast composables, and a working Vitest + Playwright setup are pre-wired and tested.
 - **You want to own your stack.** There is no framework version to upgrade past you, no plugin API to be deprecated. If the router doesn't do what you need, it's one readable file — change it.
-- **You build with AI assistants.** Quiver ships `CLAUDE.md`, `AGENTS.md`, Copilot instructions, and Claude Code slash commands, so an AI agent knows the conventions of this codebase from the first prompt.
+- **You build with AI assistants.** Quiver ships `AGENTS.md` (read by Claude Code, Codex, and Copilot) and Claude Code slash commands, so an AI agent knows the conventions of this codebase from the first prompt.
 
 ## How it compares
 

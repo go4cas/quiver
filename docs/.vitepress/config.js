@@ -32,7 +32,6 @@ export default defineConfig({
 
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
-      { text: 'API', link: '/api/framework' },
       { text: `v${pkg.version}`, link: 'https://github.com/go4cas/quiver/releases' },
     ],
 
@@ -54,17 +53,6 @@ export default defineConfig({
             { text: 'Testing',         link: '/guide/testing' },
             { text: 'Troubleshooting', link: '/guide/troubleshooting' },
             { text: 'Contributing',    link: 'https://github.com/go4cas/quiver/blob/main/CONTRIBUTING.md' },
-          ],
-        },
-      ],
-      '/api/': [
-        {
-          text: 'API Reference',
-          items: [
-            { text: 'Framework',   link: '/api/framework' },
-            { text: 'Router',      link: '/api/router' },
-            { text: 'Composables', link: '/api/composables' },
-            { text: 'Components',  link: '/api/components' },
           ],
         },
       ],

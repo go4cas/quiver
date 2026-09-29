@@ -85,8 +85,7 @@ tests/
 └── e2e/             # End-to-end tests (Playwright)
 
 docs/
-├── guide/           # Developer guides
-└── api/             # API reference
+└── guide/           # Developer guides
 ```
 
 ## Static assets
@@ -138,6 +137,23 @@ These are framework internals — no need to touch them for normal development.
 | `vitest.config.js` | Leave unless changing which test directories are scanned. |
 | `playwright.config.js` | Leave unless changing test directories or the dev server port. |
 | `vite.config.js` | Leave unless adding Vite plugins. |
+
+## App bootstrap
+
+`src/main.js` registers DI values, starts the router, then mounts the app:
+
+```js
+provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
+await initRouter()               // from './framework/router.js'
+await createApp({ root: '#app' }) // from './framework/index.js'
+```
+
+`createApp(options?)` installs plugins, then renders the current route (inside its layout) into the root element. It returns a `Promise<void>` and throws if the root element is missing. Await `initRouter()` first.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `root` | `string` | `'#app'` | CSS selector for the root DOM element |
+| `plugins` | `array` | `[]` | Objects with an optional `install()` method, called before mounting |
 
 Ready to build something? See the [feature workflow](./workflow) guide.
 

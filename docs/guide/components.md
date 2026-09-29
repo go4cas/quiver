@@ -128,6 +128,28 @@ Direct imports keep the dependency graph explicit and avoid import cycles throug
 
 ---
 
+## Built-in components
+
+| Component | Props | Notes |
+|---|---|---|
+| `Link` | `{ to, children, class? }` | `<a>` that navigates via the router instead of reloading. Sets `aria-current="page"` when the path equals `to` or is nested under it (`/users/42` for `to: '/users'`; never for `'/'`); omitted otherwise |
+| `Counter` | `{ label }` | Local-state demo: `component()`, `watch()`, `onCleanup()`, `hmrState` (see above) |
+| `UserCard` | a `userState.users` entry: `{ id, name, role, team, status, avatar }` | `status` `'online'` / `'away'` get coloured badges. Render with `.key(user.id)` |
+| `ThemeToggle` | none | `<button aria-label="Toggle light/dark mode">` that flips `uiState.mode` |
+| `ThemeSelector` | none | `role="group"` of five swatch buttons (`aria-label`, `aria-pressed`) that set `uiState.theme` — see [Theming](./theming). Independent of `ThemeToggle` |
+| `ErrorCard` | `message = 'Something went wrong.'` | Full-screen panel the router renders when a page fails to load |
+| `LoadingCard` | none | Full-screen panel the router renders while status is `'idle'` or `'loading'` |
+
+Style the active `Link` with Tailwind's arbitrary variant:
+
+```js
+const navClass = 'rounded-xl px-3 py-2 text-sm hover:bg-slate-100 [&[aria-current=page]]:bg-slate-900 [&[aria-current=page]]:text-white'
+
+${Link({ to: '/users', children: 'Users', class: navClass })}
+```
+
+---
+
 ## Using a component in a page
 
 ```js

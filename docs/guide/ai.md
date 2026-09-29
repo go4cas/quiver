@@ -10,11 +10,10 @@ These files are automatically loaded by their respective tools whenever you open
 
 | File | Tool | Purpose |
 |---|---|---|
-| `AGENTS.md` | Codex and other AGENTS.md-aware tools | **The single source of truth** — full project context, conventions, and Arrow.js rules |
+| `AGENTS.md` | Codex, GitHub Copilot (coding agent and VS Code Chat), and other AGENTS.md-aware tools | **The single source of truth** — full project context, conventions, and Arrow.js rules |
 | `CLAUDE.md` | Claude Code | Imports `AGENTS.md` — same content, zero drift |
-| `.github/copilot-instructions.md` | GitHub Copilot | Condensed rules applied inline during completions |
 
-To change a convention, edit `AGENTS.md` — Claude Code picks it up through the import automatically. Only the Copilot file is maintained separately (it is a deliberately condensed variant).
+To change a convention, edit `AGENTS.md` — it is the only file to edit. Copilot and Codex read it directly; Claude Code picks it up through the `@AGENTS.md` import in `CLAUDE.md`.
 
 The context covers:
 - Folder structure and what belongs where

@@ -29,9 +29,8 @@ Open [http://localhost:5173](http://localhost:5173). You can also click **Use th
 
 Quiver ships with context files and Claude Code slash commands that make AI assistants immediately productive in this codebase:
 
-- **`AGENTS.md`** — the single source of truth: conventions, Arrow.js rules, composables, theming, folder structure
-- **`CLAUDE.md`** — loaded automatically by Claude Code; imports `AGENTS.md` so both tools share one context
-- **`.github/copilot-instructions.md`** — condensed rules for GitHub Copilot
+- **`AGENTS.md`** — the single source of truth, read directly by Codex and GitHub Copilot: conventions, Arrow.js rules, composables, theming, folder structure
+- **`CLAUDE.md`** — loaded automatically by Claude Code; imports `AGENTS.md` so every tool shares one context
 - **`/add-page`**, **`/add-layout`**, **`/add-component`**, **`/add-state`**, **`/add-composable`**, **`/add-theme`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks
 
 See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
@@ -83,19 +82,14 @@ tests/
 - [Getting started](docs/guide/getting-started.md) — what to add, what to leave alone
 - [Why Quiver](docs/guide/why-quiver.md) — an honest comparison with the alternatives
 - [Feature workflow](docs/guide/workflow.md) — step-by-step walkthrough for adding a feature
-- [Routing](docs/guide/routing.md) — file-based routing, dynamic segments, navigation guards
+- [Getting started](docs/guide/getting-started.md) — install, scripts, folder structure, createApp
+- [Components](docs/guide/components.md) — component(), local state, built-in components
+- [Routing](docs/guide/routing.md) — file-based routing, guards, useMeta, router API
 - [Layouts](docs/guide/layouts.md) — page layouts, DI keys, creating new layouts
-- [State](docs/guide/state.md) — reactive stores, built-in state modules
-- [Composables](docs/guide/composables.md) — useRoute, useRouter, useForm, provide/inject
+- [State](docs/guide/state.md) — createStore, built-in state modules
+- [Composables](docs/guide/composables.md) — useRoute, useRouter, useForm, useFetch, useToast, provide/inject
 - [Testing](docs/guide/testing.md) — unit tests and E2E tests
 - [Troubleshooting](docs/guide/troubleshooting.md) — common gotchas and their fixes
-
-### API reference
-
-- [Framework](docs/api/framework.md) — createApp, createStore, provide, inject, useMeta
-- [Router](docs/api/router.md) — initRouter, go, beforeEach, resolveRoute and utilities
-- [Composables](docs/api/composables.md) — useRoute, useRouter, useForm
-- [Components](docs/api/components.md) — Link, Counter, ThemeToggle, UserCard, ErrorCard, LoadingCard
 
 ---
 

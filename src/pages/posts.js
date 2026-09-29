@@ -1,4 +1,4 @@
-import { html, reactive } from '@arrow-js/core'
+import { html } from '@arrow-js/core'
 import { useFetch } from '../composables/useFetch.js'
 
 export const meta = {
@@ -12,7 +12,6 @@ const BROKEN = 'https://jsonplaceholder.typicode.com/does-not-exist-404'
 function PostsPage() {
   const posts  = useFetch(API, { transform: (data) => data.slice(0, 12), delay: 1500 })
   const broken = useFetch(BROKEN, { immediate: false })
-  const ui     = reactive({ forcedError: false })
 
   return html`
     <div class="space-y-10">
@@ -32,14 +31,14 @@ function PostsPage() {
         <button
           type="button"
           class="rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover shadow-panel theme-brutalist:border-2 theme-brutalist:border-fg"
-          @click="${() => { ui.forcedError = false; broken.reset(); posts.refetch() }}"
+          @click="${() => { broken.reset(); posts.refetch() }}"
         >
           Refresh
         </button>
         <button
           type="button"
           class="rounded-control bg-surface-inset px-4 py-2 text-sm font-semibold text-fg-soft hover:bg-line"
-          @click="${() => { ui.forcedError = true; broken.refetch() }}"
+          @click="${() => broken.refetch()}"
         >
           Force error
         </button>
@@ -88,11 +87,10 @@ function PostsPage() {
         : ''}
 
       ${() => {
-        const loading   = posts.loading()
-        const forcedErr = ui.forcedError
-        const postErr   = posts.error()
-        const brokenErr = broken.error()
-        if (loading || forcedErr || postErr || brokenErr) return ''
+        const loading       = posts.loading()
+        const postErr       = posts.error()
+        const brokenPending = broken.loading() || broken.error()
+        if (loading || postErr || brokenPending) return ''
         return html`
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             ${() => (posts.data() ?? []).map(/** @param {{ id: number, title: string, body: string }} post */ (post) =>

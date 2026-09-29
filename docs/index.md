@@ -8,8 +8,8 @@ hero:
       text: Get Started
       link: /guide/getting-started
     - theme: alt
-      text: API Reference
-      link: /api/framework
+      text: Composables
+      link: /guide/composables
 
 features:
   - title: File-based Routing
@@ -22,11 +22,11 @@ features:
     details: Global stores built on Arrow.js reactive(). createStore() keeps the shape clean and mutations explicit.
     link: /guide/state
   - title: Composables
-    details: useRoute, useRouter, and useForm — the common patterns extracted so you write less boilerplate.
+    details: useRoute, useRouter, useForm, useFetch, and useToast — the common patterns extracted so you write less boilerplate.
     link: /guide/composables
   - title: Dependency Injection
     details: provide() and inject() for passing config or services to any layout or component without prop-drilling.
-    link: /api/framework
+    link: /guide/composables#provide-key-value-inject-key-fallback
   - title: Testing
     details: Unit tests with Vitest and end-to-end tests with Playwright. Both configured and ready to run.
     link: /guide/testing

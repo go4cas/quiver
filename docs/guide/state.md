@@ -23,6 +23,8 @@ export const ticketState = createStore((reactive) =>
 )
 ```
 
+`createStore(setup)` calls `setup` with Arrow.js's `reactive` and returns whatever `setup` returns — the store object.
+
 Use `crypto.randomUUID()` for IDs — it produces collision-safe values unlike `Date.now()`.
 
 ---

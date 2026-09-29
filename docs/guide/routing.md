@@ -41,6 +41,30 @@ export default MyPage
 
 The router sets `document.title` from `meta.title` after each navigation — no manual call needed.
 
+### Reactive titles with `useMeta`
+
+When the title or description must change with route params or state, call `useMeta({ title, description })` from `src/framework/index.js` at the top of the page function (see `src/pages/users/[id].js`):
+
+```js
+import { useMeta } from '../framework/index.js'
+
+function UserDetailPage() {
+  const route = useRoute()
+  useMeta({
+    title: () => `User ${route.params().id}`,
+    description: 'User profile.',
+  })
+  return html`...`
+}
+```
+
+| Option | Type | Description |
+|---|---|---|
+| `title` | `string \| () => string` | Sets `document.title`; a function is re-evaluated reactively via `watch()` |
+| `description` | `string \| () => string` | Sets `<meta name="description">` (created if missing); a function is reactive |
+
+The router stops `useMeta` watchers on every navigation, so a reactive title never leaks onto the next page.
+
 ---
 
 ## Reading route params
@@ -105,7 +129,7 @@ beforeEach(({ to }) => {
 })
 ```
 
-`beforeEach` returns an unregister function if you need to remove the guard later.
+`beforeEach` returns an unregister function if you need to remove the guard later. Guards may be async and run in registration order; the first one that returns `false` or a path short-circuits the rest.
 
 Guards also run on the initial page load with `from: null`. On first load, returning `false` redirects to `/` (there is no previous page to stay on); redirect strings re-run the guards for the new destination (capped at 10 hops).
 
@@ -116,6 +140,36 @@ Guards control client-side navigation UX only — a user can bypass them with De
 ::: tip Import path
 `beforeEach`, `go`, `destroyRouter`, and the route utilities are exported from `src/framework/router.js` **only** — they are not re-exported from `src/framework/index.js`. Always import them directly from `router.js`.
 :::
+
+---
+
+## Router API
+
+Exported from `src/framework/router.js`. Pages and components normally only need `useRoute()` / `useRouter()`.
+
+| Export | Returns | Description |
+|---|---|---|
+| `initRouter()` | `Promise<void>` | Attaches the Navigation API listener, runs guards, and resolves the initial route. Await it before `createApp()` |
+| `destroyRouter()` | `void` | Removes the navigate listener (tests, teardown) |
+| `go(path)` | `Promise<void>` | Navigates to `path` (trailing slash and query string normalised); resolves when navigation completes. Prefer `useRouter().go()` in pages |
+| `beforeEach(guard)` | `() => void` | Registers `({ from, to }) => string \| false \| void`; returns the unregister function |
+| `resolveRoute(path?)` | `Promise<void>` | Resolves `path` (default `window.location.pathname`) and updates `routerState`. Used internally |
+| `getRouteRecords()` | `Array<{ file, path }>` | Route records derived from `src/pages/` |
+
+Path utilities, exported for tests and custom routing logic:
+
+```js
+normalizePath('/users/?foo=bar')          // '/users' — strips query, hash, trailing slash
+normalizePath()                           // '/'
+matchPath('/users/:id', '/users/42')      // { id: '42' }
+matchPath('/users/:id', '/posts/42')      // null
+matchPath('/users', '/users')             // {}
+scoreRoute('/')                           // 0  — specificity; static beats dynamic
+scoreRoute('/users')                      // 10
+scoreRoute('/users/:id')                  // 11
+fileToRoutePath('../pages/users/[id].js') // '/users/:id'
+fileToRoutePath('../pages/index.js')      // '/'
+```
 
 ---
 

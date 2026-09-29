@@ -52,9 +52,9 @@ function MyPage() {
 
 | Method | Description |
 |---|---|
-| `router.go(path)` | Navigate to a path; returns a Promise that resolves when navigation completes |
-| `router.back()` | Navigate back in history |
-| `router.forward()` | Navigate forward in history |
+| `router.go(path)` | Navigate to a path (trailing slash and query string normalised); returns a Promise that resolves when navigation completes |
+| `router.back()` | Navigate back in history; returns a Promise |
+| `router.forward()` | Navigate forward in history; returns a Promise |
 
 Uses the browser's [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API) internally.
 
@@ -77,7 +77,17 @@ function MyPage() {
 }
 ```
 
-Four type shortcuts — `success`, `error`, `warning`, `info` — each accept an optional `opts` object with `duration` (ms, `0` = permanent) and `dismissible` (show close button). Call `toast.dismiss(id)` to remove a toast immediately. Adjust global defaults with `toastState.configure({ position, duration, dismissible })`.
+| Method | Description |
+|---|---|
+| `success` · `error` · `warning` · `info` `(msg, opts?)` | Add a toast of that type; returns its id |
+| `dismiss(id)` | Remove the toast immediately |
+
+| `opts` | Type | Default | Description |
+|---|---|---|---|
+| `duration` | `number` | `4000` | Auto-dismiss delay in ms; `0` = never auto-dismiss |
+| `dismissible` | `boolean` | `true` | Render a close button |
+
+Change the global defaults (and `position`, default `'bottom-right'`) with `toastState.configure({ position, duration, dismissible })`; per-call `opts` override them.
 
 ---
 
@@ -122,12 +132,17 @@ function LoginPage() {
 }
 ```
 
+| Option | Description |
+|---|---|
+| `validate(values)` | Sync or async. Return `{ fieldName: message }` to block submission, or `{}` to allow it |
+| `onSubmit(values, form)` | Async; runs after validation passes. Receives the values and the reactive `form` |
+
 **`useForm` returns:**
 
 | Value | Description |
 |---|---|
 | `form` | Reactive state object (see below) |
-| `handleSubmit` | Event handler — attach to `@submit` on the form element |
+| `handleSubmit` | Event handler — attach to `@submit`; calls `preventDefault()`, validates, then runs `onSubmit` |
 | `field(name)` | Returns `{ get, set, error }` accessors for a named field |
 
 **`form` properties:**
@@ -177,7 +192,7 @@ function PostsPage() {
 
 | Return value | Type | Description |
 |---|---|---|
-| `data()` | `() => any \| null` | Parsed JSON response (or transformed value) |
+| `data()` | `() => any \| null` | Parsed JSON response (or transformed value); `null` until the first success |
 | `loading()` | `() => boolean` | `true` while the request is in flight |
 | `error()` | `() => string \| null` | Error message, or `null` on success |
 | `status()` | `() => number \| null` | HTTP status code of the last response |
@@ -193,9 +208,11 @@ function PostsPage() {
 | `headers` | `object` | `{}` | Request headers |
 | `body` | `string` | — | Request body |
 
+Any other `fetch` option is passed through. A caller-supplied `signal` is combined with the internal abort controller, so either can cancel the request.
+
 ---
 
-## `provide` / `inject`
+## `provide(key, value)` / `inject(key, fallback?)`
 
 App-level dependency injection for passing configuration or services down to any layout or component without prop-drilling.
 
@@ -220,4 +237,4 @@ export function MenuLayout(content) {
 
 `inject` must be called inside the function body, not at module scope — calling it at the top level of a file creates a circular import dependency.
 
-The second argument to `inject` is the fallback value used when no matching `provide` call exists.
+The second argument to `inject` is the fallback, returned when the key was never provided or is `null`/`undefined`. Calling `provide` again with the same key overwrites it. Call `provide` in `src/main.js` before `createApp()`.
