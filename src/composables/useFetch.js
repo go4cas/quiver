@@ -3,7 +3,7 @@ import { reactive, onCleanup } from '@arrow-js/core'
 /**
  * Reactive HTTP fetching. refetch() aborts the previous in-flight request.
  * @param {string} url
- * @param {{ immediate?: boolean, transform?: (raw: any) => any, delay?: number } & RequestInit} [options]
+ * @param {{ immediate?: boolean, transform?: (raw: any) => any } & RequestInit} [options]
  * @returns {{
  *   data: () => any,
  *   loading: () => boolean,
@@ -14,7 +14,7 @@ import { reactive, onCleanup } from '@arrow-js/core'
  * }}
  */
 export function useFetch(url, options = {}) {
-  const { immediate = true, transform, delay = 0, ...fetchOptions } = options
+  const { immediate = true, transform, ...fetchOptions } = options
 
   const state = reactive(
     /** @type {{ data: any, loading: boolean, error: string | null, status: number | null }} */
@@ -41,8 +41,7 @@ export function useFetch(url, options = {}) {
       state.status = res.status
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const raw = await res.json()
-      if (delay) await new Promise((r) => setTimeout(r, delay))
-      if (controller !== own) return
+      if (controller !== own) return // superseded while parsing
       state.data = transform ? transform(raw) : raw
     } catch (err) {
       const e = /** @type {Error} */ (err)

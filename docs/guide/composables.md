@@ -203,7 +203,6 @@ function PostsPage() {
 |---|---|---|---|
 | `immediate` | `boolean` | `true` | Fetch on mount; set `false` for manual trigger |
 | `transform` | `(data) => any` | identity | Applied to the parsed JSON before storing |
-| `delay` | `number` | `0` | Artificial delay in ms after the response resolves — handy for demoing loading states |
 | `method` | `string` | `'GET'` | HTTP method |
 | `headers` | `object` | `{}` | Request headers |
 | `body` | `string` | — | Request body |

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `createApp()` options `root` and `plugins` — it always mounts `#app`; run setup code before calling it. `createApp()` is now synchronous
 - **Breaking:** `getRouteRecords()` from `src/framework/router.js` — it had no callers
 - **Breaking:** the unused `theme-retro:` and `theme-mono:` Tailwind variants — the themes remain; register a variant in `src/style.css` when a component needs one
+- **Breaking:** the `useFetch` `delay` option — data is exposed as soon as it arrives; use DevTools network throttling to inspect loading states
 
 ## [1.1.1] - 2026-09-29
 

@@ -10,7 +10,7 @@ const API    = 'https://jsonplaceholder.typicode.com/posts'
 const BROKEN = 'https://jsonplaceholder.typicode.com/does-not-exist-404'
 
 function PostsPage() {
-  const posts  = useFetch(API, { transform: (data) => data.slice(0, 12), delay: 1500 })
+  const posts  = useFetch(API, { transform: (data) => data.slice(0, 12) })
   const broken = useFetch(BROKEN, { immediate: false })
 
   return html`
