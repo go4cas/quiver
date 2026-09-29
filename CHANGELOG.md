@@ -5,7 +5,12 @@ All notable changes to Quiver are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.1] - 2026-09-29
+
+### Changed
+
+- Internal simplifications with no behaviour change: `resolveRoute` state writes, redundant root-path special cases in `scoreRoute`/`matchPath`, `hmrState`, the default Vite port setting, a no-op `nextTick()` in the Team page, and a redundant `forcedError` flag in the Posts demo
+- Dev dependency lockfile bumps (Vitest 4.1.11, PostCSS 8.5.28, undici 7.30.0) clear all open dev-only Dependabot alerts
 
 ### Removed
 
@@ -15,10 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Separate API reference section (`docs/api/`) — its reference tables are folded into the matching guide pages, so each topic is documented once
 - `.github/copilot-instructions.md` — `AGENTS.md` is the single source for every AI tool, Copilot included
 - Accidentally committed `.claude/worktrees/` gitlink (now ignored)
-
-### Changed
-
-- Internal simplifications with no behaviour change: `resolveRoute` state writes, redundant root-path special cases in `scoreRoute`/`matchPath`, `hmrState`, the default Vite port setting, a no-op `nextTick()` in the Team page, and a redundant `forcedError` flag in the Posts demo
 
 ### Fixed
 
@@ -77,5 +78,6 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[1.1.1]: https://github.com/go4cas/quiver/releases/tag/v1.1.1
 [1.1.0]: https://github.com/go4cas/quiver/releases/tag/v1.1.0
 [1.0.0]: https://github.com/go4cas/quiver/releases/tag/v1.0.0
