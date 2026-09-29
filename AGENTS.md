@@ -148,7 +148,7 @@ Call these inside a page or component function, never at module scope:
 
 ### Toasts
 
-`ToastContainer` is already mounted by the built-in layouts — calling `useToast()` from any page or component just works. Global defaults via `toastState.configure({ position, duration, dismissible })`; positions: `top-left`, `top-center`, `top-right`, `bottom-left`, `bottom-center`, `bottom-right`.
+`ToastContainer` is already mounted by the built-in layouts — calling `useToast()` from any page or component just works. Toasts render bottom-right; defaults (`duration: 4000`, `dismissible: true`) live in `toastState.add()`.
 
 ### Layouts
 

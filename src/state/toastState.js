@@ -13,27 +13,15 @@ const timers = new Map()
 export const toastState = reactive({
   toasts:     /** @type {Toast[]} */ ([]),
   dismissing: /** @type {string[]} */ ([]),
-  config: {
-    position:    'bottom-right',
-    duration:    4000,
-    dismissible: true,
-  },
-
-  /** @param {{ position?: string, duration?: number, dismissible?: boolean }} opts */
-  configure(opts) {
-    this.config = { ...this.config, ...opts }
-  },
-
   /**
    * @param {string} message
    * @param {{ type?: ToastType, duration?: number, dismissible?: boolean }} [opts]
    * @returns {string} toast id
    */
-  add(message, opts = {}) {
-    const id          = crypto.randomUUID()
-    const duration    = opts.duration    ?? this.config.duration
-    const dismissible = opts.dismissible ?? this.config.dismissible
-    this.toasts.push({ id, message, type: opts.type ?? 'info', duration, dismissible })
+  // Defaults live here — edit them to change every toast in the app.
+  add(message, { type = 'info', duration = 4000, dismissible = true } = {}) {
+    const id = crypto.randomUUID()
+    this.toasts.push({ id, message, type, duration, dismissible })
     if (duration > 0) timers.set(id, setTimeout(() => this.dismiss(id), duration))
     return id
   },

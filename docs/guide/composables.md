@@ -87,7 +87,7 @@ function MyPage() {
 | `duration` | `number` | `4000` | Auto-dismiss delay in ms; `0` = never auto-dismiss |
 | `dismissible` | `boolean` | `true` | Render a close button |
 
-Change the global defaults (and `position`, default `'bottom-right'`) with `toastState.configure({ position, duration, dismissible })`; per-call `opts` override them.
+Toasts render bottom-right. To change the defaults for every toast, edit them in `add()` in `src/state/toastState.js`; to move the stack, edit the position classes in `src/components/ToastContainer.js`.
 
 ---
 
