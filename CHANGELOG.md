@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Breaking (toolchain):** Bun 1.4+ is the supported package manager and runtime. `bun.lock` replaces `package-lock.json`; `bunfig.toml` runs scripts and tools on Bun; CI, the docs deploy and Playwright's dev server use Bun; Dependabot tracks the `bun` ecosystem. Scripts stay plain, so `npm install && npm run dev` still works on Node.js 20.19+ (without a lockfile) — this is how the StackBlitz button runs
+- `bun.lock` is pinned to `"lockfileVersion": 1`, the newest format Dependabot's Bun updater can read (see the note in `.github/dependabot.yml`)
 
 ### Removed
 
@@ -19,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `getRouteRecords()` from `src/framework/router.js` — it had no callers
 - **Breaking:** the unused `theme-retro:` and `theme-mono:` Tailwind variants — the themes remain; register a variant in `src/style.css` when a component needs one
 - **Breaking:** the `useFetch` `delay` option — data is exposed as soon as it arrives; use DevTools network throttling to inspect loading states
+
+### Fixed
+
+- The sidebar footer no longer shows a hard-coded, stale `v1.0`
 
 ## [1.1.1] - 2026-09-29
 

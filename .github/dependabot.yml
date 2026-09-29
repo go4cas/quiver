@@ -1,5 +1,9 @@
 version: 2
 updates:
+  # ponytail: bun.lock is pinned to "lockfileVersion": 1 because Dependabot's bun
+  # updater only reads v1 (Bun 1.4 writes v2 for new lockfiles, then keeps whatever
+  # version it finds). If you regenerate the lockfile, set the marker back to 1.
+  # Drop this note once dependabot-core reads lockfile v2.
   - package-ecosystem: bun
     directory: /
     schedule:
