@@ -24,3 +24,6 @@ playwright-report/
 .vscode/
 .idea/
 *.swp
+
+# Claude Code worktrees
+.claude/worktrees/

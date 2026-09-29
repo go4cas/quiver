@@ -143,16 +143,9 @@ Ready to build something? See the [feature workflow](./workflow) guide.
 
 ---
 
-## Two Arrow.js packages
+## One runtime dependency
 
-Quiver uses two Arrow.js packages, each with a distinct role:
-
-| Package | Used for |
-|---|---|
-| `@arrow-js/core` | `reactive()`, `html`, `component()`, `watch()`, `onCleanup()`, `nextTick()` — the reactive primitives you use every day |
-| `@arrow-js/framework` | `render()` — attaches an Arrow.js template to a DOM node. Called once inside `src/framework/app.js` and not needed in user code |
-
-You will only ever import from `@arrow-js/core` in your pages, components, and composables.
+Quiver's only runtime dependency is `@arrow-js/core`: `reactive()`, `html`, `component()`, `watch()`, `onCleanup()`, `nextTick()`. `src/framework/app.js` mounts the root template by calling it with the `#app` element — no separate render package.
 
 ---
 

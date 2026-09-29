@@ -1,5 +1,4 @@
 import { html } from '@arrow-js/core'
-import { render } from '@arrow-js/framework'
 import { routerState } from '../state/routerState.js'
 import { layouts } from '../layouts/index.js'
 import { LoadingCard } from '../components/LoadingCard.js'
@@ -32,5 +31,5 @@ export async function createApp({ root = '#app', plugins = [] } = {}) {
 
   if (!rootEl) throw new Error(`Missing root element: ${root}`)
 
-  await render(rootEl, html`<div class="min-h-screen">${() => RouteOutlet()}</div>`)
+  html`<div class="min-h-screen">${() => RouteOutlet()}</div>`(rootEl)
 }

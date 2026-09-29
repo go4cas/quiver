@@ -4,7 +4,7 @@ import { reactive } from '@arrow-js/core'
  * @typedef {Object} RouterState
  * @property {string} path
  * @property {Record<string, string>} params
- * @property {(((...args: any[]) => unknown) & { layout?: string }) | null} page
+ * @property {((...args: any[]) => unknown) | null} page
  * @property {string} layout
  * @property {'idle' | 'loading' | 'ready' | 'not-found' | 'error'} status
  * @property {string} error

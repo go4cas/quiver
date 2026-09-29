@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- `@arrow-js/framework` dependency — `createApp()` mounts the root template with `@arrow-js/core` directly (also drops its nested `jsdom`/`ws` install tree)
+- Undocumented `page.layout` fallback — a page's layout comes from `meta.layout` only
+- Duplicate `docs/guide/contributing.md`; the docs sidebar links to `CONTRIBUTING.md`
+- Accidentally committed `.claude/worktrees/` gitlink (now ignored)
+
+### Changed
+
+- Internal simplifications with no behaviour change: `resolveRoute` state writes, redundant root-path special cases in `scoreRoute`/`matchPath`, `hmrState`, the default Vite port setting, and a no-op `nextTick()` in the Team page
+
 ### Fixed
 
 - A malformed percent-escape in a URL (e.g. `/users/%zz`) now matches the route with the raw segment instead of rendering the error page

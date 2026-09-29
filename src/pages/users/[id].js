@@ -17,7 +17,7 @@ function UserDetailPage() {
   // The router clears this watcher automatically on the next navigation.
   useMeta({
     title: () => {
-      const user = userState.users.find((u) => String(u.id) === String(route.params().id))
+      const user = userState.users.find((u) => u.id === route.params().id)
       return user ? `${user.name} — Profile` : 'Profile'
     },
   })
@@ -44,7 +44,7 @@ function UserDetailPage() {
       </div>
 
       ${() => {
-        const user = userState.users.find((u) => String(u.id) === String(route.params().id))
+        const user = userState.users.find((u) => u.id === route.params().id)
 
         if (!user) {
           return html`

@@ -12,15 +12,6 @@ import { reactive } from '@arrow-js/core'
  * @returns {T}
  */
 export function hmrState(key, initialState) {
-  let state = import.meta.hot?.data[key]
-
-  if (!state) {
-    state = reactive(initialState)
-  }
-
-  if (import.meta.hot) {
-    import.meta.hot.data[key] = state
-  }
-
-  return state
+  const hot = import.meta.hot
+  return hot ? (hot.data[key] ??= reactive(initialState)) : reactive(initialState)
 }

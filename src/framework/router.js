@@ -9,6 +9,7 @@ import { clearMeta } from './meta.js'
  */
 
 const pageModules = import.meta.glob('../pages/**/*.js')
+const notFoundLoader = pageModules['../pages/not-found.js']
 
 const routeRecords = Object.entries(pageModules)
   .map(([file, loader]) => ({
@@ -41,8 +42,6 @@ export function fileToRoutePath(file) {
  * @returns {number}
  */
 export function scoreRoute(path) {
-  if (path === '/') return 0
-
   return path
     .split('/')
     .filter(Boolean)
@@ -67,8 +66,6 @@ export function normalizePath(path = '/') {
 export function matchPath(routePath, urlPath) {
   const normalizedRoute = normalizePath(routePath)
   const normalizedUrl = normalizePath(urlPath)
-
-  if (normalizedRoute === '/' && normalizedUrl === '/') return {}
 
   const routeParts = normalizedRoute.split('/').filter(Boolean)
   const urlParts = normalizedUrl.split('/').filter(Boolean)
@@ -116,56 +113,38 @@ export async function resolveRoute(path = window.location.pathname) {
   // watchers so reactive titles don't keep firing after navigation.
   clearMeta()
 
-  routerState.status = 'loading'
-  routerState.path = cleanPath
-  routerState.error = ''
-  routerState.page = null
-  routerState.params = {}
-  routerState.meta = {}
+  Object.assign(routerState, { status: 'loading', path: cleanPath, error: '', page: null, params: {}, meta: {} })
 
   try {
-    for (const route of routeRecords) {
-      if (route.file.endsWith('/not-found.js')) continue
+    /** @type {Record<string, string> | null} */
+    let params = null
+    const route = routeRecords.find((r) => !r.file.endsWith('/not-found.js') && (params = matchPath(r.path, cleanPath)))
+    const module = /** @type {PageModule | undefined} */ (await (route ? route.loader() : notFoundLoader?.()))
+    if (epoch !== resolveEpoch) return // superseded by a newer navigation
 
-      const params = matchPath(route.path, cleanPath)
-
-      if (params) {
-        const module = /** @type {PageModule} */ (await route.loader())
-        if (epoch !== resolveEpoch) return // superseded by a newer navigation
-        const page = module.default
-
-        if (typeof page !== 'function') {
-          throw new Error(`${route.file} must default export a page function.`)
-        }
-
-        const pageMeta = module.meta || {}
-
-        routerState.params = params
-        routerState.page = page
-        routerState.layout = pageMeta.layout || page.layout || 'basic'
-        routerState.meta = pageMeta
-        routerState.status = 'ready'
-        if (pageMeta.title) document.title = pageMeta.title
-        return
-      }
+    if (route && typeof module?.default !== 'function') {
+      throw new Error(`${route.file} must default export a page function.`)
     }
 
-    const notFoundModule = /** @type {PageModule | undefined} */ (await pageModules['../pages/not-found.js']?.())
-    if (epoch !== resolveEpoch) return // superseded by a newer navigation
-    const notFoundMeta = notFoundModule?.meta || {}
+    const meta = module?.meta || {}
 
-    routerState.page = notFoundModule?.default ?? null
-    routerState.layout = notFoundMeta.layout || routerState.page?.layout || 'basic'
-    routerState.meta = notFoundMeta
-    routerState.status = 'not-found'
-    if (notFoundMeta.title) document.title = notFoundMeta.title
+    Object.assign(routerState, {
+      params: params || {},
+      page: module?.default ?? null,
+      layout: meta.layout || 'basic',
+      meta,
+      status: route ? 'ready' : 'not-found',
+    })
+    if (meta.title) document.title = meta.title
   } catch (error) {
     if (epoch !== resolveEpoch) return // superseded by a newer navigation
-    routerState.page = null
-    routerState.layout = 'basic'
-    routerState.meta = {}
-    routerState.error = error instanceof Error ? error.message : String(error)
-    routerState.status = 'error'
+    Object.assign(routerState, {
+      page: null,
+      layout: 'basic',
+      meta: {},
+      error: error instanceof Error ? error.message : String(error),
+      status: 'error',
+    })
   }
 }
 

@@ -1,6 +1,6 @@
 # Why Quiver?
 
-Quiver is a **starter template, not a framework**. You don't install it from npm — you scaffold it, read it, and own every line from day one. The entire framework layer (router, stores, DI, composables) is around 350 lines of plain JavaScript in `src/framework/`, with exactly two runtime dependencies: `@arrow-js/core` and `@arrow-js/framework`.
+Quiver is a **starter template, not a framework**. You don't install it from npm — you scaffold it, read it, and own every line from day one. The entire framework layer (router, stores, DI, composables) is around 350 lines of plain JavaScript in `src/framework/`, with exactly one runtime dependency: `@arrow-js/core`.
 
 That trade — a codebase you can read in an afternoon instead of an ecosystem you depend on — is the whole point. This page is an honest look at when that trade is right for you, and when it isn't.
 

@@ -1,4 +1,4 @@
-import { html, nextTick } from '@arrow-js/core'
+import { html } from '@arrow-js/core'
 import { UserCard } from '../../components/UserCard.js'
 import { userState } from '../../state/userState.js'
 
@@ -25,17 +25,13 @@ function UsersPage() {
             <span class="rounded-full bg-violet-100 px-2.5 py-0.5 font-mono text-xs text-violet-600 dark:bg-violet-950 dark:text-violet-400">global store</span>
             <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">reactive arrays</span>
             <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">.key()</span>
-            <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">nextTick()</span>
           </div>
         </div>
 
         <button
           type="button"
           class="shrink-0 rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover shadow-panel theme-brutalist:border-2 theme-brutalist:border-fg"
-          @click="${async () => {
-            userState.addUser({ name: 'New Member', role: 'Analyst', team: 'Insights' })
-            await nextTick()
-          }}"
+          @click="${() => userState.addUser({ name: 'New Member', role: 'Analyst', team: 'Insights' })}"
         >
           Add member
         </button>

@@ -53,7 +53,7 @@ export default defineConfig({
             { text: 'Composables',     link: '/guide/composables' },
             { text: 'Testing',         link: '/guide/testing' },
             { text: 'Troubleshooting', link: '/guide/troubleshooting' },
-            { text: 'Contributing',    link: '/guide/contributing' },
+            { text: 'Contributing',    link: 'https://github.com/go4cas/quiver/blob/main/CONTRIBUTING.md' },
           ],
         },
       ],
