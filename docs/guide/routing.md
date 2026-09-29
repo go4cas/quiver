@@ -154,7 +154,6 @@ Exported from `src/framework/router.js`. Pages and components normally only need
 | `go(path)` | `Promise<void>` | Navigates to `path` (trailing slash and query string normalised); resolves when navigation completes. Prefer `useRouter().go()` in pages |
 | `beforeEach(guard)` | `() => void` | Registers `({ from, to }) => string \| false \| void`; returns the unregister function |
 | `resolveRoute(path?)` | `Promise<void>` | Resolves `path` (default `window.location.pathname`) and updates `routerState`. Used internally |
-| `getRouteRecords()` | `Array<{ file, path }>` | Route records derived from `src/pages/` |
 
 Path utilities, exported for tests and custom routing logic:
 

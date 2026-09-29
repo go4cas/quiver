@@ -246,7 +246,3 @@ export async function initRouter() {
 export function destroyRouter() {
   navigation.removeEventListener('navigate', handleNavigate)
 }
-
-export function getRouteRecords() {
-  return routeRecords.map(({ file, path }) => ({ file, path }))
-}
