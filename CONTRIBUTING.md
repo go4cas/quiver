@@ -30,7 +30,7 @@ If you're unsure whether something belongs, open an issue first.
    - What you expected to happen
    - What actually happened
    - Minimal steps to reproduce
-   - Node.js version and OS
+   - Bun version (or Node.js version, if using npm) and OS
 
 ---
 
@@ -47,7 +47,7 @@ Open an issue describing the problem you're trying to solve before writing any c
 ```bash
 git clone https://github.com/<your-username>/quiver
 cd quiver
-npm install
+bun install
 ```
 
 **2. Create a focused branch:**
@@ -61,9 +61,9 @@ One concern per PR. Avoid mixing bug fixes with refactors or unrelated doc edits
 **3. Make your changes and run the checks:**
 
 ```bash
-npm run typecheck     # JSDoc type check (tsc, checkJs)
-npm test              # unit tests (one-shot; use npm run test:watch while developing)
-npm run test:e2e      # end-to-end tests
+bun run typecheck     # JSDoc type check (tsc, checkJs)
+bun run test              # unit tests (one-shot; use bun run test:watch while developing)
+bun run test:e2e      # end-to-end tests
 ```
 
 All three must pass before opening a PR — CI runs them on every push.
@@ -73,7 +73,7 @@ All three must pass before opening a PR — CI runs them on every push.
 - No unnecessary comments — only add one when the *why* is non-obvious
 - No new abstractions beyond what the change requires
 - Keep components, composables, and state modules in their respective folders
-- Type new code with JSDoc (`@param`/`@returns`) — CI enforces a clean `npm run typecheck`
+- Type new code with JSDoc (`@param`/`@returns`) — CI enforces a clean `bun run typecheck`
 
 **5. Open the PR:**
 
@@ -87,12 +87,12 @@ All three must pass before opening a PR — CI runs them on every push.
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start the Vite dev server |
-| `npm test` | Run unit tests once (Vitest) |
-| `npm run test:watch` | Run unit tests in watch mode |
-| `npm run test:e2e` | Run end-to-end tests (Playwright) |
-| `npm run typecheck` | Type-check `src/` via JSDoc (tsc, checkJs) |
-| `npm run docs:dev` | Start the documentation site locally |
+| `bun run dev` | Start the Vite dev server |
+| `bun run test` | Run unit tests once (Vitest) |
+| `bun run test:watch` | Run unit tests in watch mode |
+| `bun run test:e2e` | Run end-to-end tests (Playwright) |
+| `bun run typecheck` | Type-check `src/` via JSDoc (tsc, checkJs) |
+| `bun run docs:dev` | Start the documentation site locally |
 
 ---
 

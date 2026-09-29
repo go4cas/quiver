@@ -32,11 +32,11 @@ export const <name> = reactive({
    - Add `status: 'idle'` to state if async operations are likely
 
 2. Apply all Arrow.js rules — the exported object is already reactive; no extra wrapping needed.
-   - Annotate every method's parameters with JSDoc (e.g. `/** @param {string} id */`) and add a `@typedef` for the item shape — strict `checkJs` is enforced and untyped params fail `npm run typecheck`. See `src/state/userState.js` for the pattern.
+   - Annotate every method's parameters with JSDoc (e.g. `/** @param {string} id */`) and add a `@typedef` for the item shape — strict `checkJs` is enforced and untyped params fail `bun run typecheck`. See `src/state/userState.js` for the pattern.
 
 3. Verify — run and fix any failures:
 ```
-npm run typecheck && npm test && npm run test:e2e
+bun run typecheck && bun run test && bun run test:e2e
 ```
 
 4. Report:

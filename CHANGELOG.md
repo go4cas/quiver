@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking (toolchain):** Bun 1.4+ is the supported package manager and runtime. `bun.lock` replaces `package-lock.json`; `bunfig.toml` runs scripts and tools on Bun; CI, the docs deploy and Playwright's dev server use Bun; Dependabot tracks the `bun` ecosystem. Scripts stay plain, so `npm install && npm run dev` still works on Node.js 20.19+ (without a lockfile) — this is how the StackBlitz button runs
+
 ### Removed
 
 - **Breaking:** `createStore()` — state modules are plain `reactive({...})` objects from `@arrow-js/core`, like `routerState` and `uiState` already were

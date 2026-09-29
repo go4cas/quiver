@@ -10,13 +10,13 @@ An [Arrow.js](https://arrow-js.com) starter template with file-based routing, la
 
 ## Getting started
 
-**Prerequisites:** Node.js 20.19+
+**Prerequisites:** [Bun](https://bun.com) 1.4+ (or Node.js 20.19+ with npm, without a lockfile)
 
 ```bash
-npx degit go4cas/quiver my-app
+bunx degit go4cas/quiver my-app
 cd my-app
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173). You can also click **Use this template** on GitHub, or clone the repository directly.
@@ -41,16 +41,16 @@ See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 
 | Command                | Description                          |
 | ---------------------- | ------------------------------------ |
-| `npm run dev`          | Start the Vite dev server            |
-| `npm run build`        | Production build to `dist/`          |
-| `npm run preview`      | Preview the production build locally |
-| `npm test`             | Run unit tests once (Vitest)         |
-| `npm run test:watch`   | Run unit tests in watch mode         |
-| `npm run test:e2e`     | Run end-to-end tests (Playwright)    |
-| `npm run typecheck`    | Type-check `src/` via JSDoc (tsc)    |
-| `npm run docs:dev`     | Start the documentation site locally |
-| `npm run docs:build`   | Build the documentation site         |
-| `npm run docs:preview` | Preview the built documentation site |
+| `bun run dev`          | Start the Vite dev server            |
+| `bun run build`        | Production build to `dist/`          |
+| `bun run preview`      | Preview the production build locally |
+| `bun run test`             | Run unit tests once (Vitest)         |
+| `bun run test:watch`   | Run unit tests in watch mode         |
+| `bun run test:e2e`     | Run end-to-end tests (Playwright)    |
+| `bun run typecheck`    | Type-check `src/` via JSDoc (tsc)    |
+| `bun run docs:dev`     | Start the documentation site locally |
+| `bun run docs:build`   | Build the documentation site         |
+| `bun run docs:preview` | Preview the built documentation site |
 
 ---
 

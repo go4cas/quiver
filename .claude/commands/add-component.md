@@ -24,11 +24,11 @@ export function <Name>({ /* props */ }) {
      - No `<!-- -->` HTML comments inside the template literal — use JS comments above it instead
      - Use `aria-disabled` + CSS for disabled states, never `.disabled="${...}"`
    - Use Tailwind CSS utility classes for styling; match the visual style of existing components in `src/components/`
-   - Annotate the component's props with JSDoc, e.g. `/** @param {{ title: string }} props */` — strict `checkJs` is enforced and untyped props fail `npm run typecheck`
+   - Annotate the component's props with JSDoc, e.g. `/** @param {{ title: string }} props */` — strict `checkJs` is enforced and untyped props fail `bun run typecheck`
 
 2. Verify — run and fix any failures:
 ```
-npm run typecheck && npm test && npm run test:e2e
+bun run typecheck && bun run test && bun run test:e2e
 ```
 
 3. Report:

@@ -29,7 +29,7 @@ export function <name>() {
    - Return actions as plain functions (no `() =>` wrapper needed)
    - If the composable sets up watchers or side effects, clean them up with `onCleanup` from `@arrow-js/core` to prevent leaks across navigations
    - Apply Arrow.js rules: no `<!-- -->` comments inside any template literals used internally
-   - Annotate the exported function with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `npm run typecheck`
+   - Annotate the exported function with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `bun run typecheck`
 
 2. Create a unit test at `tests/composables/<name>.test.js`:
 
@@ -53,7 +53,7 @@ describe('<name>', () => {
 
 3. Verify — run and fix any failures:
 ```
-npm run typecheck && npm test && npm run test:e2e
+bun run typecheck && bun run test && bun run test:e2e
 ```
 
 4. Report:

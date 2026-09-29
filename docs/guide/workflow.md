@@ -115,7 +115,7 @@ test('adding a ticket shows it in the list', async ({ page }) => {
 })
 ```
 
-Run with `npm run test:e2e`.
+Run with `bun run test:e2e`.
 
 ---
 

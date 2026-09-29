@@ -41,10 +41,10 @@ Execute the plan in this order:
 
 ## Step 3 — Verify
 
-Run `npm run dev` and confirm the feature works end-to-end in the browser. Then run the full gate and fix any failures before reporting done:
+Run `bun run dev` and confirm the feature works end-to-end in the browser. Then run the full gate and fix any failures before reporting done:
 
 ```
-npm run typecheck && npm test && npm run test:e2e
+bun run typecheck && bun run test && bun run test:e2e
 ```
 
 ## Arrow.js rules (apply throughout)
@@ -53,4 +53,4 @@ npm run typecheck && npm test && npm run test:e2e
 - No `<!-- -->` HTML comments inside `` html`...` `` template literals
 - Use `aria-disabled` + CSS for disabled states, never `.disabled="${...}"`
 - Use `.key(uniqueId)` on components rendered inside loops
-- Annotate exported functions and props with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `npm run typecheck`
+- Annotate exported functions and props with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `bun run typecheck`

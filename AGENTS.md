@@ -30,21 +30,21 @@ tests/
 ## Commands
 
 ```
-npm run dev           # Start Vite dev server
-npm test              # Run unit tests once
-npm run test:watch    # Run unit tests in watch mode
-npm run test:e2e      # Run E2E tests (Playwright)
-npm run typecheck     # Type-check src/ via JSDoc (tsc --noEmit, checkJs)
-npm run build         # Production build
-npm run docs:dev      # Start docs site locally
-npm run docs:build    # Build docs site
+bun run dev           # Start Vite dev server
+bun run test              # Run unit tests once
+bun run test:watch    # Run unit tests in watch mode
+bun run test:e2e      # Run E2E tests (Playwright)
+bun run typecheck     # Type-check src/ via JSDoc (tsc --noEmit, checkJs)
+bun run build         # Production build
+bun run docs:dev      # Start docs site locally
+bun run docs:build    # Build docs site
 ```
 
-Always run `npm run typecheck && npm test && npm run test:e2e` before completing a task.
+Always run `bun run typecheck && bun run test && bun run test:e2e` before completing a task.
 
 ## Types
 
-The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict` (see `jsconfig.json`). CI enforces a clean `npm run typecheck`. When adding code:
+The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict` (see `jsconfig.json`). CI enforces a clean `bun run typecheck`. When adding code:
 
 - Annotate exported functions with `@param`/`@returns`; use `@typedef` for shared shapes and `@template` for generics
 - Reuse existing typedefs via import syntax: `/** @typedef {import('../state/userState.js').User} User */`
