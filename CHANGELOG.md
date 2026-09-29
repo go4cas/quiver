@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** `toastState.configure()`, `toastState.config` and toast positions — toasts render bottom-right; `duration` and `dismissible` remain per-call options (via `useToast()` or `toastState.add()`), and their defaults are edited in `toastState.add()`
 - **Breaking:** `createApp()` options `root` and `plugins` — it always mounts `#app`; run setup code before calling it. `createApp()` is now synchronous
 - **Breaking:** `getRouteRecords()` from `src/framework/router.js` — it had no callers
+- **Breaking:** the unused `theme-retro:` and `theme-mono:` Tailwind variants — the themes remain; register a variant in `src/style.css` when a component needs one
 
 ## [1.1.1] - 2026-09-29
 

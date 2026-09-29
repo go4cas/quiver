@@ -7,8 +7,6 @@
 /* Per-theme structural variants for effects that can't be expressed as tokens */
 @variant theme-glass     (&:where([data-theme=glass] *));
 @variant theme-brutalist (&:where([data-theme=brutalist] *));
-@variant theme-retro     (&:where([data-theme=retro] *));
-@variant theme-mono      (&:where([data-theme=mono] *));
 
 @theme {
   /* ── Brand ──────────────────────────────────────── */
