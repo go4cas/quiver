@@ -156,7 +156,7 @@ Call these inside a page or component function, never at module scope:
 
 ### Theming
 
-Two orthogonal attributes on `<html>`: `data-theme` (`default` · `mono` · `glass` · `retro` · `brutalist`) and `data-mode` (`light` · `dark`), both driven by `uiState` and persisted to localStorage. Components use semantic tokens (`bg-surface`, `text-fg`, `border-line`, `bg-brand`, `rounded-panel`, `shadow-panel`) — never hard-code colors, or theme switching breaks. Per-theme utility overrides via variants: `theme-glass:backdrop-blur-md`, `theme-brutalist:border-2`, etc.
+Two orthogonal attributes on `<html>`: `data-theme` (`default` · `mono` · `glass` · `retro` · `brutalist`) and `data-mode` (`light` · `dark`), both driven by `uiState` and persisted to localStorage. Components use semantic tokens (`bg-surface`, `text-fg`, `border-line`, `bg-brand`, `rounded-panel`, `shadow-panel`; status: `text-error`, `bg-success-tint`, `border-warning/30`, `info`) — never hard-code colors or use Tailwind palette classes, or theme switching breaks. Per-theme utility overrides via variants: `theme-glass:backdrop-blur-md`, `theme-brutalist:border-2`, etc.
 
 To add a theme: token override blocks (light + dark) in `src/style.css`, an optional `@variant theme-<id>` line, and an entry in the `THEMES` array in `src/components/ThemeSelector.js`. See the Theming guide or the `/add-theme` command.
 

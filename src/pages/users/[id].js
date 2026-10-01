@@ -48,9 +48,9 @@ function UserDetailPage() {
 
         if (!user) {
           return html`
-            <div class="rounded-panel border border-amber-200 bg-amber-50 p-6 dark:border-amber-900 dark:bg-amber-950">
-              <h2 class="font-semibold text-amber-800 dark:text-amber-400">User not found</h2>
-              <p class="mt-1 text-sm text-amber-700 dark:text-amber-500">No user exists for ID <code class="font-mono">${() => route.params().id}</code>.</p>
+            <div class="rounded-panel border border-warning/30 bg-warning-tint p-6">
+              <h2 class="font-semibold text-warning">User not found</h2>
+              <p class="mt-1 text-sm text-warning">No user exists for ID <code class="font-mono">${() => route.params().id}</code>.</p>
             </div>
           `
         }

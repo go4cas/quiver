@@ -5,6 +5,17 @@ All notable changes to Quiver are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Status colour tokens: `success`, `error`, `warning`, `info`, each with a `-tint` variant, defined for light and dark mode in `src/style.css`
+
+### Changed
+
+- Toasts, alerts, form errors, status badges and the demo pages use the status tokens instead of hard-coded Tailwind palette classes, so they now follow the active theme. The decorative concept badges on the demo pages use `brand-tint`
+- Docs no longer recommend palette utilities for status colour
+
 ## [2.0.1] - 2026-09-30
 
 ### Changed

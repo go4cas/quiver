@@ -42,22 +42,22 @@ function ToastsPage() {
           <div class="flex flex-wrap gap-2">
             <button
               type="button"
-              class="rounded-control bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+              class="rounded-control border border-success/30 bg-success-tint px-4 py-2 text-sm font-semibold text-success hover:border-success"
               @click="${() => fire('success')}"
             >Success</button>
             <button
               type="button"
-              class="rounded-control bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+              class="rounded-control border border-error/30 bg-error-tint px-4 py-2 text-sm font-semibold text-error hover:border-error"
               @click="${() => fire('error')}"
             >Error</button>
             <button
               type="button"
-              class="rounded-control bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600"
+              class="rounded-control border border-warning/30 bg-warning-tint px-4 py-2 text-sm font-semibold text-warning hover:border-warning"
               @click="${() => fire('warning')}"
             >Warning</button>
             <button
               type="button"
-              class="rounded-control bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              class="rounded-control border border-info/30 bg-info-tint px-4 py-2 text-sm font-semibold text-info hover:border-info"
               @click="${() => fire('info')}"
             >Info</button>
           </div>

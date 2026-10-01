@@ -61,16 +61,16 @@ ticketState.addTicket({ title: 'Fix login bug' })
 
 ## 3. Add components (if needed)
 
-Create a component in `src/components/` and export it from the barrel file so it's available consistently.
+Create a component in `src/components/` and import it directly from its file — there is no barrel file.
 
 ```js
 // src/components/TicketCard.js
 import { component, html } from '@arrow-js/core'
 
 export const TicketCard = component((ticket) => html`
-  <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <h3 class="font-semibold text-slate-900">${() => ticket.title}</h3>
-    <p class="mt-1 text-sm text-slate-500">${() => ticket.status}</p>
+  <article class="rounded-panel border border-line bg-surface-raised p-5 shadow-panel">
+    <h3 class="font-semibold text-fg">${() => ticket.title}</h3>
+    <p class="mt-1 text-sm text-fg-soft">${() => ticket.status}</p>
   </article>
 `)
 ```

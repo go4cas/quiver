@@ -28,6 +28,16 @@
   --color-line:        #e2e8f0;
   --color-line-strong: #334155;
 
+  /* ── Status ──────────────────────────────────────── */
+  --color-success:      #047857;
+  --color-success-tint: #ecfdf5;
+  --color-error:        #b91c1c;
+  --color-error-tint:   #fef2f2;
+  --color-warning:      #b45309;
+  --color-warning-tint: #fffbeb;
+  --color-info:         #1d4ed8;
+  --color-info-tint:    #eff6ff;
+
   /* ── Shape ───────────────────────────────────────── */
   --radius-control: 0.75rem;
   --radius-panel:   1rem;
@@ -69,6 +79,14 @@
   --color-line:            #1e293b;
   --color-line-strong:     #cbd5e1;
   --color-brand-tint:      rgb(249 115 22 / 0.15);
+  --color-success:         #34d399;
+  --color-success-tint:    #022c22;
+  --color-error:           #f87171;
+  --color-error-tint:      #450a0a;
+  --color-warning:         #fbbf24;
+  --color-warning-tint:    #451a03;
+  --color-info:            #60a5fa;
+  --color-info-tint:       #172554;
 }
 
 /* ═══════════════════════════════════════════════════

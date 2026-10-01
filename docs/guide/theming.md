@@ -82,6 +82,8 @@ All components use semantic CSS custom properties instead of palette utilities. 
 | `--color-line-strong` | `border-line-strong` | Emphasis borders |
 | `--color-brand` | `text-brand` / `bg-brand` | Primary action colour |
 | `--color-brand-tint` | `bg-brand-tint` | Tinted badge backgrounds |
+| `--color-success` · `--color-error` · `--color-warning` · `--color-info` | `text-success`, `border-error/30`, … | Status text and borders |
+| `--color-success-tint` · `--color-error-tint` · `--color-warning-tint` · `--color-info-tint` | `bg-success-tint`, … | Status backgrounds (toasts, alerts, badges) |
 
 ### Shape and shadow tokens
 

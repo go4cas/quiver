@@ -6,8 +6,8 @@ import { userState } from '../state/userState.js'
 
 /** @type {Record<string, string>} */
 const STATUS_CLASSES = {
-  online: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
-  away:   'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  online: 'bg-success-tint text-success',
+  away:   'bg-warning-tint text-warning',
 }
 const statusClass = /** @param {string} s */ (s) => STATUS_CLASSES[s] ?? 'bg-surface-inset text-fg-soft'
 
@@ -40,7 +40,7 @@ export const UserCard = component(/** @param {User} user */ (user) => html`
       </button>
       <button
         type="button"
-        class="rounded-control bg-surface-inset px-3 py-2 text-sm font-semibold text-fg-soft hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400"
+        class="rounded-control bg-surface-inset px-3 py-2 text-sm font-semibold text-fg-soft hover:bg-error-tint hover:text-error"
         @click="${() => userState.removeUser(user.id)}"
       >
         Remove

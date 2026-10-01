@@ -63,13 +63,13 @@ function LoginPage() {
         <label class="block">
           <span class="text-sm font-medium text-fg-soft">Email <span class="text-brand">*</span></span>
           <input class="mt-1.5 w-full rounded-control border border-line bg-surface-inset px-3 py-2.5 text-sm text-fg outline-none placeholder:text-fg-faint transition focus:border-brand focus:bg-surface-raised" type="email" placeholder="alice@example.com" @input="${/** @type {any} */ (emailField.set)}" />
-          ${() => (emailField.error() ? html`<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">${() => emailField.error()}</p>` : '')}
+          ${() => (emailField.error() ? html`<p class="mt-1.5 text-xs text-error">${() => emailField.error()}</p>` : '')}
         </label>
 
         <label class="block">
           <span class="text-sm font-medium text-fg-soft">Password <span class="text-brand">*</span></span>
           <input class="mt-1.5 w-full rounded-control border border-line bg-surface-inset px-3 py-2.5 text-sm text-fg outline-none placeholder:text-fg-faint transition focus:border-brand focus:bg-surface-raised" type="password" placeholder="••••••••" @input="${/** @type {any} */ (passwordField.set)}" />
-          ${() => (passwordField.error() ? html`<p class="mt-1.5 text-xs text-red-600 dark:text-red-400">${() => passwordField.error()}</p>` : '')}
+          ${() => (passwordField.error() ? html`<p class="mt-1.5 text-xs text-error">${() => passwordField.error()}</p>` : '')}
         </label>
 
         <button

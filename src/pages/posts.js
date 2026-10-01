@@ -55,15 +55,15 @@ function PostsPage() {
 
       ${() => posts.error() || broken.error()
         ? html`
-            <div class="rounded-panel border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-              <p class="text-sm font-semibold text-red-700 dark:text-red-400">Error</p>
-              <p class="mt-1 font-mono text-xs text-red-600 dark:text-red-500">${() => posts.error() || broken.error()}</p>
+            <div class="rounded-panel border border-error/30 bg-error-tint p-4">
+              <p class="text-sm font-semibold text-error">Error</p>
+              <p class="mt-1 font-mono text-xs text-error">${() => posts.error() || broken.error()}</p>
             </div>
           `
         : !posts.loading() && posts.data()
           ? html`
-              <div class="rounded-panel border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950">
-                <p class="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Success — ${() => posts.data().length} posts loaded</p>
+              <div class="rounded-panel border border-success/30 bg-success-tint p-4">
+                <p class="text-sm font-semibold text-success">Success — ${() => posts.data().length} posts loaded</p>
               </div>
             `
           : ''}

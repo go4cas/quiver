@@ -32,8 +32,8 @@ import { go } from '../framework/router.js'
 import { userState } from '../state/userState.js'
 
 const STATUS_CLASSES = {
-  online: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400',
-  away:   'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400',
+  online: 'bg-success-tint text-success',
+  away:   'bg-warning-tint text-warning',
 }
 const statusClass = (s) => STATUS_CLASSES[s] ?? 'bg-surface-inset text-fg-soft'
 
@@ -143,7 +143,7 @@ Direct imports keep the dependency graph explicit and avoid import cycles throug
 Style the active `Link` with Tailwind's arbitrary variant:
 
 ```js
-const navClass = 'rounded-xl px-3 py-2 text-sm hover:bg-slate-100 [&[aria-current=page]]:bg-slate-900 [&[aria-current=page]]:text-white'
+const navClass = 'rounded-control px-3 py-2 text-sm hover:bg-surface-inset [&[aria-current=page]]:bg-brand-tint [&[aria-current=page]]:text-brand'
 
 ${Link({ to: '/users', children: 'Users', class: navClass })}
 ```
@@ -216,21 +216,21 @@ html`<span>${props.label}</span>`
 
 ## Styling a component
 
-Two approaches — they can be mixed freely within the same component:
+Use semantic token utilities — never Tailwind palette classes (`bg-<colour>-<shade>`). Token values are overridden per theme and per mode in `src/style.css`, so a component styled with tokens works in all five themes, light and dark, with no `dark:` colour overrides.
 
-**Semantic tokens** (recommended for structural chrome) — utility classes generated from the design token system: `bg-surface-raised`, `text-fg`, `rounded-panel`, `shadow-panel`. The component automatically responds to all five themes because the token values are overridden at the CSS level per theme. See [Theming](./theming) for the full token reference.
+**Chrome** — `bg-surface-raised`, `text-fg`, `border-line`, `rounded-panel`, `shadow-panel`.
 
-**Direct palette utilities** (for meaning-carrying colour) — `bg-emerald-100`, `text-red-600`, etc. Use these when the colour must stay fixed regardless of the active theme — for example, a status badge that is always green for "online" and always red for "error". These values do not change when the user switches theme.
+**Status colour** — `success`, `error`, `warning`, `info`, each with a `-tint` background. Use the opacity modifier for a soft border:
 
 ```js
-// Structural chrome → semantic tokens (adapts to theme)
 <article class="rounded-panel border border-line bg-surface-raised p-5 shadow-panel">
 
-// Meaning-carrying colour → palette utilities (fixed across themes)
-<span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
-  online
-</span>
+<div class="rounded-panel border border-error/30 bg-error-tint p-4 text-error">
+  Something went wrong.
+</div>
 ```
+
+See [Theming](./theming) for the full token reference.
 
 ---
 
@@ -238,10 +238,10 @@ Two approaches — they can be mixed freely within the same component:
 
 Components participate in the theming system through two Tailwind variant classes:
 
-**`dark:`** — applies when `data-mode="dark"` is on `<html>`. Use it for light/dark mode differences that should apply within every theme:
+**`dark:`** — applies when `data-mode="dark"` is on `<html>`. Colour tokens already switch with the mode, so reserve `dark:` for non-colour differences, like the knob position in `ThemeToggle`:
 
 ```js
-class="bg-white dark:bg-slate-900"
+class="translate-x-0.5 dark:translate-x-5"
 ```
 
 **Per-theme variants** (`theme-glass:`, `theme-brutalist:`) — apply only when that specific theme is active. Use for structural differences that go beyond a colour swap:

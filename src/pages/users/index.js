@@ -22,7 +22,7 @@ function UsersPage() {
           </p>
           <div class="mt-3 flex flex-wrap gap-2">
             <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">file-based routing</span>
-            <span class="rounded-full bg-violet-100 px-2.5 py-0.5 font-mono text-xs text-violet-600 dark:bg-violet-950 dark:text-violet-400">global store</span>
+            <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">global store</span>
             <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">reactive arrays</span>
             <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">.key()</span>
           </div>
@@ -41,7 +41,7 @@ function UsersPage() {
         <div>
           <div class="flex items-center gap-2">
             <h2 class="text-xs font-semibold uppercase tracking-wider text-fg-faint">Team member cards</h2>
-            <span class="rounded-md bg-sky-100 px-1.5 py-0.5 font-mono text-xs text-sky-600 dark:bg-sky-950 dark:text-sky-400">nested components</span>
+            <span class="rounded-md bg-brand-tint px-1.5 py-0.5 font-mono text-xs text-brand">nested components</span>
           </div>
           <p class="mt-1 text-xs text-fg-faint">
             Each card is a <code class="font-mono">component()</code> instance rendered by this page.
