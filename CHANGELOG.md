@@ -5,7 +5,7 @@ All notable changes to Quiver are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.1.0] - 2026-10-01
 
 ### Added
 
@@ -131,6 +131,7 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[2.1.0]: https://github.com/go4cas/quiver/releases/tag/v2.1.0
 [2.0.1]: https://github.com/go4cas/quiver/releases/tag/v2.0.1
 [2.0.0]: https://github.com/go4cas/quiver/releases/tag/v2.0.0
 [1.1.1]: https://github.com/go4cas/quiver/releases/tag/v1.1.1
