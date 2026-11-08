@@ -1,6 +1,6 @@
 # Quiver v3 — drop-in refactor spec
 
-Status: draft for the Decisions thread · Author: Cas · Date: 2026-11-08
+Status: decisions settled (P0, 2026-11-08; see [DECISIONS.md](DECISIONS.md)) · Author: Cas · Date: 2026-11-08
 
 ## 1. Context
 
@@ -28,7 +28,7 @@ These are symptoms of the template model, not Audition problems. v3 turns Quiver
 **Non-goals (v3)**
 
 - Swapping Arrow.js, or SSR/hydration (that's `@arrow-js/ssr` / `@arrow-js/hydrate`).
-- A formal plugin system (deferred until 2–3 real plugins exist, D13).
+- A formal plugin system (deferred until 2–3 real plugins exist, D13). Core has `afterEach` / `onError` hooks only (D24).
 - A Navigation API fallback (deferred, D11).
 - Multiple Quiver apps on one page (D12).
 
@@ -36,11 +36,11 @@ These are symptoms of the template model, not Audition problems. v3 turns Quiver
 
 | Layer | Contents | Assumes | Ships as |
 |---|---|---|---|
-| **Core** `@go4cas/quiver` | `initRouter`, `go`, `beforeEach`, `url()`, `useRoute`, `useRouter`, `useMeta`, `provide`/`inject`, `createApp` (target, layouts, slots, `destroy`) | `@arrow-js/core` only | npm package, plain ESM |
+| **Core** `@go4cas/quiver` | `initRouter`, `go`, `beforeEach`, `afterEach`, `onError`, `url()`, `useRoute`, `useRouter`, `useMeta`, `provide`/`inject`, `createApp` (target, layouts, `defaultLayout`, loading/error views, `destroy`) | `@arrow-js/core` only | npm package, plain ESM + generated `.d.ts` (D20) |
 | **Route discovery** `@go4cas/quiver/vite`, `@go4cas/quiver/bun`, `quiver routes` CLI | One shared scanner: `pages/` → manifest | Its bundler / none | Subpath exports + bin |
-| **Composables** `arrow-use` (name TBD, D4) | `useFetch`, `useStorage`, `useMediaQuery`, `useEventListener` (v0.1) | `@arrow-js/core` only (peer) | npm package |
-| **Recipes** | `Link`, toasts, theme switcher, `useForm`, layouts, loading/error views | Core + composables | Copied into apps by `/add-*` |
-| **Starter** | Demo app: pages, themes, recipes in use | Vite | `degit` |
+| **Composables** `arrow-use` (D4) | `useFetch`, `useStorage`, `useMediaQuery`, `useEventListener` (v0.1) | `@arrow-js/core` only (peer) | npm package |
+| **Recipes** | `theme` (`tokens.css` + `base.css`), `Link`, toasts, theme switcher, `useForm`, `hmrState`, layouts, loading/error views | Core + composables | Shipped as files in the core tarball (`recipes/`); copied into apps by the `/add-*` commands of the Quiver Claude Code plugin (D32) |
+| **Starter** `starter/` | Demo app: pages, themes, recipes in use | Vite | `bunx degit go4cas/quiver/starter` (Q1) |
 
 **The rule for core:** something goes in core only if it needs framework internals (router, context, meta) or every app has to wire it into the framework. Everything else is a composable or a recipe.
 
@@ -50,86 +50,110 @@ These are symptoms of the template model, not Audition problems. v3 turns Quiver
 - R2. **No styling in core.** Core renders no `class` attributes. Layouts and the loading/error views are injected, with bare unstyled defaults.
 - R3. **No mount assumptions.**
   - `createApp({ target })` takes an element or selector, not a hardcoded `#app`.
-  - `initRouter({ base })` defaults to `new URL(document.baseURI).pathname`.
-  - Navigations outside the base are not intercepted.
-  - `useRoute().path()` is base-relative.
-- R4. **No hidden state the app can't reset.** Module singletons stay, but `destroy()` clears guards, context, meta watchers and router state, and removes the navigate listener. No module reads `window` at import time.
+  - `initRouter({ base })`: an explicit `base` wins; otherwise the directory of `<base href>` if a `<base>` element exists; otherwise `/` (D22). Stored with a trailing slash.
+  - Navigations outside the base are not intercepted. The base without its trailing slash (`/app`) counts as inside and resolves to `/`.
+  - Every app-facing path is base-relative: `go()`, guard `from`/`to` and redirect strings, hook paths, manifest keys, `useRoute().path()`. Only `url()` and rendered `href`s carry the base (D23).
+- R4. **No hidden state the app can't reset.** Module singletons stay, but `destroy()` removes the navigate listener, clears guards, `afterEach`/`onError` handlers, context and meta watchers, resets router state to `idle`, and empties the target; `initRouter` + `createApp` work again afterwards (D25). No module reads `window` at import time (`routerState` starts at `path: ''`).
 - R5. **One Arrow copy.** `@arrow-js/core` is a `peerDependency` of every package, and published files import it by its bare name.
 - R6. **No-build works.** Core and composables run unbundled from a CDN behind an import map.
-- R7. **Tailwind-free.** Repo-wide `grep -ri tailwind` matches only CHANGELOG history and the optional Tailwind guide.
+- R7. **Tailwind-free.** Repo-wide `grep -ri tailwind`, excluding `planning/`, `node_modules/` and `bun.lock`, matches only `CHANGELOG.md`, the optional Tailwind guide and the layer-order note (D29). A Vitest test runs it in CI (D34).
 - R8. **Agent context ships with the package.** `AGENTS.md` and `llms.txt` describe the public API and are included in the npm tarball.
 - R9. **2.x users have a path.** A migration guide maps every 2.x pattern to its v3 replacement.
 
 ## 5. Decisions
 
-**Agreed** = Cas confirmed it on 2026-11-06. **Proposed** = for the Decisions thread to confirm or change.
+**Agreed** = Cas confirmed it (D1, D2, D7, D8, D17 on 2026-11-06; the rest in the Decisions thread on 2026-11-08). Rationale and detail for every row: [DECISIONS.md](DECISIONS.md).
 
 | # | Decision | Status |
 |---|---|---|
 | D1 | Quiver becomes a drop-in core plus a starter that consumes it | Agreed |
 | D2 | Remove Tailwind entirely, whatever else changes | Agreed |
-| D3 | Core package name `@go4cas/quiver`. `quiver` on npm is taken (2013 Node streams package), and `@quiver-js/core` already exists ("Micro framework for arrow-js", dormant) | Proposed |
-| D4 | Composables package name `arrow-use` (free on npm as of 2026-11-06). Alternatives: `use-arrow`, `arrow-composables`, `@go4cas/arrow-use` | Proposed |
-| D5 | Token prefix `--q-` (e.g. `--q-color-brand`, `--q-radius-panel`) | Proposed |
-| D6 | Recipe CSS uses `@layer quiver`, `:where()` (zero specificity) and native nesting, and state is styled through attributes (`aria-current`, `data-type`), never utility variants | Proposed |
+| D3 | Core package name `@go4cas/quiver`. `quiver` on npm is taken (2013 Node streams package), and `@quiver-js/core` already exists ("Micro framework for arrow-js", dormant) | Agreed |
+| D4 | Composables package name `arrow-use` (free on npm as of 2026-11-06). Alternatives: `use-arrow`, `arrow-composables`, `@go4cas/arrow-use`. Not reserved on npm; P8 re-checks, fallback `@go4cas/arrow-use`. | Agreed |
+| D5 | Token prefix `--q-` (e.g. `--q-color-brand`, `--q-radius-panel`). Recipe classes use `q-`. | Agreed |
+| D6 | Recipe CSS uses `@layer quiver`, `:where()` (zero specificity) and native nesting, and state is styled through attributes (`aria-current`, `data-type`), never utility variants. Plus D29. | Agreed |
 | D7 | Composables return getter functions (`data()`, `loading()`), matching the current `useFetch` | Agreed |
 | D8 | Composables are Arrow composables, not Quiver ones: no Quiver imports, usable in plain Arrow apps | Agreed |
-| D9 | Core takes an explicit route manifest. File-based discovery is optional: Vite plugin, Bun plugin, or codegen (`routes.gen.js`), all sharing one scanner | Proposed |
-| D10 | `base` defaults to `<base href>` via `document.baseURI` | Proposed |
-| D11 | Navigation API stays a hard requirement (Chrome/Edge 102+, Safari 26.2+, Firefox 147+), documented loudly. A history-API fallback is deferred until someone needs it | Proposed |
-| D12 | Keep module singletons, one app per page, `destroy()` resets everything. An instance-per-app API is deferred | Proposed |
-| D13 | No plugin system in v3. Possibly add `afterEach` / `onError` hooks, but no `plugins: []` option | Proposed |
-| D14 | Bun workspaces: `packages/quiver/`, `packages/arrow-use/`, `starter/`, `recipes/`, `examples/`, `docs/` | Proposed |
-| D15 | Versions: core `3.0.0`, composables `0.1.0` | Proposed |
-| D16 | Publish to npm. Published files are source ESM + JSDoc (no build step), so the package is also vendorable as a folder | Proposed |
+| D9 | Core takes an explicit route manifest. File-based discovery is optional: Vite plugin, Bun plugin, or codegen (`routes.gen.js`), all sharing one scanner. Format: D21. | Agreed |
+| D10 | `base` defaults to `<base href>` via `document.baseURI`. `document.baseURI` is the document URL when there is no `<base>`. | Replaced by D22 |
+| D11 | Navigation API stays a hard requirement (Chrome/Edge 102+, Safari 26.2+, Firefox 147+), documented loudly. A history-API fallback is deferred until someone needs it. `initRouter` error names the minimum browsers and links the docs. | Agreed |
+| D12 | Keep module singletons, one app per page, `destroy()` resets everything. An instance-per-app API is deferred. Teardown: D25. | Agreed |
+| D13 | No plugin system in v3. Possibly add `afterEach` / `onError` hooks, but no `plugins: []` option | Changed by D24 |
+| D14 | Bun workspaces: `packages/quiver/`, `packages/arrow-use/`, `starter/`, `recipes/`, `examples/`, `docs/`. Layout: D19. | Agreed |
+| D15 | Versions: core `3.0.0`, composables `0.1.0` | Agreed |
+| D16 | Publish to npm. Published files are source ESM + JSDoc (no build step), so the package is also vendorable as a folder. Plus D20 (`.d.ts`). | Agreed |
 | D17 | `Link`, toasts, theme switcher, `useForm`, `hmrState`, layouts and loading/error views become recipes. `useFetch` moves to the composables package | Agreed |
-| D18 | `Link` drops its `@click` handler (the Navigation API already intercepts plain `<a href>`, and the handler breaks Cmd/Ctrl/middle-click). Core adds `url(path)` for base-aware hrefs | Proposed |
+| D18 | `Link` drops its `@click` handler (the Navigation API already intercepts plain `<a href>`, and the handler breaks Cmd/Ctrl/middle-click). Core adds `url(path)` for base-aware hrefs. `url()` keeps query/hash, returns absolute URLs unchanged. | Agreed |
+| D19 | Layout: `packages/quiver/`, `packages/arrow-use/`, `starter/`, `recipes/`, `examples/{vite,bun,no-build}/`, `docs/`, `planning/`. Tests sit beside their code. The starter depends on `^3.0.0`, never `workspace:` (CI check). The root README leads with the new degit path; 2.x stays at `go4cas/quiver#v2.1.0`. Docs still build to `docs/.vitepress/dist` | Agreed |
+| D20 | Each package's `prepack` generates `.d.ts` with `tsc --declaration --emitDeclarationOnly`; runtime files stay untouched source. Hygiene: MIT `LICENSE`, `files` allowlist, `"type": "module"`, `exports` map, `@arrow-js/core` peer `^1.0.6`, CLI `engines.node >=22.12` | Agreed |
+| D21 | Manifest is `{ [pattern]: loader }`, loader returns a module or a promise of one; `notFound` is a separate option; core sorts by `scoreRoute` | Agreed |
+| D22 | `base`: explicit option, else directory of `<base href>` when a `<base>` element exists, else `/` | Agreed |
+| D23 | All app-facing paths are base-relative (`go`, guards, redirects, hooks, manifest, `useRoute().path()`); only `url()` and `href`s carry the base; `/app` counts as inside base `/app/` | Agreed |
+| D24 | `afterEach(fn)` → `{ from, to, status }`; `onError(fn)` → `{ error, from, to, phase: 'guard' \| 'load' \| 'render' }`. Both return unregister. Every error shows the error view, then calls `onError`; a throwing handler is caught and logged. No `plugins` | Agreed |
+| D25 | `destroy()`: listener, guards, hooks, context, meta watchers, router state (`idle`, `path: ''`), target emptied; re-init works; `document.title` not restored. A second `createApp` before `destroy()` throws | Agreed |
+| D26 | `routerState` is private; apps read it via `useRoute()` only (Q6). Startup order: `provide` → guards/hooks → `await initRouter()` → `createApp()`; `createApp` first throws | Agreed |
+| D27 | Migration guide explains each `createApp` option as the replacement for a 2.x hardcode (`target`←`#app`, `layouts`←`layouts/index.js`, `loading`/`error`←`LoadingCard`/`ErrorCard`); `plugins` is not coming back; `createApp` stays sync (Q3) | Agreed |
+| D28 | `defaultLayout` option (default `'default'`; starter passes `'basic'`); unknown layout renders bare with `console.warn`. `loading()`; `error({ message, error, retry })`; bare defaults `<p>Loading…</p>` / `<p role="alert">`. Core mounts into `target` with no wrapper | Agreed |
+| D29 | Every recipe stylesheet starts with `@layer quiver;`. Docs give layered apps an ordering line (Tailwind: `@layer theme, base, quiver, components, utilities;`) | Agreed |
+| D30 | `tokens.css` + `base.css` are the `theme` recipe (not in core, R2), inside `@layer quiver`. Recipes ship plain CSS only (Q5) | Agreed |
+| D31 | Toast exit: `data-state="closing"`, await `el.getAnimations()` `.finished`, then remove; `prefers-reduced-motion` rule (Q4) | Agreed |
+| D32 | Recipes ship as files in the core tarball (`recipes/`, in `files`, not in `exports`); `/add-*` copy from `node_modules/@go4cas/quiver/recipes/`. The commands ship as a Claude Code plugin in this repo (required for P7). Public marketplace listing needs Cas's go-ahead. `useForm` recipe has no Quiver imports | Agreed |
+| D33 | One `jsconfig.json` per workspace; root scripts fan out with `bun run --filter`. Core's config omits `vite/client` types (enforces R1) (Q7) | Agreed |
+| D34 | Boundary checks (core ↛ starter, arrow-use ↛ Quiver, no `workspace:` in starter, R7 grep) are Vitest tests, not ESLint. `engines.bun >=1.4.4` (from the 2026-11-06 spike; P4 confirms) | Agreed |
+| D35 | Screenshot tolerance (`maxDiffPixelRatio`, `threshold`) is proposed in DESIGN.md and approved by Cas in the Design PR; P1 can't loosen it. Fonts self-hosted (OFL), `document.fonts.ready`; baseline captured on CI Linux Chromium from 2.1 CSS as P1's first commit; `animations: 'disabled'` | Agreed |
 
-### Open questions for the Decisions thread
+### Questions resolved in the Decisions thread
 
-- Q1. Does the starter stay at the repo root (so `bunx degit go4cas/quiver` keeps working) or move to `starter/` (`degit go4cas/quiver/starter`)?
-- Q2. Also publish to JSR?
-- Q3. v2.0 removed `createApp({ root, plugins })` on purpose. v3 brings back an options object (`target`, `layouts`, slots). How is that explained to 2.x users without looking like churn?
-- Q4. How does toast exit timing decouple from CSS: an `exitMs` option, or `animationend` in the recipe markup?
-- Q5. Do recipes ship a plain-CSS variant only, or plain CSS plus a Tailwind snippet in their README?
-- Q6. Should `routerState` stay importable, or is it reachable only through `useRoute()`?
-- Q7. Does the typecheck/CI setup run per workspace or from the root?
+- Q1. Starter location → moves to `starter/` (D19).
+- Q2. JSR → not in v3.
+- Q3. Explaining the `createApp` options → D27.
+- Q4. Toast exit timing → D31.
+- Q5. Tailwind snippets in recipes → no, plain CSS only (D30).
+- Q6. `routerState` → private, `useRoute()` only (D26).
+- Q7. Typecheck/CI → per workspace, run from the root (D33).
 
-## 6. Core API sketch (proposed; Architecture finalises)
+## 6. Core API sketch (Architecture finalises signatures in TECH-SPEC.md)
 
 ```js
-import { initRouter, createApp, beforeEach, url } from '@go4cas/quiver'
+import { initRouter, createApp, beforeEach, afterEach, onError, url, go, provide } from '@go4cas/quiver'
 import routes from 'quiver:routes'            // or a hand-written object, or ./routes.gen.js
 
+provide('app', { name: 'Audition' })        // 1. context
 beforeEach(({ from, to }) => { /* unchanged 2.x semantics, base-relative paths */ })
+afterEach(({ from, to, status }) => {})       // 2. guards and hooks (D24)
+onError(({ error, from, to, phase }) => {})   //    phase: 'guard' | 'load' | 'render'
 
 await initRouter({
   routes,                                     // { '/': () => import(...), '/runs/:id': () => import(...) }
   notFound: () => import('./pages/not-found.js'),
-  base: '/api/custom/app/',                   // optional; default from <base href>
-})
+  base: '/api/custom/app/',                   // optional; default: <base href> directory, else '/' (D22)
+})                                            // 3. router
 
 const app = createApp({
   target: '#app',                             // element or selector
   layouts: { basic: BasicLayout, menu: MenuLayout },
+  defaultLayout: 'basic',                     // optional; default 'default'; missing → bare page (D28)
   loading: LoadingView,                       // optional; bare default
-  error: ErrorView,                           // optional; receives the message
-})
+  error: ErrorView,                           // optional; receives { message, error, retry }
+})                                            // 4. mount (throws if called before initRouter)
 
-url('/runs/42')                               // '/api/custom/app/runs/42'
-app.destroy()                                 // listener, guards, context, meta, router state
+url('/runs/42?tab=log')                       // '/api/custom/app/runs/42?tab=log'
+go('/runs/42')                                // base-relative (D23)
+app.destroy()                                 // listener, guards, hooks, context, meta, router state, target (D25)
 ```
 
-Page modules keep the 2.x contract: a default export page function, and an optional `export const meta = { layout, title }`.
+Page modules keep the 2.x contract: a default export page function, and an optional `export const meta = { layout, title }`. Apps read the route only through `useRoute()`; `routerState` is not exported (D26).
 
 ## 7. Conventions
 
-### CSS (D5, D6)
+### CSS (D5, D6, D29, D30)
 
+- `tokens.css` and `base.css` are the `theme` recipe, not part of core (D30). Both are inside `@layer quiver`.
 - `tokens.css` holds the token contract as `:root { --q-* }`, plus `[data-theme]` / `[data-mode]` override blocks. It's a direct port of today's `@theme` and theme blocks in `src/style.css`.
 - A small `base.css` replaces the reset that Tailwind's preflight provided (`box-sizing`, margins, form-control inheritance, `antialiased` font smoothing).
-- Recipe CSS:
+- Recipe CSS starts with the layer statement, and classes use the `q-` prefix:
   ```css
+  @layer quiver;
   @layer quiver {
     :where(.q-toast) {
       border-radius: var(--q-radius-panel);
@@ -137,7 +161,8 @@ Page modules keep the 2.x contract: a default export page function, and an optio
     }
   }
   ```
-  Any unlayered app CSS wins without `!important`, and one app class overrides a recipe.
+  Any unlayered app CSS wins without `!important`, and one app class overrides a recipe. Apps that use their own layers declare the order once, e.g. `@layer theme, base, quiver, components, utilities;` for Tailwind v4 (D29).
+- Recipes ship plain CSS only. Tailwind guidance lives only in the optional Tailwind guide (Q5).
 - Per-theme effects (today's `theme-glass:`, `theme-brutalist:` variants) become `[data-theme="glass"] :where(.q-card) { … }`.
 
 ### Composables (D7, D8)
@@ -166,26 +191,28 @@ Each phase is one build thread and one PR. A phase is done only when every **Don
 | P7 | Recipes + AI tooling | M | P1, P6 |
 | P8 | Docs, migration guide, release | M | P5, P7 |
 
-**P1 — Remove Tailwind.** Port `@theme` and the theme blocks to `tokens.css` (`--q-*`), add `base.css`, rewrite every `class` attribute (about 220 across 18 files) as plain CSS following §7, remove `tailwindcss`, `@tailwindcss/vite` and the Vite plugin, and update AGENTS.md, `/add-component`, `/add-theme`, `/add-layout` and the docs (index, theming, components, VitePress description).
+**P1 — Remove Tailwind.** First commit: self-host the four Google Fonts (OFL) and capture the screenshot baseline on the CI runner (Linux Chromium) from the untouched 2.1 CSS, waiting for `document.fonts.ready`, with `animations: 'disabled'` (D35). Then port `@theme` and the theme blocks to `tokens.css` (`--q-*`), add `base.css`, rewrite every `class` attribute (about 220 across 18 files) as plain CSS following §7, remove `tailwindcss`, `@tailwindcss/vite` and the Vite plugin, and update AGENTS.md, `/add-component`, `/add-theme`, `/add-layout` and the docs (index, theming, components, VitePress description).
 Done when:
-- a Playwright screenshot baseline (taken before any CSS change: every page × 5 themes × 2 modes) matches within an agreed tolerance
+- a Playwright screenshot baseline (taken before any CSS change: every page × 5 themes × 2 modes) matches within the tolerance Cas approved in DESIGN.md (D35)
 - unit, typecheck and e2e tests are green
 - R7 holds
 
-**P2 — Workspace restructure.** Bun workspaces per D14 (and Q1). Move `src/framework/`, `routerState`, `useRoute` and `useRouter` into `packages/quiver/`. Everything else moves to the starter, which imports `@go4cas/quiver`. No behaviour changes.
+**P2 — Workspace restructure.** Bun workspaces per D19. Move `src/framework/`, `routerState`, `useRoute` and `useRouter` into `packages/quiver/`. Everything else moves to `starter/`, which depends on `"@go4cas/quiver": "^3.0.0"`. Per-workspace `jsconfig.json` with root fan-out scripts (D33). Update README/docs degit and StackBlitz paths and `.stackblitzrc`. No behaviour changes.
 Done when:
-- all suites are green
-- a test or lint check proves nothing in `packages/quiver` imports from the starter
+- all suites are green from the root
+- Vitest checks prove nothing in `packages/quiver` imports from the starter, and `starter/package.json` has no `workspace:` (D34)
+- core typechecks without `vite/client` types
 
 **P3 — Core API.** Implement §6 (R1–R5):
-- manifest-based `initRouter` with `notFound` and `base`
-- no interception outside the base
+- manifest-based `initRouter` with `notFound` and `base` (D21, D22)
+- base-relative paths everywhere app-facing, no interception outside the base (D23)
 - `url()`
-- `routerState` with no `window` read at import
-- `createApp` with `target`, layouts and slots, plus bare defaults
-- `destroy()`
-- `Link` moved to the starter without `@click`
-- unit tests for base matching, `url()` and teardown
+- `afterEach` and `onError`, with guard, load and render errors all reaching the error view (D24)
+- `routerState` private and with no `window` read at import (D25, D26)
+- `createApp` with `target`, `layouts`, `defaultLayout`, `loading`/`error` views, bare defaults and no wrapper (D28); startup-order errors (D26)
+- `destroy()` with re-init (D25)
+- `Link` moved to the starter without `@click`; `Link` and `MenuLayout` use `useRoute()`
+- unit tests for base matching, `url()`, hooks, error phases and teardown
 Done when:
 - an e2e run of the starter served under `/sub/app/` passes (deep link, back/forward, a link outside the base loads normally)
 - an e2e check shows Cmd/Ctrl-click opens a new tab
@@ -196,12 +223,12 @@ Done when: one fixture `pages/` folder produces an identical manifest through al
 **P5 — Build-mode proof.** `examples/vite`, `examples/bun` and `examples/no-build` (import map, single Arrow copy, no CDN `+esm` bundles), each with a smoke e2e test and one variant under a base path, in CI.
 Done when: all three pass in CI.
 
-**P6 — Composables package.** `packages/arrow-use/` per §7 with `useFetch` (ported), `useStorage`, `useMediaQuery` and `useEventListener`, a conventions README, and a vanilla Arrow example.
+**P6 — Composables package.** (`arrow-use`, D4) `packages/arrow-use/` per §7 with `useFetch` (ported), `useStorage`, `useMediaQuery` and `useEventListener`, a conventions README, and a vanilla Arrow example.
 Done when:
 - tests pass against bare Arrow
-- no Quiver import exists anywhere in the package (enforced by a check)
+- no Quiver import exists anywhere in the package (enforced by a Vitest check, D34)
 
-**P7 — Recipes + AI tooling.** A `recipes/` registry where each recipe has JS + CSS + README: Link, toasts (with Q4 resolved), theme switcher (built on `useStorage` + `useMediaQuery`), `useForm`, layouts, loading/error views. `/add-*` commands copy from the registry. AGENTS.md and `llms.txt` ship inside `packages/quiver`, and the starter's CLAUDE.md imports them. Optionally, package the commands as a Claude Code plugin.
+**P7 — Recipes + AI tooling.** A `recipes/` registry where each recipe has JS + CSS + README: `theme` (tokens + base, D30), Link, toasts (D31), theme switcher (built on `useStorage` + `useMediaQuery`), `useForm` (no Quiver imports), `hmrState`, layouts, loading/error views. Recipes ship in the core tarball under `recipes/` (D32). `/add-*` commands copy from `node_modules/@go4cas/quiver/recipes/` and ship as a Claude Code plugin in this repo. AGENTS.md and `llms.txt` ship inside `packages/quiver`, and the starter's CLAUDE.md imports them. No public marketplace listing without Cas's go-ahead.
 Done when: a fresh plain-Arrow app (not the starter) gets a working toast via `/add-component toast`.
 
 **P8 — Docs + release.** Docs site:
@@ -212,8 +239,8 @@ Done when: a fresh plain-Arrow app (not the starter) gets a working toast via `/
 - a 2.x → 3.0 migration guide
 - the updated `degit` path
 
-CHANGELOG. Prepare publishing `@go4cas/quiver@3.0.0` and `arrow-use@0.1.0`.
-Done when: the docs build is green, and a dry-run publish (`npm pack`) shows the right files. Publishing happens only after Cas's go-ahead.
+CHANGELOG. Prepare publishing `@go4cas/quiver@3.0.0` and `arrow-use@0.1.0`: re-check that `arrow-use` is still free and the `go4cas` scope is Cas's (D4); `prepack` generates `.d.ts` (D20).
+Done when: the docs build is green, and a dry-run publish (`npm pack`) shows the right files, including `recipes/`, `.d.ts`, `LICENSE`, `AGENTS.md` and `llms.txt`. Publishing happens only after Cas's go-ahead.
 
 **Audition** can adopt Quiver after P3 merges, using a hand-written manifest. P4 adds file-based routing later.
 
@@ -228,7 +255,7 @@ Done when: the docs build is green, and a dry-run publish (`npm pack`) shows the
 7. Every PR adds its user-visible changes under `## [Unreleased]` in CHANGELOG.md.
 8. Stop and ask Cas before: changing the public API beyond `planning/v3/TECH-SPEC.md`, adding scope, adding a dependency, renaming a package, or anything touching npm, tags, releases or GitHub Pages settings.
 9. Logical, conventional commits (`feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`).
-10. AGENTS.md's current **Scope** section ("Fix bugs in `src/framework/` … do not swap Arrow.js") describes the 2.x template. This spec supersedes it for v3. The Decisions PR rewrites that section.
+10. AGENTS.md's **Scope** section was rewritten by the Decisions PR to point at this spec. Keep the two consistent.
 
 ## 10. Known pitfalls
 
@@ -236,6 +263,8 @@ Done when: the docs build is green, and a dry-run publish (`npm pack`) shows the
 - **Screenshot flakiness.** `style.css` imports Google Fonts. Self-host the fonts or wait for `document.fonts.ready` before capturing, and agree a tolerance.
 - **Two Arrow copies.** Any duplicate `@arrow-js/core` (a dependency instead of a peer, a CDN `+esm` bundle, or a relative import) silently breaks reactivity.
 - **Tailwind's `node_modules` scanning** is another reason recipes are copied in, not imported, even for apps that use Tailwind.
+- **`<base>` and `document.baseURI`.** With no `<base>` element, `document.baseURI` is the page URL, not the app root. Never derive the base from it alone (D22).
+- **Cascade-layer order.** Layer order is first-declaration order, so `@layer quiver` must be declared before an app's own layers (D29).
 - **`hmrState`** depends on `import.meta.hot`. It works in Vite and Bun and falls back to plain `reactive()` in no-build mode.
 - **VitePress builds everything under `docs/`.** Planning files live in `planning/v3/` so they never end up on the docs site.
 

@@ -178,4 +178,13 @@ To add a theme: token override blocks (light + dark) in `src/style.css`, an opti
 
 ## Scope
 
-Fix bugs in `src/framework/`, improve tests, correct docs. Do not add app-specific features, backend/auth, or swap Arrow.js — those belong in a fork.
+Quiver is being refactored from a starter template into a drop-in library (v3). The plan, requirements and phases are in [`planning/v3/SPEC.md`](planning/v3/SPEC.md), with decisions recorded in [`planning/v3/DECISIONS.md`](planning/v3/DECISIONS.md) and findings in [`planning/v3/NOTES.md`](planning/v3/NOTES.md). For v3 work, the spec is the source of truth, and the conventions above describe the 2.x code until each phase updates them.
+
+In scope:
+
+- The phases P0–P8 in the spec, one phase per branch and PR, in dependency order
+- Bug fixes in the framework code, test improvements and doc corrections, as before
+
+Out of scope (spec §2 non-goals): swapping Arrow.js, SSR/hydration, a plugin system (core has only `afterEach`/`onError` hooks), a Navigation API fallback, multiple Quiver apps on one page, and app-specific features or backend/auth (those belong in an app).
+
+Stop and ask the maintainer before: public API changes beyond `planning/v3/TECH-SPEC.md`, scope additions, new dependencies, package renames, or anything touching npm, tags, releases or GitHub Pages. Never merge or push to `main`.
