@@ -61,7 +61,7 @@ jobs:
         if: ${{ inputs.update-screenshots }}
         run: |
           if [ "$GITHUB_REF_NAME" = "main" ]; then echo "Refusing to update screenshots on main"; exit 1; fi
-          bun run test:visual --update-snapshots=all
+          bun run test:visual --update-snapshots=changed   # only captures beyond the tolerance, so sub-threshold noise never churns PNGs
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
