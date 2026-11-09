@@ -112,7 +112,7 @@ These are symptoms of the template model, not Audition problems. v3 turns Quiver
 - Q6. `routerState` → private, `useRoute()` only (D26).
 - Q7. Typecheck/CI → per workspace, run from the root (D33).
 
-## 6. Core API sketch (Architecture finalises signatures in TECH-SPEC.md)
+## 6. Core API sketch (final signatures: [TECH-SPEC.md](TECH-SPEC.md))
 
 ```js
 import { initRouter, createApp, beforeEach, afterEach, onError, url, go, provide } from '@go4cas/quiver'

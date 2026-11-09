@@ -27,3 +27,24 @@ Findings that changed or added decisions, with where each one was checked. The o
 | N17 | `jsconfig.json` loads `vite/client` types for all of `src/` | `"types": ["vite/client"]` | D33 (core config leaves them out) |
 
 The 2026-11-06 review evidence (Vite-isms, Tailwind footprint, the Bun 1.4.4 spike, npm names) is in the SPEC.md appendix and was not re-run here. P4 re-verifies the Bun spike.
+
+## Architecture thread (2026-11-08, repo at `e809fee`)
+
+Findings behind [TECH-SPEC.md](TECH-SPEC.md). Spikes ran in a scratch folder with Bun 1.4.4, Node 22.23 and TypeScript 7.0.2; nothing in the repo changed.
+
+| # | Finding | Evidence | Outcome |
+|---|---|---|---|
+| N18 | Bun links a `^3.0.0` dependency to a workspace package only when the workspace version satisfies the range. A prerelease (`3.0.0-alpha.0`) makes `bun install` go to npm and fail | scratch workspace: `3.0.0` → `bun.lock` has `"@x/core@workspace:packages/core"`; `3.0.0-alpha.0` → `GET https://registry.npmjs.org/@x%2fcore - 404`, `failed to resolve` | X-12: core is `3.0.0` from P2 |
+| N19 | Typechecking `node:` imports under `checkJs` needs `@types/node`, which the repo doesn't have | `tsc --checkJs --strict --types ''` on a file importing `node:fs/promises`: `TS2591: Cannot find name 'node:fs/promises'`. `node_modules/@types/` has no `node` | Q-A in TECH-SPEC |
+| N20 | `scoreRoute` has ties, so with key order irrelevant (D21) the match order is undefined | `scoreRoute('/a/:b') === scoreRoute('/:a/b') === 11`; both match `/a/b` | M-6 tie-break, M-4 |
+| N21 | 2.x `go()` and guard redirects drop the query and hash | `router.js`: `go` calls `navigate(normalizePath(path))`; the redirect branch calls `navigate(normalizePath(result))`; `normalizePath` strips `?…` and `#…` | C-30, C-32 |
+| N22 | 2.x intercepts form POST and download navigations | `handleNavigate` checks only `canIntercept`, `hashChange` and `info.rollback`, not `formData` or `downloadRequest` | §2 step 1 |
+| N23 | 2.x caps redirects only on the initial load | `initRouter` loops at most 10 times; `handleNavigate`'s redirect branch has no counter | C-27 |
+| N24 | `recipes/` at the repo root can't be listed in the core package's `files` | npm `files` entries are relative to the package folder | X-10: `prepack` copies it in |
+| N25 | 2.x silently drops `not-found.js` files below the pages root | `resolveRoute`: `!r.file.endsWith('/not-found.js')` excludes them; only `../pages/not-found.js` is used | S-3 |
+| N26 | TS 7.0.2 emits clean `.d.ts` from the 2.x JSDoc, so D20 works as written | `tsc --allowJs --declaration --emitDeclarationOnly` on `src/framework/context.js` and `meta.js` produced typed declarations, including the `@template` on `inject` | X-11 |
+| N27 | `bun run --filter '*' <script>` skips workspaces without the script and runs dependents after their dependencies | scratch workspace: the package without `test` was skipped; `@x/core` ran before the starter that depends on it; exit 0 | W-2 |
+| N28 | `initRouter` resolves before `createApp` mounts, so the initial navigation has no error view to show when it fails | 2.x `main.js`: `await initRouter()` then `createApp()` | C-44 |
+| N29 | Render errors can only be caught inside the outlet's reactive slot, where `Page()` and `Layout()` are called | `app.js` `RouteOutlet` | C-48 |
+| N30 | Arrow 1.0.6 has no public unmount; `onCleanup` callbacks run only when Arrow drops a chunk | `dist/index.d.ts` exports `html, svg, reactive, watch, component, onCleanup, nextTick, pick`; `onCleanup` throws `'onCleanup needs component'` outside one | C-49 step 6, C-50 |
+| N31 | Playwright resolves `page.goto('/x')` against the origin, so a sub-path `baseURL` is lost unless tests use relative URLs | URL resolution: `new URL('/x', 'http://h/sub/app/')` is `http://h/x` | CI-3 |

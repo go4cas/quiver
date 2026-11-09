@@ -178,7 +178,7 @@ To add a theme: token override blocks (light + dark) in `src/style.css`, an opti
 
 ## Scope
 
-Quiver is being refactored from a starter template into a drop-in library (v3). The plan, requirements and phases are in [`planning/v3/SPEC.md`](planning/v3/SPEC.md), with decisions recorded in [`planning/v3/DECISIONS.md`](planning/v3/DECISIONS.md) and findings in [`planning/v3/NOTES.md`](planning/v3/NOTES.md). For v3 work, the spec is the source of truth, and the conventions above describe the 2.x code until each phase updates them.
+Quiver is being refactored from a starter template into a drop-in library (v3). The plan, requirements and phases are in [`planning/v3/SPEC.md`](planning/v3/SPEC.md), with decisions recorded in [`planning/v3/DECISIONS.md`](planning/v3/DECISIONS.md) findings in [`planning/v3/NOTES.md`](planning/v3/NOTES.md), and final signatures, manifest and scanner formats, exports maps, workspace and CI layout in [`planning/v3/TECH-SPEC.md`](planning/v3/TECH-SPEC.md). Build PRs cite the TECH-SPEC rule IDs (`C-…`, `M-…`, `S-…`, `X-…`, `W-…`, `CI-…`, `U-…`) they implement. For v3 work, the spec is the source of truth, and the conventions above describe the 2.x code until each phase updates them.
 
 In scope:
 
