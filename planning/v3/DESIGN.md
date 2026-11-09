@@ -2,7 +2,7 @@
 
 Status: proposed, for Cas to approve in the Design PR · Phase: Design (feeds P1 and P7) · Date: 2026-11-08
 
-This file is the CSS design for v3: the map from 2.x tokens to `--q-*` tokens, the `base.css` that replaces Tailwind's preflight, the recipe CSS pattern and class naming, how the per-theme effects port, and the screenshot baseline plan. The goal is **visual parity with 2.1, not a redesign**. [SPEC.md](SPEC.md) stays the source of truth. Decisions referenced here are in [DECISIONS.md](DECISIONS.md), and the evidence is in [NOTES.md](NOTES.md) (N18–N29).
+This file is the CSS design for v3: the map from 2.x tokens to `--q-*` tokens, the `base.css` that replaces Tailwind's preflight, the recipe CSS pattern and class naming, how the per-theme effects port, and the screenshot baseline plan. The goal is **visual parity with 2.1, not a redesign**. [SPEC.md](SPEC.md) stays the source of truth. Decisions referenced here are in [DECISIONS.md](DECISIONS.md), and the evidence is in [NOTES.md](NOTES.md) (N32–N43).
 
 Two things in this file need Cas's answer in this PR: the screenshot tolerance (§8.5, D35) and how P1 treats the 2.1 rendering bugs listed in §2. Everything else is a proposal P1 follows unless Cas changes it.
 
@@ -25,9 +25,9 @@ P1 ports the **computed result** of 2.1, not its class lists. In 2.1 the effect 
 
 So for every element, P1 writes the declarations that win in 2.1. The screenshot gate (§8) proves it. The three checks below were run on this branch against the unmodified 2.1 code (Chromium from Playwright 1.63.0, Tailwind 4.3.3):
 
-- **The token port is exact.** The `tokens.css` in §4.4, loaded beside 2.1, resolves every `--q-*` colour, radius and display-font token to the same value as its 2.x token, in all 5 themes × 2 modes: 220 of 220 values match (N27).
-- **Plain CSS can match Tailwind's output pixel for pixel.** A plain `box-shadow` instead of Tailwind's five-part `--tw-shadow` stack, a plain `color-mix(in oklab, …)` without the `@supports` wrapper, and a flex column with `gap` instead of `space-y-*` margins each produced a 0-pixel difference at `threshold: 0` (N28).
-- **Rendering is deterministic.** The same page captured 30 times (3 themes × 10 repeats, 4 workers) gave 0 differing pixels each time (N28).
+- **The token port is exact.** The `tokens.css` in §4.4, loaded beside 2.1, resolves every `--q-*` colour, radius and display-font token to the same value as its 2.x token, in all 5 themes × 2 modes: 220 of 220 values match (N41).
+- **Plain CSS can match Tailwind's output pixel for pixel.** A plain `box-shadow` instead of Tailwind's five-part `--tw-shadow` stack, a plain `color-mix(in oklab, …)` without the `@supports` wrapper, and a flex column with `gap` instead of `space-y-*` margins each produced a 0-pixel difference at `threshold: 0` (N42).
+- **Rendering is deterministic.** The same page captured 30 times (3 themes × 10 repeats, 4 workers) gave 0 differing pixels each time (N42).
 
 ## 2. What 2.1 actually renders (V1–V6)
 
@@ -69,7 +69,7 @@ What D29 promised still holds. Unlayered app CSS beats all of Quiver without `!i
 
 ### 3.2 Files
 
-The theme recipe (D30) has three stylesheets and a font folder:
+The theme recipe (D30) has three stylesheets and a font folder. It is the one recipe without a JS file, so it is an exception to TECH-SPEC's `<name>/<name>.js, <name>.css` layout:
 
 ```
 recipes/theme/
@@ -495,7 +495,7 @@ These are written to be checked in review (and partly by a P7 test).
 11. **Motion** has a `@media (prefers-reduced-motion: reduce)` rule wherever the recipe animates (D31).
 12. **Hooks.** An element that 2.1's effect rules styled carries the matching hook class from §7.1 (`q-panel`, `q-sidebar`, `q-header`, `q-accent`), next to its own class.
 
-**Browser floor.** Native nesting with `&` needs Chrome/Edge 112, and `color-mix()` needs Chrome 111. Core's floor is Chrome/Edge 102 (D11), so recipe CSS needs a slightly newer Chromium than core does. Safari 26.2 and Firefox 147 support both. P8's docs state both floors (N25).
+**Browser floor.** Native nesting with `&` needs Chrome/Edge 112, and `color-mix()` needs Chrome 111. Core's floor is Chrome/Edge 102 (D11), so recipe CSS needs a slightly newer Chromium than core does. Safari 26.2 and Firefox 147 support both. P8's docs state both floors (N39).
 
 ### 6.2 Example: the toast recipe
 
@@ -807,7 +807,7 @@ for (const state of STATES) for (const theme of THEMES) for (const mode of MODES
 }
 ```
 
-`playwright.config.js` gets two projects for this folder, `visual-desktop` and `visual-mobile`, plus the existing e2e suite as project `e2e`:
+`playwright.config.js` gets two projects for this folder, `visual-desktop` and `visual-mobile`, beside the e2e projects (`e2e` in P1; TECH-SPEC CI-2's `root` and `subpath` once P3 lands):
 
 ```js
 expect: {
@@ -816,11 +816,11 @@ expect: {
 snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{ext}',
 ```
 
-Scripts: `test:e2e` becomes `playwright test --project=e2e`, so §9 rule 4's command is unchanged and doesn't fail on macOS, and a new `test:visual` runs the two visual projects.
+Scripts: `test:e2e` runs only the e2e projects, so §9 rule 4's command is unchanged and doesn't fail on macOS, and a new `test:visual` runs the two visual projects.
 
 ### 8.3 Where it runs
 
-- **Pinned image.** The visual job runs in `mcr.microsoft.com/playwright:v1.63.0-noble`, the official image for the Playwright version in `bun.lock`. It fixes Chromium and the system fonts behind the fallback stacks (V6). A plain `ubuntu-latest` runner changes its font packages when GitHub updates the image, which would break the baseline for reasons unrelated to Quiver. The tag moves with the Playwright version in `bun.lock`, and a Playwright upgrade means re-capturing the baseline in the same PR. This is a CI image, not a package dependency, but §10 asks Cas to confirm it.
+- **Pinned image.** TECH-SPEC §7's `screenshots` job runs in `mcr.microsoft.com/playwright:v1.63.0-noble`, the official image for the Playwright version in `bun.lock`. It fixes Chromium and the system fonts behind the fallback stacks (V6). A plain `ubuntu-latest` runner changes its font packages when GitHub updates the image, which would break the baseline for reasons unrelated to Quiver. The tag moves with the Playwright version in `bun.lock`, and a Playwright upgrade means re-capturing the baseline in the same PR. This is a CI image, not a package dependency, but §10 asks Cas to confirm it.
 - **Capturing the baseline.** The workflow gets a `workflow_dispatch` input, `update-screenshots`. When it's set, the job runs `test:visual --update-snapshots` and commits `tests/visual/__screenshots__/` back to the branch it ran on, with `contents: write` for that job only. It refuses to run on `main`. That's how P1 gets a Linux baseline without anyone capturing on a laptop (D35: macOS captures don't match Linux).
 - **Local runs** on another OS are expected to differ. `test:visual` is for CI; to reproduce locally, run the same image with Docker.
 
@@ -828,7 +828,7 @@ Scripts: `test:e2e` becomes `playwright test --project=e2e`, so §9 rule 4's com
 
 1. `chore`: self-host the four fonts (woff2, latin subset, the same Google Fonts versions 2.1 loads, with each family's OFL file), replacing the `@import` in `style.css`. Nothing else changes.
 2. `test`: add the visual suite, the posts fixture, the config and the CI job; dispatch the workflow on the P1 branch to commit the baseline captured from the 2.1 CSS.
-3. The port, in as many commits as P1 likes: `tokens.css`, `base.css`, `effects.css`, recipe and starter CSS, markup, then removing Tailwind. The visual job must pass with the baseline from step 2, unchanged.
+3. The port, in as many commits as P1 likes: `tokens.css`, `base.css`, `effects.css`, recipe and starter CSS, markup, then removing Tailwind. The `screenshots` job must pass with the baseline from step 2, unchanged.
 4. Only if Cas picks the fix option (§2): one `fix(theme)` commit applying F1–F4, which re-runs the capture and commits the new PNGs. The PR then shows the visual change as an image diff that Cas reviews.
 
 ### 8.5 Tolerance (for Cas to approve, D35)
@@ -882,6 +882,6 @@ Left alone on purpose: white text on the default orange (2.8:1) and on glass-dar
 1. **The 2.1 bugs (V1–V4).** Port and then fix in P1 (recommended), keep them, or port the intended look. Asked on the decision card in the Design thread.
 2. **Sub-layers (§3.1).** Every stylesheet starts with `@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;` instead of D29's `@layer quiver;`. Same promise to apps; needed so theme effects reliably beat recipe states.
 3. **Tolerance (§8.5).** `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`.
-4. **CI image (§8.3).** The visual job runs in `mcr.microsoft.com/playwright:v1.63.0-noble` and can commit a re-captured baseline to a non-`main` branch when dispatched.
+4. **CI image (§8.3).** The `screenshots` job runs in `mcr.microsoft.com/playwright:v1.63.0-noble` (TECH-SPEC §7 currently says "same as `e2e`", i.e. a plain runner; this would change that row) and can commit a re-captured baseline to a non-`main` branch when dispatched.
 5. **Toast state (§8.1, state 9).** Keep one capture with permanent toasts, or drop it to follow D35's "no live toasts" literally.
 6. **`effects.css` in the theme recipe (§3.2).** D30 names `tokens.css` and `base.css`. This adds an optional third file for the per-theme effects and their fonts.
