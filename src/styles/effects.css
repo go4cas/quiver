@@ -60,7 +60,6 @@
 
   /* ── Retro / Y2K ──────────────────────────────── */
   [data-theme="retro"] {
-    /* 2.1 also declared font-family: 'VT323' here; it never applied (V1, see F1) */
     font-size: 1.0625rem;
     letter-spacing: 0.02em;
     line-height: 1.6;
@@ -90,8 +89,7 @@
 
     & :where(.q-panel) {
       border-width: 2px;
-      /* 2.1's var(--shadow-panel) in retro light; F2 turns this back into var(--q-shadow-panel) */
-      box-shadow: 2px 2px 0 0 var(--q-color-line-strong), 0 0 14px color-mix(in srgb, var(--q-color-brand) 30%, transparent);
+      box-shadow: var(--q-shadow-panel), 0 0 14px color-mix(in srgb, var(--q-color-brand) 30%, transparent);
     }
 
     & :where(button) {
@@ -104,10 +102,6 @@
 
   [data-theme="retro"][data-mode="dark"] {
     background: #0d0221;
-
-    & :where(.q-panel) {
-      box-shadow: 2px 2px 0 0 var(--q-color-brand), 0 0 14px color-mix(in srgb, var(--q-color-brand) 30%, transparent);
-    }
   }
 
   /* ── Monochrome ───────────────────────────────── */
@@ -122,8 +116,6 @@
 
   /* ── Neo Brutalism ────────────────────────────── */
   [data-theme="brutalist"] {
-    /* 2.1 also declared font-family: 'Space Grotesk' (V1, see F1) and
-       -webkit-font-smoothing: auto (V5, overridden by body); neither applied */
     font-weight: 700;
 
     & :where(h1, h2, h3) { font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; line-height: 1.1; }
@@ -136,7 +128,13 @@
     }
     & :where(button):active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 0 var(--q-color-line); }
 
-    & :where(.q-panel, .q-sidebar) { border-width: 3px; }
+    & :where(.q-panel) { border-width: 3px; }
+
+    /* The sidebar's border only on the edge facing the content */
+    & :where(.q-sidebar) {
+      border-width: 0 0 3px;
+      @media (width >= 64rem) { border-width: 0 3px 0 0; }
+    }
     & :focus-visible { outline: 3px solid var(--q-color-fg); outline-offset: 0; }
   }
 }

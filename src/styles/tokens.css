@@ -1,5 +1,5 @@
 /* Quiver theme: the --q-* token contract (planning/v3/DESIGN.md §4).
-   Parity port of 2.1's @theme and theme blocks. */
+   Ported from 2.1's @theme and theme blocks, with the 2.1 rendering bugs fixed (DESIGN.md §9). */
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
 
 @layer quiver.tokens {
@@ -88,6 +88,8 @@
     --q-color-line-strong:     #404040;
     --q-radius-control:        0.375rem;
     --q-radius-panel:          0.5rem;
+    --q-shadow-panel:          0 1px 2px 0 rgb(0 0 0 / 0.08);
+    --q-shadow-float:          0 4px 8px 0 rgb(0 0 0 / 0.12);
   }
 
   /* MONOCHROME — dark */
@@ -103,6 +105,9 @@
     --q-color-fg-faint:        #525252;
     --q-color-line:            #262626;
     --q-color-line-strong:     #d4d4d4;
+    --q-color-on-brand:        #0a0a0a;
+    --q-shadow-panel:          0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --q-shadow-float:          0 4px 8px 0 rgb(0 0 0 / 0.4);
   }
 
   /* ═══════════════════════════════════════════════════
@@ -122,6 +127,8 @@
     --q-color-line-strong:     rgb(71 85 105 / 0.5);
     --q-radius-control:        1.25rem;
     --q-radius-panel:          1.5rem;
+    --q-shadow-panel:          0 8px 32px 0 rgb(31 38 135 / 0.12);
+    --q-shadow-float:          0 16px 48px 0 rgb(31 38 135 / 0.18);
   }
 
   /* LIQUID GLASS — dark */
@@ -137,6 +144,8 @@
     --q-color-fg-faint:        #64748b;
     --q-color-line:            rgb(148 163 184 / 0.2);
     --q-color-line-strong:     rgb(203 213 225 / 0.3);
+    --q-shadow-panel:          0 8px 32px 0 rgb(0 0 0 / 0.3);
+    --q-shadow-float:          0 16px 48px 0 rgb(0 0 0 / 0.4);
   }
 
   /* ═══════════════════════════════════════════════════
@@ -157,6 +166,9 @@
     --q-radius-control:        0px;
     --q-radius-panel:          0px;
     --q-font-display:          'Orbitron', monospace;
+    --q-font-body:             'VT323', monospace;
+    --q-shadow-panel:          2px 2px 0 0 var(--q-color-line-strong);
+    --q-shadow-float:          4px 4px 0 0 var(--q-color-line-strong);
   }
 
   /* RETRO / Y2K — dark */
@@ -172,6 +184,9 @@
     --q-color-fg-faint:        #8b5cf6;
     --q-color-line:            #3b1f6b;
     --q-color-line-strong:     #7c3aed;
+    --q-color-on-brand:        #0d0221;
+    --q-shadow-panel:          2px 2px 0 0 var(--q-color-brand);
+    --q-shadow-float:          4px 4px 0 0 var(--q-color-brand);
   }
 
   /* ═══════════════════════════════════════════════════
@@ -191,6 +206,10 @@
     --q-color-line-strong:     #000000;
     --q-radius-control:        0px;
     --q-radius-panel:          0px;
+    --q-color-on-brand:        #000000;
+    --q-shadow-panel:          4px 4px 0 0 #000000;
+    --q-shadow-float:          6px 6px 0 0 #000000;
+    --q-font-body:             'Space Grotesk', Inter, sans-serif;
   }
 
   /* NEO BRUTALISM — dark */
@@ -206,5 +225,8 @@
     --q-color-fg-faint:        #a3a3a3;
     --q-color-line:            #ffffff;
     --q-color-line-strong:     #ffffff;
+    --q-color-on-brand:        #000000;
+    --q-shadow-panel:          4px 4px 0 0 #ffffff;
+    --q-shadow-float:          6px 6px 0 0 #ffffff;
   }
 }
