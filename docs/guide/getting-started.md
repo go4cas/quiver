@@ -59,6 +59,7 @@ Open [http://localhost:5173](http://localhost:5173). The app hot-reloads on ever
 | `bun run test` | Run unit tests once (Vitest) |
 | `bun run test:watch` | Run unit tests in watch mode |
 | `bun run test:e2e` | Run end-to-end tests (Playwright) |
+| `bun run test:visual` | Run the screenshot-parity suite (CI image only, see `tests/visual/README.md`) |
 | `bun run typecheck` | Type-check `src/` via JSDoc annotations (tsc `checkJs`, no build step) |
 | `bun run docs:dev` | Start the documentation site locally |
 | `bun run docs:build` | Build the documentation site |
@@ -78,12 +79,17 @@ src/
 ├── state/           # Global reactive state modules
 ├── composables/     # Reusable logic functions
 ├── utils/           # Pure helper functions
+├── styles/          # Theme: tokens.css, base.css, effects.css, fonts/
+├── app.css          # The app's own page styles
+├── style.css        # CSS entry: layer order + imports
 └── main.js          # App entry point
 
 tests/
 ├── framework/       # Unit tests for framework utilities (Vitest)
 ├── composables/     # Unit tests for composables (Vitest)
-└── e2e/             # End-to-end tests (Playwright)
+├── repo/            # Repo-wide checks (Vitest)
+├── e2e/             # End-to-end tests (Playwright)
+└── visual/          # Screenshot parity, 5 themes × 2 modes (Playwright)
 
 docs/
 └── guide/           # Developer guides

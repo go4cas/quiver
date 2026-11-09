@@ -4,7 +4,7 @@
 
 An [Arrow.js](https://arrow-js.com) starter template with file-based routing, layouts, reactive state, composables, and a full testing setup — built for AI-assisted development, with context files and slash commands for Claude Code, Codex, and Copilot included.
 
-**Stack:** Arrow.js · Vite · Tailwind CSS v4 · Vitest · Playwright
+**Stack:** Arrow.js · Vite · plain CSS (`--q-*` tokens) · Vitest · Playwright
 
 ---
 
@@ -47,6 +47,7 @@ See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 | `bun run test`             | Run unit tests once (Vitest)         |
 | `bun run test:watch`   | Run unit tests in watch mode         |
 | `bun run test:e2e`     | Run end-to-end tests (Playwright)    |
+| `bun run test:visual`  | Screenshot parity (CI image only)    |
 | `bun run typecheck`    | Type-check `src/` via JSDoc (tsc)    |
 | `bun run docs:dev`     | Start the documentation site locally |
 | `bun run docs:build`   | Build the documentation site         |
@@ -65,12 +66,17 @@ src/
 ├── state/           # Global reactive state modules — add your stores here
 ├── composables/     # Reusable logic functions — add your composables here
 ├── utils/           # Pure helper functions
+├── styles/          # Theme: tokens.css, base.css, effects.css, fonts/
+├── app.css          # The app's own page styles
+├── style.css        # CSS entry: layer order + imports
 └── main.js          # App entry point
 
 tests/
 ├── framework/       # Unit tests for framework utilities (Vitest)
 ├── composables/     # Unit tests for composables (Vitest)
-└── e2e/             # End-to-end tests (Playwright)
+├── repo/            # Repo-wide checks (Vitest)
+├── e2e/             # End-to-end tests (Playwright)
+└── visual/          # Screenshot parity, 5 themes × 2 modes (Playwright)
 ```
 
 ---

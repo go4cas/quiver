@@ -70,7 +70,7 @@ Creates `src/composables/useTheme.js` with reactive accessors and actions, plus 
 ```
 /add-theme ocean — cool blues, soft shadows
 ```
-Adds light and dark token blocks to `src/style.css`, registers the theme in `ThemeSelector`, and extends the theme E2E test.
+Adds light and dark token blocks to `src/styles/tokens.css`, registers the theme in `ThemeSelector`, and extends the theme E2E test.
 
 ```
 /add-feature blog — list posts, read a single post, markdown rendering
@@ -96,7 +96,7 @@ Use `${() => value}` for any interpolation that references state. Static values 
 Never write `<!-- -->` inside `` html`...` `` — Arrow.js uses comment nodes as slot markers and this throws `Invalid HTML position`.
 
 **3. `.disabled` is not a DOM property.**
-`.disabled="${() => bool}"` sets a literal attribute named `.disabled`. Use `aria-disabled="true/false"` + CSS (`opacity-50 cursor-not-allowed`) instead.
+`.disabled="${() => bool}"` sets a literal attribute named `.disabled`. Use `aria-disabled="true/false"` and style `[aria-disabled="true"]` in CSS (`opacity: 0.5; cursor: not-allowed`) instead.
 
 **4. Use `.key()` in loops.**
 `` items.map(i => Card(i).key(i.id)) `` prevents DOM re-creation on state changes.

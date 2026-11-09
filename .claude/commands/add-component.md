@@ -23,7 +23,10 @@ export function <Name>({ /* props */ }) {
      - Wrap reactive props in `() =>` only if the prop value can change after render; static props (strings, numbers passed once) do not need `() =>`
      - No `<!-- -->` HTML comments inside the template literal — use JS comments above it instead
      - Use `aria-disabled` + CSS for disabled states, never `.disabled="${...}"`
-   - Use Tailwind CSS utility classes for styling; match the visual style of existing components in `src/components/`
+   - Style it in a sibling `src/components/<Name>.css` and add an `@import` for it to `src/style.css` (before `effects.css`). Start the file with `@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;` and put the rules in `@layer quiver.components { … }`
+   - Use only `--q-*` tokens for colours, radii, shadows and fonts (`var(--q-color-surface-raised)`, `var(--q-radius-panel)`, …); spacing and sizes are `rem` literals. Never hard-code colours
+   - Wrap selectors in `:where(.<name>)`, express variants and state as attributes (`data-tone`, `aria-pressed`), not modifier classes, and put hover inside `@media (hover: hover)`
+   - Add the hook class `q-panel` to card or panel elements and `q-accent` to brand-coloured text so theme effects apply. Match the look of existing components in `src/components/`
    - Annotate the component's props with JSDoc, e.g. `/** @param {{ title: string }} props */` — strict `checkJs` is enforced and untyped props fail `bun run typecheck`
 
 2. Verify — run and fix any failures:

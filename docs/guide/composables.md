@@ -123,8 +123,8 @@ function LoginPage() {
       ${() => emailField.error() ? html`<p>${() => emailField.error()}</p>` : ''}
       <button
         type="submit"
+        class="submit"
         aria-disabled="${() => form.submitting ? 'true' : 'false'}"
-        class="${() => form.submitting ? 'opacity-50 cursor-not-allowed' : ''}"
       >${() => form.submitting ? 'Signing in…' : 'Sign in'}</button>
     </form>
     <p>${() => form.message}</p>

@@ -40,13 +40,17 @@ html`<p>${() => user.name}</p>`
 // Wrong — sets attribute ".disabled", button still fires click events
 html`<button .disabled="${() => form.submitting}">Submit</button>`
 
-// Correct — aria-disabled + guard in the handler or CSS
+// Correct — aria-disabled + guard in the handler, styled from CSS
 html`
   <button
+    class="submit"
     aria-disabled="${() => form.submitting ? 'true' : 'false'}"
-    class="${() => form.submitting ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}"
   >Submit</button>
 `
+```
+
+```css
+:where(.submit)[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
 ```
 
 ## List items flicker, lose focus, or reset state

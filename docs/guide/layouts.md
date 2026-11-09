@@ -90,7 +90,7 @@ import { html } from '@arrow-js/core'
 
 export function BlankLayout(content) {
   return html`
-    <div class="min-h-screen bg-white">
+    <div class="blank-layout">
       ${content}
     </div>
   `

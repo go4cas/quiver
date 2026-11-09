@@ -140,12 +140,20 @@ Direct imports keep the dependency graph explicit and avoid import cycles throug
 | `ErrorCard` | `message = 'Something went wrong.'` | Full-screen panel the router renders when a page fails to load |
 | `LoadingCard` | none | Full-screen panel the router renders while status is `'idle'` or `'loading'` |
 
-Style the active `Link` with Tailwind's arbitrary variant:
+Style the active `Link` through its `aria-current` attribute:
 
 ```js
-const navClass = 'rounded-control px-3 py-2 text-sm hover:bg-surface-inset [&[aria-current=page]]:bg-brand-tint [&[aria-current=page]]:text-brand'
+${Link({ to: '/users', children: 'Users', class: 'nav-link' })}
+```
 
-${Link({ to: '/users', children: 'Users', class: navClass })}
+```css
+@layer quiver.components {
+  :where(.nav-link) {
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--q-radius-control);
+    &[aria-current="page"] { background-color: var(--q-color-brand-tint); color: var(--q-color-brand); }
+  }
+}
 ```
 
 ---
@@ -168,7 +176,7 @@ function UsersPage() {
         await nextTick()
       }}">Add member</button>
 
-      <div class="grid gap-4 md:grid-cols-2">
+      <div class="grid" data-cols="md2-3">
         ${() => userState.users.map((user) => UserCard(user).key(user.id))}
       </div>
     </div>
@@ -195,7 +203,7 @@ Props are the argument to the factory function — a plain object, string, numbe
 ```js
 // Receiving props
 export const Badge = component((props) => html`
-  <span class="rounded-full px-2 py-1 text-xs">${() => props.label}</span>
+  <span class="badge">${() => props.label}</span>
 `)
 
 // Passing props
@@ -216,40 +224,58 @@ html`<span>${props.label}</span>`
 
 ## Styling a component
 
-Use semantic token utilities — never Tailwind palette classes (`bg-<colour>-<shade>`). Token values are overridden per theme and per mode in `src/style.css`, so a component styled with tokens works in all five themes, light and dark, with no `dark:` colour overrides.
+Give the component its own CSS file next to it (`src/components/Badge.css`) and import it from `src/style.css`. Write plain CSS against the `--q-*` tokens, never hard-coded colours, so the component works in all five themes, light and dark:
 
-**Chrome** — `bg-surface-raised`, `text-fg`, `border-line`, `rounded-panel`, `shadow-panel`.
+```css
+@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
 
-**Status colour** — `success`, `error`, `warning`, `info`, each with a `-tint` background. Use the opacity modifier for a soft border:
+@layer quiver.components {
+  :where(.badge) {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--q-radius-control);
+    background-color: var(--q-color-surface-inset);
+    font-size: 0.75rem;
+    color: var(--q-color-fg-soft);
 
-```js
-<article class="rounded-panel border border-line bg-surface-raised p-5 shadow-panel">
-
-<div class="rounded-panel border border-error/30 bg-error-tint p-4 text-error">
-  Something went wrong.
-</div>
+    &[data-tone="error"] {
+      border: 1px solid color-mix(in oklab, var(--q-color-error) 30%, transparent);
+      background-color: var(--q-color-error-tint);
+      color: var(--q-color-error);
+    }
+  }
+}
 ```
 
-See [Theming](./theming) for the full token reference.
+- Wrap selectors in `:where()` so one app class can override them.
+- Put variants and state in attributes (`data-tone`, `aria-current`, `aria-pressed`), not modifier classes.
+- Wrap hover in `@media (hover: hover) { &:hover { … } }`.
+- Spacing and sizes are `rem` literals; colours, radii, shadows and fonts are tokens.
 
 ---
 
 ## Theming in components
 
-Components participate in the theming system through two Tailwind variant classes:
+Colour tokens already switch with the theme and mode, so most components need nothing else. For the rest:
 
-**`dark:`** — applies when `data-mode="dark"` is on `<html>`. Colour tokens already switch with the mode, so reserve `dark:` for non-colour differences, like the knob position in `ThemeToggle`:
-
-```js
-class="translate-x-0.5 dark:translate-x-5"
-```
-
-**Per-theme variants** (`theme-glass:`, `theme-brutalist:`) — apply only when that specific theme is active. Use for structural differences that go beyond a colour swap:
+**Hook classes** — add `q-panel` to cards and panels, `q-accent` to brand-coloured text, and the theme effects (glass blur, retro neon, brutalist borders) apply automatically:
 
 ```js
-class="rounded-panel shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2"
+html`<article class="badge-card q-panel">…</article>`
 ```
 
-`theme-glass:backdrop-blur-md` adds a frosted-glass blur only in the Liquid Glass theme. `theme-brutalist:border-2` thickens the border only in Neo Brutalism. All other themes are unaffected.
+**Dark-mode differences that aren't colours** — nest `:where([data-mode="dark"]) &`, like the knob position in `ThemeToggle.css`:
 
-For the full token reference, per-theme variable overrides, and how to add a new theme, see the [Theming guide](./theming).
+```css
+:where(.q-mode-toggle__thumb) {
+  translate: 0.125rem 0;
+  :where([data-mode="dark"]) & { translate: 1.25rem 0; }
+}
+```
+
+**One theme, one component** — a `[data-theme="…"]` rule in the component's CSS:
+
+```css
+[data-theme="brutalist"] :where(.badge) { border-width: 2px; }
+```
+
+For the full token reference, the layer order and how to add a new theme, see the [Theming guide](./theming).
