@@ -9,47 +9,47 @@ export const meta = {
 
 function UsersPage() {
   return html`
-    <div class="space-y-10">
+    <div class="page">
 
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="team__header">
         <div>
-          <h1 class="text-2xl font-bold text-fg">
+          <h1 class="page__title">
             Team
-            <span class="ml-2 text-lg font-normal text-fg-faint">${() => userState.users.length}</span>
+            <span class="page__count">${() => userState.users.length}</span>
           </h1>
-          <p class="mt-1 text-sm text-fg-soft">
+          <p class="page__lead">
             Add and remove members to see the reactive array update live.
           </p>
-          <div class="mt-3 flex flex-wrap gap-2">
-            <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">file-based routing</span>
-            <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">global store</span>
-            <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">reactive arrays</span>
-            <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">.key()</span>
+          <div class="chips">
+            <span class="chip q-accent" data-tone="brand">file-based routing</span>
+            <span class="chip q-accent" data-tone="brand">global store</span>
+            <span class="chip">reactive arrays</span>
+            <span class="chip">.key()</span>
           </div>
         </div>
 
         <button
           type="button"
-          class="shrink-0 rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover shadow-panel theme-brutalist:border-2 theme-brutalist:border-fg"
+          class="btn team__add" data-variant="primary"
           @click="${() => userState.addUser({ name: 'New Member', role: 'Analyst', team: 'Insights' })}"
         >
           Add member
         </button>
       </div>
 
-      <section class="space-y-3">
+      <section class="section">
         <div>
-          <div class="flex items-center gap-2">
-            <h2 class="text-xs font-semibold uppercase tracking-wider text-fg-faint">Team member cards</h2>
-            <span class="rounded-md bg-brand-tint px-1.5 py-0.5 font-mono text-xs text-brand">nested components</span>
+          <div class="section__head">
+            <h2 class="section__title">Team member cards</h2>
+            <span class="tag q-accent">nested components</span>
           </div>
-          <p class="mt-1 text-xs text-fg-faint">
-            Each card is a <code class="font-mono">component()</code> instance rendered by this page.
-            <code class="font-mono">.key(user.id)</code> gives each instance stable DOM identity so Arrow re-uses
+          <p class="section__note">
+            Each card is a <code>component()</code> instance rendered by this page.
+            <code>.key(user.id)</code> gives each instance stable DOM identity so Arrow re-uses
             existing nodes instead of destroying and recreating them on every state change.
           </p>
         </div>
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div class="grid" data-cols="md2-3">
           ${() => userState.users.map((user) => UserCard(user).key(user.id))}
         </div>
       </section>

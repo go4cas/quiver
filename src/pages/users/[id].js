@@ -23,23 +23,23 @@ function UserDetailPage() {
   })
 
   return html`
-    <div class="space-y-6">
+    <div class="page" data-spacing="tight">
 
       <button
         type="button"
-        class="text-sm text-fg-faint hover:text-fg-soft"
+        class="back-link"
         @click="${() => router.go('/users')}"
       >
         ← Back to team
       </button>
 
       <div>
-        <h1 class="text-2xl font-bold text-fg">Profile</h1>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">/users/:id</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">useRoute()</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">useRouter()</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">useMeta()</span>
+        <h1 class="page__title">Profile</h1>
+        <div class="chips">
+          <span class="chip q-accent" data-tone="brand">/users/:id</span>
+          <span class="chip">useRoute()</span>
+          <span class="chip">useRouter()</span>
+          <span class="chip">useMeta()</span>
         </div>
       </div>
 
@@ -48,35 +48,35 @@ function UserDetailPage() {
 
         if (!user) {
           return html`
-            <div class="rounded-panel border border-warning/30 bg-warning-tint p-6">
-              <h2 class="font-semibold text-warning">User not found</h2>
-              <p class="mt-1 text-sm text-warning">No user exists for ID <code class="font-mono">${() => route.params().id}</code>.</p>
+            <div class="alert q-panel" data-tone="warning" data-size="lg">
+              <h2 class="profile__missing-title">User not found</h2>
+              <p class="profile__missing-text">No user exists for ID <code>${() => route.params().id}</code>.</p>
             </div>
           `
         }
 
         return html`
-          <div class="rounded-panel border border-line bg-surface-raised p-6 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
-            <div class="flex items-center gap-4">
-              <img src="${user.avatar}" alt="" class="h-16 w-16 rounded-full object-cover" />
+          <div class="card profile q-panel" data-size="lg">
+            <div class="profile__person">
+              <img src="${user.avatar}" alt="" class="profile__avatar" />
               <div>
-                <h2 class="text-2xl font-bold text-fg">${() => user.name}</h2>
-                <p class="text-fg-soft">${() => user.role}</p>
+                <h2 class="profile__name">${() => user.name}</h2>
+                <p class="profile__role">${() => user.role}</p>
               </div>
             </div>
 
-            <dl class="mt-6 grid gap-3 sm:grid-cols-3">
-              <div class="rounded-control bg-surface-inset p-4">
-                <dt class="text-xs font-semibold uppercase tracking-wide text-fg-faint">Team</dt>
-                <dd class="mt-1.5 font-semibold text-fg">${() => user.team}</dd>
+            <dl class="profile__facts">
+              <div class="fact">
+                <dt class="fact__label">Team</dt>
+                <dd class="fact__value">${() => user.team}</dd>
               </div>
-              <div class="rounded-control bg-surface-inset p-4">
-                <dt class="text-xs font-semibold uppercase tracking-wide text-fg-faint">Status</dt>
-                <dd class="mt-1.5 font-semibold text-fg">${() => user.status}</dd>
+              <div class="fact">
+                <dt class="fact__label">Status</dt>
+                <dd class="fact__value">${() => user.status}</dd>
               </div>
-              <div class="rounded-control bg-surface-inset p-4">
-                <dt class="text-xs font-semibold uppercase tracking-wide text-fg-faint">Route param · :id</dt>
-                <dd class="mt-1.5 font-mono text-sm text-brand">${() => route.params().id}</dd>
+              <div class="fact">
+                <dt class="fact__label">Route param · :id</dt>
+                <dd class="fact__value q-accent" data-mono>${() => route.params().id}</dd>
               </div>
             </dl>
           </div>

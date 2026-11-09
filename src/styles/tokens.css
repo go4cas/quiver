@@ -1,0 +1,210 @@
+/* Quiver theme: the --q-* token contract (planning/v3/DESIGN.md §4).
+   Parity port of 2.1's @theme and theme blocks. */
+@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
+
+@layer quiver.tokens {
+  :root {
+    /* ── Brand ──────────────────────────────────────── */
+    --q-color-brand:       #f97316;
+    --q-color-brand-hover: #ea580c;
+    --q-color-brand-tint:  rgb(249 115 22 / 0.12);
+    --q-color-on-brand:    #ffffff;
+
+    /* ── Surface ─────────────────────────────────────── */
+    --q-color-surface:         #f8fafc;
+    --q-color-surface-raised:  #ffffff;
+    --q-color-surface-inset:   #f1f5f9;
+
+    /* ── Foreground ──────────────────────────────────── */
+    --q-color-fg:       #0f172a;
+    --q-color-fg-soft:  #64748b;
+    --q-color-fg-faint: #94a3b8;
+
+    /* ── Border ──────────────────────────────────────── */
+    --q-color-line:        #e2e8f0;
+    --q-color-line-strong: #334155;
+
+    /* ── Status ──────────────────────────────────────── */
+    --q-color-success:      #047857;
+    --q-color-success-tint: #ecfdf5;
+    --q-color-error:        #b91c1c;
+    --q-color-error-tint:   #fef2f2;
+    --q-color-warning:      #b45309;
+    --q-color-warning-tint: #fffbeb;
+    --q-color-info:         #1d4ed8;
+    --q-color-info-tint:    #eff6ff;
+
+    /* ── Shape ───────────────────────────────────────── */
+    --q-radius-control: 0.75rem;
+    --q-radius-panel:   1rem;
+
+    /* ── Shadow ──────────────────────────────────────── */
+    --q-shadow-panel: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --q-shadow-float: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* ── Typography ──────────────────────────────────── */
+    --q-font-body:    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --q-font-display: Inter, ui-sans-serif, system-ui, sans-serif;
+    --q-font-mono:    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     DEFAULT — dark
+  ═══════════════════════════════════════════════════ */
+  [data-mode="dark"] {
+    --q-color-surface:         #020617;
+    --q-color-surface-raised:  #0f172a;
+    --q-color-surface-inset:   #1e293b;
+    --q-color-fg:              #f1f5f9;
+    --q-color-fg-soft:         #94a3b8;
+    --q-color-fg-faint:        #64748b;
+    --q-color-line:            #1e293b;
+    --q-color-line-strong:     #cbd5e1;
+    --q-color-brand-tint:      rgb(249 115 22 / 0.15);
+    --q-color-success:         #34d399;
+    --q-color-success-tint:    #022c22;
+    --q-color-error:           #f87171;
+    --q-color-error-tint:      #450a0a;
+    --q-color-warning:         #fbbf24;
+    --q-color-warning-tint:    #451a03;
+    --q-color-info:            #60a5fa;
+    --q-color-info-tint:       #172554;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     MONOCHROME — light
+  ═══════════════════════════════════════════════════ */
+  [data-theme="mono"] {
+    --q-color-brand:           #0a0a0a;
+    --q-color-brand-hover:     #262626;
+    --q-color-brand-tint:      rgb(10 10 10 / 0.08);
+    --q-color-surface:         #ffffff;
+    --q-color-surface-raised:  #f5f5f5;
+    --q-color-surface-inset:   #e5e5e5;
+    --q-color-fg:              #0a0a0a;
+    --q-color-fg-soft:         #404040;
+    --q-color-fg-faint:        #737373;
+    --q-color-line:            #d4d4d4;
+    --q-color-line-strong:     #404040;
+    --q-radius-control:        0.375rem;
+    --q-radius-panel:          0.5rem;
+  }
+
+  /* MONOCHROME — dark */
+  [data-theme="mono"][data-mode="dark"] {
+    --q-color-brand:           #fafafa;
+    --q-color-brand-hover:     #e5e5e5;
+    --q-color-brand-tint:      rgb(250 250 250 / 0.1);
+    --q-color-surface:         #0a0a0a;
+    --q-color-surface-raised:  #171717;
+    --q-color-surface-inset:   #262626;
+    --q-color-fg:              #fafafa;
+    --q-color-fg-soft:         #a3a3a3;
+    --q-color-fg-faint:        #525252;
+    --q-color-line:            #262626;
+    --q-color-line-strong:     #d4d4d4;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     LIQUID GLASS — light
+  ═══════════════════════════════════════════════════ */
+  [data-theme="glass"] {
+    --q-color-brand:           #7c3aed;
+    --q-color-brand-hover:     #6d28d9;
+    --q-color-brand-tint:      rgb(124 58 237 / 0.1);
+    --q-color-surface:         rgb(241 245 249 / 0.65);
+    --q-color-surface-raised:  rgb(255 255 255 / 0.6);
+    --q-color-surface-inset:   rgb(241 245 249 / 0.85);
+    --q-color-fg:              #0f172a;
+    --q-color-fg-soft:         #475569;
+    --q-color-fg-faint:        #94a3b8;
+    --q-color-line:            rgb(148 163 184 / 0.35);
+    --q-color-line-strong:     rgb(71 85 105 / 0.5);
+    --q-radius-control:        1.25rem;
+    --q-radius-panel:          1.5rem;
+  }
+
+  /* LIQUID GLASS — dark */
+  [data-theme="glass"][data-mode="dark"] {
+    --q-color-brand:           #a78bfa;
+    --q-color-brand-hover:     #c4b5fd;
+    --q-color-brand-tint:      rgb(167 139 250 / 0.15);
+    --q-color-surface:         rgb(2 6 23 / 0.65);
+    --q-color-surface-raised:  rgb(15 23 42 / 0.55);
+    --q-color-surface-inset:   rgb(30 41 59 / 0.8);
+    --q-color-fg:              #e2e8f0;
+    --q-color-fg-soft:         #94a3b8;
+    --q-color-fg-faint:        #64748b;
+    --q-color-line:            rgb(148 163 184 / 0.2);
+    --q-color-line-strong:     rgb(203 213 225 / 0.3);
+  }
+
+  /* ═══════════════════════════════════════════════════
+     RETRO / Y2K — light
+  ═══════════════════════════════════════════════════ */
+  [data-theme="retro"] {
+    --q-color-brand:           #ec4899;
+    --q-color-brand-hover:     #db2777;
+    --q-color-brand-tint:      rgb(236 72 153 / 0.12);
+    --q-color-surface:         #fefce8;
+    --q-color-surface-raised:  #ffffff;
+    --q-color-surface-inset:   #fef9c3;
+    --q-color-fg:              #1c1917;
+    --q-color-fg-soft:         #44403c;
+    --q-color-fg-faint:        #78716c;
+    --q-color-line:            #d6d3d1;
+    --q-color-line-strong:     #57534e;
+    --q-radius-control:        0px;
+    --q-radius-panel:          0px;
+    --q-font-display:          'Orbitron', monospace;
+  }
+
+  /* RETRO / Y2K — dark */
+  [data-theme="retro"][data-mode="dark"] {
+    --q-color-brand:           #a3e635;
+    --q-color-brand-hover:     #84cc16;
+    --q-color-brand-tint:      rgb(163 230 53 / 0.15);
+    --q-color-surface:         #0d0221;
+    --q-color-surface-raised:  #1a0533;
+    --q-color-surface-inset:   #1e1b4b;
+    --q-color-fg:              #e9d5ff;
+    --q-color-fg-soft:         #c4b5fd;
+    --q-color-fg-faint:        #8b5cf6;
+    --q-color-line:            #3b1f6b;
+    --q-color-line-strong:     #7c3aed;
+  }
+
+  /* ═══════════════════════════════════════════════════
+     NEO BRUTALISM — light
+  ═══════════════════════════════════════════════════ */
+  [data-theme="brutalist"] {
+    --q-color-brand:           #facc15;
+    --q-color-brand-hover:     #eab308;
+    --q-color-brand-tint:      rgb(250 204 21 / 0.2);
+    --q-color-surface:         #ffffff;
+    --q-color-surface-raised:  #ffffff;
+    --q-color-surface-inset:   #f5f5f5;
+    --q-color-fg:              #000000;
+    --q-color-fg-soft:         #171717;
+    --q-color-fg-faint:        #525252;
+    --q-color-line:            #000000;
+    --q-color-line-strong:     #000000;
+    --q-radius-control:        0px;
+    --q-radius-panel:          0px;
+  }
+
+  /* NEO BRUTALISM — dark */
+  [data-theme="brutalist"][data-mode="dark"] {
+    --q-color-brand:           #facc15;
+    --q-color-brand-hover:     #fde047;
+    --q-color-brand-tint:      rgb(250 204 21 / 0.2);
+    --q-color-surface:         #000000;
+    --q-color-surface-raised:  #0a0a0a;
+    --q-color-surface-inset:   #171717;
+    --q-color-fg:              #ffffff;
+    --q-color-fg-soft:         #e5e5e5;
+    --q-color-fg-faint:        #a3a3a3;
+    --q-color-line:            #ffffff;
+    --q-color-line-strong:     #ffffff;
+  }
+}

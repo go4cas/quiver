@@ -1,0 +1,23 @@
+@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
+
+@layer quiver.components {
+  :where(.q-basic) {
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background-color: var(--q-color-surface);
+  }
+
+  :where(.q-basic__card) {
+    width: 100%;
+    max-width: 24rem;
+    padding: 2rem;
+    border-width: 1px;
+    border-color: var(--q-color-line);
+    border-radius: var(--q-radius-panel);
+    background-color: var(--q-color-surface-raised);
+    box-shadow: var(--q-shadow-panel);
+  }
+}

@@ -1,0 +1,142 @@
+/* Quiver theme: per-theme effects that can't be tokens (planning/v3/DESIGN.md §7). Optional. */
+@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
+
+/* Theme fonts: latin subset, SIL OFL 1.1 (licences in ./fonts/) */
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/orbitron-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/space-grotesk-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/vt323-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@layer quiver.effects {
+  /* ── Liquid Glass ─────────────────────────────── */
+  [data-theme="glass"] {
+    background: linear-gradient(135deg, #e0e7ff 0%, #f0fdf4 50%, #fce7f3 100%);
+    background-attachment: fixed;
+    font-weight: 450;
+    letter-spacing: -0.01em;
+
+    & :where(h1, h2, h3) { font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; }
+
+    & :where(.q-panel, .q-sidebar) {
+      -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.05);
+      backdrop-filter: blur(20px) saturate(160%) brightness(1.05);
+      background-image: linear-gradient(180deg, rgb(255 255 255 / 0.15) 0%, transparent 40%);
+    }
+
+    & :where(.q-header) {
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      backdrop-filter: blur(20px) saturate(160%);
+    }
+  }
+
+  [data-theme="glass"][data-mode="dark"] {
+    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+    background-attachment: fixed;
+
+    & :where(.q-panel, .q-sidebar) {
+      background-image: linear-gradient(180deg, rgb(255 255 255 / 0.07) 0%, transparent 40%);
+    }
+  }
+
+  /* ── Retro / Y2K ──────────────────────────────── */
+  [data-theme="retro"] {
+    /* 2.1 also declared font-family: 'VT323' here; it never applied (V1, see F1) */
+    font-size: 1.0625rem;
+    letter-spacing: 0.02em;
+    line-height: 1.6;
+
+    &::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgb(0 0 0 / 0.08) 3px, rgb(0 0 0 / 0.08) 4px);
+      pointer-events: none;
+      z-index: 9998;
+    }
+
+    & :where(h1, h2, h3) {
+      font-family: var(--q-font-display);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      text-shadow:
+        0 0 8px var(--q-color-brand),
+        0 0 16px var(--q-color-brand),
+        0 0 32px color-mix(in srgb, var(--q-color-brand) 40%, transparent);
+    }
+
+    & :where(.q-accent) {
+      text-shadow: 0 0 6px currentColor, 0 0 12px color-mix(in srgb, currentColor 50%, transparent);
+    }
+
+    & :where(.q-panel) {
+      border-width: 2px;
+      /* 2.1's var(--shadow-panel) in retro light; F2 turns this back into var(--q-shadow-panel) */
+      box-shadow: 2px 2px 0 0 var(--q-color-line-strong), 0 0 14px color-mix(in srgb, var(--q-color-brand) 30%, transparent);
+    }
+
+    & :where(button) {
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-family: 'VT323', monospace;
+      font-size: 1rem;
+    }
+  }
+
+  [data-theme="retro"][data-mode="dark"] {
+    background: #0d0221;
+
+    & :where(.q-panel) {
+      box-shadow: 2px 2px 0 0 var(--q-color-brand), 0 0 14px color-mix(in srgb, var(--q-color-brand) 30%, transparent);
+    }
+  }
+
+  /* ── Monochrome ───────────────────────────────── */
+  [data-theme="mono"] {
+    font-size: 0.9375rem;
+    letter-spacing: 0.01em;
+    line-height: 1.5;
+
+    & :where(h1, h2, h3) { font-weight: 600; letter-spacing: -0.025em; line-height: 1.25; }
+    & :focus-visible { outline: 2px solid var(--q-color-fg); outline-offset: 2px; }
+  }
+
+  /* ── Neo Brutalism ────────────────────────────── */
+  [data-theme="brutalist"] {
+    /* 2.1 also declared font-family: 'Space Grotesk' (V1, see F1) and
+       -webkit-font-smoothing: auto (V5, overridden by body); neither applied */
+    font-weight: 700;
+
+    & :where(h1, h2, h3) { font-weight: 900; text-transform: uppercase; letter-spacing: -0.02em; line-height: 1.1; }
+
+    & :where(button) {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      transition: transform 80ms ease, box-shadow 80ms ease;
+    }
+    & :where(button):active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 0 var(--q-color-line); }
+
+    & :where(.q-panel, .q-sidebar) { border-width: 3px; }
+    & :focus-visible { outline: 3px solid var(--q-color-fg); outline-offset: 0; }
+  }
+}

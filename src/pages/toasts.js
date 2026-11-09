@@ -25,72 +25,72 @@ function ToastsPage() {
   }
 
   return html`
-    <div class="space-y-10">
+    <div class="page">
       <div>
-        <h1 class="text-2xl font-bold text-fg">Toasts</h1>
-        <p class="mt-1 text-sm text-fg-soft">Global notifications via <code class="font-mono">useToast</code> and <code class="font-mono">toastState</code>.</p>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">useToast()</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">add()</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">dismiss()</span>
+        <h1 class="page__title">Toasts</h1>
+        <p class="page__lead">Global notifications via <code>useToast</code> and <code>toastState</code>.</p>
+        <div class="chips">
+          <span class="chip q-accent" data-tone="brand">useToast()</span>
+          <span class="chip">add()</span>
+          <span class="chip">dismiss()</span>
         </div>
       </div>
 
-      <div class="grid gap-6 sm:grid-cols-2">
-        <div class="rounded-panel border border-line bg-surface-raised p-6 shadow-panel">
-          <h2 class="mb-4 text-sm font-semibold text-fg">Trigger</h2>
-          <div class="flex flex-wrap gap-2">
+      <div class="toast-demo">
+        <div class="card q-panel" data-size="lg">
+          <h2 class="card__title">Trigger</h2>
+          <div class="button-row">
             <button
               type="button"
-              class="rounded-control border border-success/30 bg-success-tint px-4 py-2 text-sm font-semibold text-success hover:border-success"
+              class="btn" data-tone="success"
               @click="${() => fire('success')}"
             >Success</button>
             <button
               type="button"
-              class="rounded-control border border-error/30 bg-error-tint px-4 py-2 text-sm font-semibold text-error hover:border-error"
+              class="btn" data-tone="error"
               @click="${() => fire('error')}"
             >Error</button>
             <button
               type="button"
-              class="rounded-control border border-warning/30 bg-warning-tint px-4 py-2 text-sm font-semibold text-warning hover:border-warning"
+              class="btn" data-tone="warning"
               @click="${() => fire('warning')}"
             >Warning</button>
             <button
               type="button"
-              class="rounded-control border border-info/30 bg-info-tint px-4 py-2 text-sm font-semibold text-info hover:border-info"
+              class="btn" data-tone="info"
               @click="${() => fire('info')}"
             >Info</button>
           </div>
-          <p class="mt-4 font-mono text-xs text-fg-faint">
+          <p class="card__status mono-note">
             ${() => toastState.toasts.length
               ? `${toastState.toasts.length} active`
               : 'none active'}
           </p>
         </div>
 
-        <div class="rounded-panel border border-line bg-surface-raised p-6 shadow-panel">
-          <h2 class="mb-4 text-sm font-semibold text-fg">Options</h2>
-          <div class="space-y-3">
-            <label class="flex flex-col gap-1">
-              <span class="text-xs font-medium text-fg-soft">Duration (ms · 0 = permanent)</span>
+        <div class="card q-panel" data-size="lg">
+          <h2 class="card__title">Options</h2>
+          <div class="options">
+            <label class="option">
+              <span class="option__label">Duration (ms · 0 = permanent)</span>
               <input
                 type="number"
                 min="0"
                 step="500"
-                class="rounded-control border border-line bg-surface px-3 py-1.5 font-mono text-sm text-fg focus:border-brand focus:outline-none"
+                class="option__input"
                 value="${() => form.duration}"
                 @input="${/** @param {any} e */ (e) => { form.duration = Number(e.target.value) }}"
               />
             </label>
 
-            <label class="flex cursor-pointer items-center gap-2">
+            <label class="check">
               <input
                 type="checkbox"
-                class="h-4 w-4 rounded border-line accent-brand"
+                class="check__box"
                 checked
                 @change="${/** @param {any} e */ (e) => { form.dismissible = e.target.checked }}"
               />
-              <span class="text-sm text-fg-soft">Dismissible</span>
+              <span class="check__label">Dismissible</span>
             </label>
           </div>
         </div>
