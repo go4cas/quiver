@@ -1,11 +1,12 @@
 import { html } from '@arrow-js/core'
 
+// Styles: views.css (classes q-view, q-view__*).
 export function LoadingCard() {
   return html`
-    <div class="flex min-h-screen items-center justify-center bg-surface p-6">
-      <div class="rounded-panel border border-line bg-surface-raised p-8 text-center shadow-panel">
-        <div class="text-lg font-semibold text-fg">Loading…</div>
-        <p class="mt-2 text-sm text-fg-soft">Resolving the current route.</p>
+    <div class="q-view">
+      <div class="q-view__card q-panel">
+        <div class="q-view__title">Loading…</div>
+        <p class="q-view__text">Resolving the current route.</p>
       </div>
     </div>
   `

@@ -11,7 +11,7 @@ import { html } from '@arrow-js/core'
 
 export function <Name>(content) {
   return html`
-    <div class="min-h-screen">
+    <div class="<name>-layout">
       ${content}
     </div>
   `
@@ -19,7 +19,7 @@ export function <Name>(content) {
 ```
 
    - The layout receives the rendered page as its `content` argument — render it as `${content}` (no `() =>` needed; content is already an Arrow template, not a reactive value)
-   - Use Tailwind CSS utility classes; match the visual style of existing layouts in `src/layouts/`
+   - Style it in a sibling `src/layouts/<Name>.css`, imported from `src/style.css` (before `effects.css`), in `@layer quiver.components` with `:where()` selectors and `--q-*` tokens only. Add `q-sidebar` / `q-header` / `q-panel` hook classes where the layout has a sidebar, sticky header or panels. Match the look of existing layouts in `src/layouts/`
    - If the layout needs global DI data (e.g. app name, current user), inject it using `inject` from `../framework/index.js`:
      ```js
      import { inject } from '../framework/index.js'

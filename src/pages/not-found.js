@@ -10,13 +10,13 @@ function NotFoundPage() {
   const router = useRouter()
 
   return html`
-    <div class="text-center">
-      <p class="font-mono text-xs font-semibold uppercase tracking-widest text-brand">404</p>
-      <h1 class="mt-2 text-2xl font-bold text-fg">Page not found</h1>
-      <p class="mt-2 text-sm text-fg-soft">The requested route does not exist.</p>
+    <div class="not-found">
+      <p class="not-found__code q-accent">404</p>
+      <h1 class="not-found__title">Page not found</h1>
+      <p class="not-found__text">The requested route does not exist.</p>
       <button
         type="button"
-        class="mt-6 rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover shadow-panel theme-brutalist:border-2 theme-brutalist:border-fg"
+        class="btn not-found__action" data-variant="primary"
         @click="${() => router.go('/')}"
       >
         Back to dashboard

@@ -68,9 +68,9 @@ Create a component in `src/components/` and import it directly from its file —
 import { component, html } from '@arrow-js/core'
 
 export const TicketCard = component((ticket) => html`
-  <article class="rounded-panel border border-line bg-surface-raised p-5 shadow-panel">
-    <h3 class="font-semibold text-fg">${() => ticket.title}</h3>
-    <p class="mt-1 text-sm text-fg-soft">${() => ticket.status}</p>
+  <article class="ticket-card q-panel">
+    <h3 class="ticket-card__title">${() => ticket.title}</h3>
+    <p class="ticket-card__status">${() => ticket.status}</p>
   </article>
 `)
 ```

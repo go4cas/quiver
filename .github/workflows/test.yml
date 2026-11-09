@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      update-screenshots:
+        description: Re-capture the visual-parity baseline and commit it to this branch (refused on main)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -30,3 +36,55 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e
+
+  # Visual parity (planning/v3/DESIGN.md §8). Runs in the official Playwright image
+  # for the version in bun.lock, which pins Chromium and the fallback system fonts.
+  # Bump the tag with Playwright and re-capture the baseline in the same PR.
+  screenshots:
+    if: ${{ !inputs.update-screenshots }}
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v7
+      - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.x
+      - run: bun install --frozen-lockfile
+      - name: Compare with the baseline
+        run: bun run test:visual
+      - uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: visual-diffs
+          path: test-results/
+          retention-days: 7
+
+  # Manual run with update-screenshots: the only job that gets a write token.
+  screenshots-update:
+    if: ${{ inputs.update-screenshots && github.ref_name != 'main' }}
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.x
+      - run: bun install --frozen-lockfile
+      - name: Re-capture and commit the baseline
+        run: |
+          bun run test:visual --update-snapshots=changed   # only captures beyond the tolerance, so sub-threshold noise never churns PNGs
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/__screenshots__
+          if git diff --cached --quiet; then echo "Baseline unchanged"; exit 0; fi
+          git commit -m "test(visual): re-capture screenshot baseline on CI (${GITHUB_SHA::7})"
+          git push origin "HEAD:$GITHUB_REF_NAME"

@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  tagline: Arrow.js · Vite · Tailwind CSS starter template with routing, layouts, state, composables, and testing.
+  tagline: Arrow.js · Vite starter template with routing, layouts, state, composables, plain-CSS themes, and testing.
   actions:
     - theme: brand
       text: Get Started

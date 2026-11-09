@@ -1,6 +1,6 @@
 # Theming
 
-Quiver ships with five distinct visual themes, each supporting light and dark mode independently. Theme and mode are stored in `uiState` and persisted to `localStorage`.
+Quiver ships with five distinct visual themes, written in plain CSS against a token contract,, each supporting light and dark mode independently. Theme and mode are stored in `uiState` and persisted to `localStorage`.
 
 ---
 
@@ -15,7 +15,7 @@ Two orthogonal attributes live on `<html>`:
 - `data-theme` — visual identity: `default` · `mono` · `glass` · `retro` · `brutalist`
 - `data-mode` — brightness: `light` · `dark`
 
-Tailwind's `@variant dark` targets `[data-mode=dark]`, so changing the mode switches the dark token set without affecting the theme.
+Token blocks select `[data-mode="dark"]` and `[data-theme="…"]`, so changing the mode switches the dark token set without affecting the theme.
 
 An inline script in `index.html` reads both values from `localStorage` before any CSS or JavaScript loads, preventing a flash of the wrong theme on page load.
 
@@ -64,100 +64,124 @@ The built-in UI provides:
 
 ---
 
-## Semantic design tokens
+## The token contract
 
-All components use semantic CSS custom properties instead of palette utilities. Tokens are defined in `src/style.css` under `@theme` and overridden per theme and mode.
+Every colour, radius, shadow and font stack a component uses is a `--q-*` custom property. The contract (27 tokens) lives in `src/styles/tokens.css`: the defaults on `:root`, then one override block per theme and mode. Component CSS reads only these tokens, so a component styled with them works in all five themes, light and dark.
 
-### Color tokens
-
-| Token | Utility class | Role |
-|---|---|---|
-| `--color-surface` | `bg-surface` | Page background |
-| `--color-surface-raised` | `bg-surface-raised` | Cards, sidebars, header |
-| `--color-surface-inset` | `bg-surface-inset` | Input backgrounds, code blocks |
-| `--color-fg` | `text-fg` | Headings and body copy |
-| `--color-fg-soft` | `text-fg-soft` | Secondary labels |
-| `--color-fg-faint` | `text-fg-faint` | Placeholder, disabled, metadata |
-| `--color-line` | `border-line` | Default dividers |
-| `--color-line-strong` | `border-line-strong` | Emphasis borders |
-| `--color-brand` | `text-brand` / `bg-brand` | Primary action colour |
-| `--color-brand-tint` | `bg-brand-tint` | Tinted badge backgrounds |
-| `--color-success` · `--color-error` · `--color-warning` · `--color-info` | `text-success`, `border-error/30`, … | Status text and borders |
-| `--color-success-tint` · `--color-error-tint` · `--color-warning-tint` · `--color-info-tint` | `bg-success-tint`, … | Status backgrounds (toasts, alerts, badges) |
-
-### Shape and shadow tokens
-
-| Token | Utility | Role |
-|---|---|---|
-| `--radius-control` | `rounded-control` | Buttons, inputs, badges |
-| `--radius-panel` | `rounded-panel` | Cards, modals, panels |
-| `--shadow-panel` | `shadow-panel` | Card elevation |
-| `--shadow-float` | `shadow-float` | Popover / dropdown elevation |
-
-### Font tokens
+### Colour tokens
 
 | Token | Role |
 |---|---|
-| `--font-display` | Headings; varies by theme |
-| `--font-ui` | Body / UI text |
-| `--font-mono` | Code and metadata |
+| `--q-color-surface` | Page background |
+| `--q-color-surface-raised` | Cards, sidebars, header |
+| `--q-color-surface-inset` | Input backgrounds, chips, code blocks |
+| `--q-color-fg` | Headings and body copy |
+| `--q-color-fg-soft` | Secondary labels |
+| `--q-color-fg-faint` | Placeholder, disabled, metadata |
+| `--q-color-line` | Default dividers and borders |
+| `--q-color-line-strong` | Emphasis borders |
+| `--q-color-brand` · `--q-color-brand-hover` | Primary action colour and its hover |
+| `--q-color-brand-tint` | Tinted badge backgrounds |
+| `--q-color-on-brand` | Text on a brand background |
+| `--q-color-success` · `-error` · `-warning` · `-info` | Status text and borders |
+| `--q-color-success-tint` · `-error-tint` · `-warning-tint` · `-info-tint` | Status backgrounds (toasts, alerts, badges) |
+
+For a soft status border, mix the colour with transparent: `border-color: color-mix(in oklab, var(--q-color-error) 30%, transparent)`.
+
+### Shape, shadow and font tokens
+
+| Token | Role |
+|---|---|
+| `--q-radius-control` | Buttons, inputs, badges |
+| `--q-radius-panel` | Cards, modals, panels |
+| `--q-shadow-panel` | Card elevation |
+| `--q-shadow-float` | Popover / dropdown elevation |
+| `--q-font-body` | Body / UI text |
+| `--q-font-display` | Headings; varies by theme |
+| `--q-font-mono` | Code and metadata |
+
+Spacing, type sizes and durations are not tokens: component CSS writes them as `rem`, `em` and `ms` literals, so mono's and retro's root font size still scale everything.
 
 ---
 
-## Per-theme variant classes
+## Stylesheets and cascade layers
 
-Tailwind variants are registered for the themes whose components need structural overrides:
+`src/style.css` is the CSS entry. It declares the layer order once, then imports the files:
 
+```css
+@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
+@import "./styles/tokens.css";    /* the token contract */
+@import "./styles/base.css";      /* the reset */
+@import "./components/ToastContainer.css";   /* one line per component */
+@import "./styles/effects.css";   /* per-theme effects (optional) */
+@import "./app.css";              /* the app's own styles */
 ```
-theme-glass:     [data-theme="glass"] &
-theme-brutalist: [data-theme="brutalist"] &
+
+| Layer | Holds |
+|---|---|
+| `quiver.tokens` | `:root` tokens and the `[data-theme]` / `[data-mode]` overrides |
+| `quiver.base` | the reset (`box-sizing`, margins, form controls, smoothing) |
+| `quiver.components` | component CSS, including the starter's own |
+| `quiver.effects` | theme effects that can't be tokens: blur, glow, scanlines, heading type |
+
+Later layers win, so theme effects always beat component CSS. Any CSS outside a layer beats all of them without `!important`, and overriding a `--q-*` token on `:root` in unlayered CSS wins whatever the load order. If your app uses its own cascade layers, declare the order once before anything else loads, with `quiver` before your layers (with Tailwind v4: `@layer theme, base, quiver, components, utilities;`).
+
+Component CSS follows a few rules: every selector is wrapped in `:where()` (zero specificity, so one app class overrides it), state and variants are attributes (`aria-current`, `aria-pressed`, `data-type`, `data-tone`) rather than modifier classes, and hover sits inside `@media (hover: hover)`.
+
+---
+
+## Theme effects and hook classes
+
+`src/styles/effects.css` holds what a token can't express. It never selects app elements by tag or class name; it selects four hook classes, plus `<html>`, `h1`–`h3`, `button` and `:focus-visible`:
+
+| Hook | Put it on | Effects that use it |
+|---|---|---|
+| `q-panel` | cards, panels, toasts, dropdowns, alerts | glass blur and sheen, retro neon border, brutalist 3px border |
+| `q-sidebar` | the menu sidebar | glass blur, brutalist border |
+| `q-header` | the sticky header | glass blur |
+| `q-accent` | brand-coloured text | retro neon glow |
+
+Add the hook next to the element's own class: `<article class="card q-panel">`.
+
+A tweak to one component in one theme lives in that component's CSS:
+
+```css
+[data-theme="brutalist"] :where(.btn)[data-variant="primary"] {
+  border-width: 2px;
+  border-color: var(--q-color-fg);
+}
 ```
 
-Use these to apply theme-specific overrides directly in markup:
-
-```js
-html`
-  <div class="rounded-panel border border-line bg-surface-raised shadow-panel
-              theme-glass:backdrop-blur-md theme-brutalist:border-2">
-    ...
-  </div>
-`
-```
+For a dark-mode difference that isn't a colour, nest `:where([data-mode="dark"]) &` inside the block (zero specificity), as `ThemeToggle.css` does for the knob position.
 
 ---
 
 ## Adding a new theme
 
 1. Choose an identifier, e.g. `'ocean'`.
-2. Add a token override block in `src/style.css`:
+2. Add token override blocks to `src/styles/tokens.css`, inside `@layer quiver.tokens`:
 
    ```css
    /* Ocean — light */
    [data-theme="ocean"] {
-     --color-surface: oklch(97% 0.02 220);
-     --color-brand: oklch(55% 0.18 220);
-     /* …remaining tokens */
+     --q-color-surface: oklch(97% 0.02 220);
+     --q-color-brand: oklch(55% 0.18 220);
+     /* …any other tokens */
    }
 
    /* Ocean — dark */
    [data-theme="ocean"][data-mode="dark"] {
-     --color-surface: oklch(15% 0.03 220);
-     --color-brand: oklch(65% 0.18 220);
+     --q-color-surface: oklch(15% 0.03 220);
+     --q-color-brand: oklch(65% 0.18 220);
    }
    ```
 
-   This matches the pattern the built-in themes use in `src/style.css`.
+3. If the theme needs effects a token can't express, add a `[data-theme="ocean"]` block to `src/styles/effects.css`, inside `@layer quiver.effects`, selecting the hook classes.
 
-3. Register a Tailwind variant if you need per-theme utility overrides:
-
-   ```css
-   @variant theme-ocean (&:where([data-theme=ocean] *));
-   ```
-
-4. Add the theme to the `THEMES` array in `src/components/ThemeSelector.js`:
+4. Add the theme to the `THEMES` array in `src/components/ThemeSelector.js` (`swatchDark` is optional):
 
    ```js
-   { id: 'ocean', label: 'Ocean', bg: 'bg-[#0ea5e9]' },
+   { id: 'ocean', label: 'Ocean', swatch: '#0ea5e9' },
    ```
 
 5. Add an entry point in the anti-flash script in `index.html` if the new identifier needs special handling (usually not required).

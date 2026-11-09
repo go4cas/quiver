@@ -2,7 +2,7 @@
 
 This file is the single source of truth for AI assistants working in this repo. `CLAUDE.md` imports it for Claude Code; Codex and other AGENTS.md-aware tools read it directly. Edit conventions here, not in `CLAUDE.md`.
 
-Quiver is an Arrow.js starter template with file-based routing, layouts, reactive state, composables, and a full testing setup. Stack: Arrow.js · Vite · Tailwind CSS v4 · Vitest · Playwright. The router is built on the Navigation API (modern browsers only).
+Quiver is an Arrow.js starter template with file-based routing, layouts, reactive state, composables, and a full testing setup. Stack: Arrow.js · Vite · plain CSS on a `--q-*` token contract · Vitest · Playwright. The router is built on the Navigation API (modern browsers only).
 
 ---
 
@@ -17,12 +17,17 @@ src/
 ├── state/           # Global reactive state modules — add stores here
 ├── composables/     # Reusable logic functions — add composables here
 ├── utils/           # Pure helper functions (hmrState)
+├── styles/          # Theme: tokens.css (contract), base.css (reset), effects.css, fonts/
+├── app.css          # Starter page styles (plus Counter.css, UserCard.css beside their components)
+├── style.css        # CSS entry: layer order + @imports — add each new stylesheet here
 └── main.js          # App entry point — provide() global DI keys here
 
 tests/
 ├── framework/       # Unit tests for framework utilities (Vitest)
 ├── composables/     # Unit tests for composables (Vitest)
-└── e2e/             # End-to-end tests (Playwright)
+├── repo/            # Repo-wide checks (Vitest)
+├── e2e/             # End-to-end tests (Playwright)
+└── visual/          # Screenshot parity, every page × 5 themes × 2 modes (Playwright)
 ```
 
 ---
@@ -34,6 +39,7 @@ bun run dev           # Start Vite dev server
 bun run test              # Run unit tests once
 bun run test:watch    # Run unit tests in watch mode
 bun run test:e2e      # Run E2E tests (Playwright)
+bun run test:visual   # Screenshot parity — only matches inside the pinned Playwright image (tests/visual/README.md)
 bun run typecheck     # Type-check src/ via JSDoc (tsc --noEmit, checkJs)
 bun run build         # Production build
 bun run docs:dev      # Start docs site locally
@@ -63,7 +69,7 @@ These are non-obvious constraints. Violating them causes silent bugs or runtime 
 
 2. **No HTML comments inside templates.** Arrow.js uses HTML comment nodes as internal slot markers. Adding `<!-- -->` inside `` html`...` `` throws `Invalid HTML position`. Put comments outside the template literal.
 
-3. **`.disabled` is not the DOM disabled property.** Writing `.disabled="${() => bool}"` sets a literal attribute named `.disabled` — the button remains clickable. Use `aria-disabled="true/false"` plus CSS (`opacity-50 cursor-not-allowed`) instead.
+3. **`.disabled` is not the DOM disabled property.** Writing `.disabled="${() => bool}"` sets a literal attribute named `.disabled` — the button remains clickable. Use `aria-disabled="true/false"` and style `[aria-disabled="true"]` in CSS (`opacity: 0.5; cursor: not-allowed`) instead.
 
 4. **Use `.key()` on components in loops.** Without `.key(uniqueId)`, Arrow re-creates DOM nodes on every state change:
    - Correct: `` html`${() => items.map(i => Card({ i }).key(i.id))}` ``
@@ -134,6 +140,29 @@ export function MyCard({ title }) {
 
 Import components directly from their files (e.g. `import { MyCard } from '../components/MyCard.js'`) — there is no barrel file. Apply all Arrow.js rules above.
 
+Style a component in a sibling `MyCard.css` and add an `@import` for it to `src/style.css` (before `effects.css`). JS never imports CSS:
+
+```css
+@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
+
+@layer quiver.components {
+  :where(.my-card) {
+    padding: 1.25rem;
+    border: 1px solid var(--q-color-line);
+    border-radius: var(--q-radius-panel);
+    background-color: var(--q-color-surface-raised);
+    &[data-tone="error"] { color: var(--q-color-error); }
+    @media (hover: hover) { &:hover { box-shadow: var(--q-shadow-float); } }
+  }
+}
+```
+
+- Every selector inside `:where()`; variants and state as attributes (`data-tone`, `aria-current`, `aria-pressed`), never modifier classes
+- Colours, radii, shadows, fonts only from `--q-*` tokens; spacing and sizes as `rem` literals; transforms via `translate`/`scale` properties, not `transform`
+- No `transition` on `button`, `a` or `input` (`base.css` owns it)
+- Recipe-style classes (layouts, toasts, theme controls, views) use the `q-` prefix; starter app classes don't
+- Add hook classes so theme effects apply: `q-panel` on cards/panels, `q-accent` on brand-coloured text, `q-sidebar`/`q-header` on layout chrome
+
 For local component state that should survive Vite hot reloads in dev, use `hmrState(key, initialState)` from `src/utils/hmrState.js`. The key must be unique per component instance on the page (derive it from a prop, e.g. `` `counter-${props.label}` ``) — duplicate keys silently link state between instances in dev mode.
 
 ### Composables
@@ -156,9 +185,13 @@ Call these inside a page or component function, never at module scope:
 
 ### Theming
 
-Two orthogonal attributes on `<html>`: `data-theme` (`default` · `mono` · `glass` · `retro` · `brutalist`) and `data-mode` (`light` · `dark`), both driven by `uiState` and persisted to localStorage. Components use semantic tokens (`bg-surface`, `text-fg`, `border-line`, `bg-brand`, `rounded-panel`, `shadow-panel`; status: `text-error`, `bg-success-tint`, `border-warning/30`, `info`) — never hard-code colors or use Tailwind palette classes, or theme switching breaks. Per-theme utility overrides via variants: `theme-glass:backdrop-blur-md`, `theme-brutalist:border-2`, etc.
+Two orthogonal attributes on `<html>`: `data-theme` (`default` · `mono` · `glass` · `retro` · `brutalist`) and `data-mode` (`light` · `dark`), both driven by `uiState` and persisted to localStorage.
 
-To add a theme: token override blocks (light + dark) in `src/style.css`, an optional `@variant theme-<id>` line, and an entry in the `THEMES` array in `src/components/ThemeSelector.js`. See the Theming guide or the `/add-theme` command.
+- **Tokens** (`src/styles/tokens.css`, `@layer quiver.tokens`): the 27-token contract — `--q-color-{brand,brand-hover,brand-tint,on-brand,surface,surface-raised,surface-inset,fg,fg-soft,fg-faint,line,line-strong}`, status `--q-color-{success,error,warning,info}` each with `-tint`, `--q-radius-{control,panel}`, `--q-shadow-{panel,float}`, `--q-font-{body,display,mono}`. Themes override subsets in `[data-theme]` / `[data-mode]` blocks. Never hard-code colours, or theme switching breaks; soft status borders are `color-mix(in oklab, var(--q-color-error) 30%, transparent)`.
+- **Layers**: `@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;` starts every stylesheet. Later layers win; unlayered app CSS beats all of them.
+- **Effects** (`src/styles/effects.css`, `@layer quiver.effects`): per-theme blur, glow, scanlines, heading type and borders. They select only the hook classes `q-panel`, `q-sidebar`, `q-header`, `q-accent`, plus `<html>`, `h1`–`h3`, `button`, `:focus-visible`. A one-component tweak for one theme goes in that component's CSS: `[data-theme="brutalist"] :where(.btn)[data-variant="primary"] { … }`. Dark-mode non-colour differences nest `:where([data-mode="dark"]) &`.
+
+To add a theme: token blocks (light + dark) in `src/styles/tokens.css`, optional effects in `src/styles/effects.css`, and an entry `{ id, label, swatch, swatchDark? }` in the `THEMES` array in `src/components/ThemeSelector.js`. See the Theming guide or the `/add-theme` command.
 
 ### Dependency injection
 
@@ -172,7 +205,9 @@ To add a theme: token override blocks (light + dark) in `src/style.css`, an opti
 
 - Unit: Vitest in `tests/framework/` and `tests/composables/` — test pure functions with `describe`/`it`
 - E2E: Playwright in `tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`
-- Both suites must pass before a task is complete
+- Repo checks: Vitest in `tests/repo/` (SPEC R7: the old utility framework is gone from the repo)
+- Visual: Playwright in `tests/visual/` compares every page state in 5 themes × 2 modes with the baseline in `tests/visual/__screenshots__/` (tolerance `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`; never loosen it). The baseline only matches inside `mcr.microsoft.com/playwright:v<version>-noble`, so CI's `screenshots` job runs it there; re-capture an intended visual change by running the `Tests` workflow by hand with `update-screenshots` on your branch (see `tests/visual/README.md`)
+- Unit and E2E must pass before a task is complete; the `screenshots` CI job must pass before merge
 
 ---
 

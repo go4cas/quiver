@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **Breaking:** Tailwind CSS. `tailwindcss`, `@tailwindcss/vite` and the Vite plugin are gone, and no markup uses utility classes. Apps built on the 2.x template that added their own Tailwind classes need Tailwind added back themselves, or the classes rewritten as plain CSS
+- The `theme-glass:` / `theme-brutalist:` / `dark:` variants and the `--color-*`, `--radius-*`, `--shadow-*`, `--font-*` Tailwind theme tokens. `--font-ui` (never used) is dropped
+
+### Added
+
+- A plain-CSS token contract of 27 `--q-*` custom properties in `src/styles/tokens.css` (colours, radii, shadows, font stacks), including the new `--q-color-on-brand` and `--q-font-body`, with the `[data-theme]` / `[data-mode]` override blocks
+- `src/styles/base.css`, the reset that replaces Tailwind's preflight, and `src/styles/effects.css` for per-theme effects, all in the cascade layers `quiver.tokens`, `quiver.base`, `quiver.components`, `quiver.effects`. Unlayered app CSS beats them without `!important`
+- Component CSS beside each component and layout (`q-` classes for the reusable ones), with state as attributes (`aria-current`, `aria-pressed`, `data-type`, `data-state`) and hook classes `q-panel`, `q-sidebar`, `q-header`, `q-accent` for theme effects
+- Self-hosted fonts (Audiowide, Orbitron, Space Grotesk, VT323; latin woff2 with their OFL licences) instead of the Google Fonts request
+- A visual-parity suite (`bun run test:visual`): every page state in 5 themes × 2 modes, desktop and mobile, 190 screenshots, run by a new `screenshots` CI job in the pinned Playwright image
+- A repo test that fails if Tailwind reappears outside the changelog and the theming guide's layer-order note
+
+### Changed
+
+- `ThemeSelector`'s `THEMES` entries are `{ id, label, swatch, swatchDark? }` (hex colours) instead of Tailwind `bg-[…]` class strings
+- `bun run test:e2e` runs only the e2e project; `bun run test:visual` runs the screenshot projects
+
+### Fixed
+
+- Retro body text now uses VT323 and brutalist body text Space Grotesk; a later `:root` rule overrode both in 2.1
+- Per-theme panel and float shadows now apply in mono, glass, retro and brutalist; 2.1's compiled shadow utilities always used the default shadow
+- Brand buttons are readable in mono dark (contrast 1.04 → 18.97), retro dark (1.51 → 13.29) and brutalist (1.53 → 13.71)
+- The brutalist sidebar border sits only on the edge facing the content, not on all four sides
+
 ## [2.1.0] - 2026-10-01
 
 ### Added

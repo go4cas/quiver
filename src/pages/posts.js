@@ -14,35 +14,35 @@ function PostsPage() {
   const broken = useFetch(BROKEN, { immediate: false })
 
   return html`
-    <div class="space-y-10">
+    <div class="page">
       <div>
-        <h1 class="text-2xl font-bold text-fg">Posts</h1>
-        <p class="mt-1 text-sm text-fg-soft">Data fetched from the JSONPlaceholder API using <code class="font-mono">useFetch</code>.</p>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <span class="rounded-full bg-brand-tint px-2.5 py-0.5 font-mono text-xs text-brand">useFetch()</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">loading</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">error</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">refetch()</span>
-          <span class="rounded-full bg-surface-inset px-2.5 py-0.5 font-mono text-xs text-fg-faint">transform</span>
+        <h1 class="page__title">Posts</h1>
+        <p class="page__lead">Data fetched from the JSONPlaceholder API using <code>useFetch</code>.</p>
+        <div class="chips">
+          <span class="chip q-accent" data-tone="brand">useFetch()</span>
+          <span class="chip">loading</span>
+          <span class="chip">error</span>
+          <span class="chip">refetch()</span>
+          <span class="chip">transform</span>
         </div>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="toolbar">
         <button
           type="button"
-          class="rounded-control bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover shadow-panel theme-brutalist:border-2 theme-brutalist:border-fg"
+          class="btn" data-variant="primary"
           @click="${() => { broken.reset(); posts.refetch() }}"
         >
           Refresh
         </button>
         <button
           type="button"
-          class="rounded-control bg-surface-inset px-4 py-2 text-sm font-semibold text-fg-soft hover:bg-line"
+          class="btn" data-variant="secondary"
           @click="${() => broken.refetch()}"
         >
           Force error
         </button>
-        <span class="font-mono text-xs text-fg-faint">
+        <span class="mono-note">
           ${() => posts.loading()
             ? 'Loading…'
             : broken.error()
@@ -55,29 +55,29 @@ function PostsPage() {
 
       ${() => posts.error() || broken.error()
         ? html`
-            <div class="rounded-panel border border-error/30 bg-error-tint p-4">
-              <p class="text-sm font-semibold text-error">Error</p>
-              <p class="mt-1 font-mono text-xs text-error">${() => posts.error() || broken.error()}</p>
+            <div class="alert q-panel" data-tone="error">
+              <p class="alert__title">Error</p>
+              <p class="alert__text">${() => posts.error() || broken.error()}</p>
             </div>
           `
         : !posts.loading() && posts.data()
           ? html`
-              <div class="rounded-panel border border-success/30 bg-success-tint p-4">
-                <p class="text-sm font-semibold text-success">Success — ${() => posts.data().length} posts loaded</p>
+              <div class="alert q-panel" data-tone="success">
+                <p class="alert__title">Success — ${() => posts.data().length} posts loaded</p>
               </div>
             `
           : ''}
 
       ${() => posts.loading()
         ? html`
-            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div class="grid" data-cols="2-3">
               ${() => [...Array(6)].map((_, i) =>
                 html`
-                  <div class="animate-pulse rounded-panel border border-line bg-surface-raised p-5">
-                    <div class="h-4 w-3/4 rounded bg-surface-inset"></div>
-                    <div class="mt-3 space-y-2">
-                      <div class="h-3 rounded bg-surface-inset"></div>
-                      <div class="h-3 w-5/6 rounded bg-surface-inset"></div>
+                  <div class="skeleton q-panel">
+                    <div class="skeleton__line" data-width="title"></div>
+                    <div class="skeleton__lines">
+                      <div class="skeleton__line"></div>
+                      <div class="skeleton__line" data-width="short"></div>
                     </div>
                   </div>
                 `.key(`s${i}`)
@@ -92,15 +92,15 @@ function PostsPage() {
         const brokenPending = broken.loading() || broken.error()
         if (loading || postErr || brokenPending) return ''
         return html`
-          <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div class="grid" data-cols="2-3">
             ${() => (posts.data() ?? []).map(/** @param {{ id: number, title: string, body: string }} post */ (post) =>
               html`
-                <article class="flex flex-col rounded-panel border border-line bg-surface-raised p-5 shadow-panel theme-glass:backdrop-blur-md theme-brutalist:border-2">
-                  <div class="flex items-start justify-between gap-2">
-                    <h2 class="text-sm font-semibold capitalize text-fg">${() => post.title}</h2>
-                    <span class="shrink-0 rounded-full bg-surface-inset px-2 py-0.5 font-mono text-xs text-fg-faint">#${() => post.id}</span>
+                <article class="card post q-panel">
+                  <div class="card__head">
+                    <h2 class="post__title">${() => post.title}</h2>
+                    <span class="badge">#${() => post.id}</span>
                   </div>
-                  <p class="mt-2 flex-1 text-sm text-fg-soft">${() => post.body}</p>
+                  <p class="post__body">${() => post.body}</p>
                 </article>
               `.key(post.id)
             )}

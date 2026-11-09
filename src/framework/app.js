@@ -25,5 +25,5 @@ export function createApp() {
 
   if (!rootEl) throw new Error('Missing root element: #app')
 
-  html`<div class="min-h-screen">${() => RouteOutlet()}</div>`(rootEl)
+  html`<div>${() => RouteOutlet()}</div>`(rootEl)
 }

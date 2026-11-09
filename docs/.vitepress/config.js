@@ -7,7 +7,7 @@ const pkg = createRequire(import.meta.url)('../../package.json')
 
 export default defineConfig({
   title: 'Quiver',
-  description: 'Arrow.js + Vite + Tailwind CSS starter template',
+  description: 'Arrow.js + Vite starter template with plain-CSS themes',
   base: '/quiver/',
   ignoreDeadLinks: [/localhost/],
 
