@@ -1,4 +1,4 @@
-/* Quiver theme: the reset that replaces Tailwind's preflight (planning/v3/DESIGN.md §5). */
+/* Quiver theme: the base reset (planning/v3/DESIGN.md §5). */
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
 
 @layer quiver.base {
