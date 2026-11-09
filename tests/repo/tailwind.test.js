@@ -16,7 +16,7 @@ const BINARY = /\.(png|jpe?g|gif|webp|ico|woff2?|ttf|otf)$/i
 
 const ALLOWED = new Set([
   'CHANGELOG.md',
-  'docs/guide/theming.md',   // layer-order note (D29)
+  'docs/guide/theming.md',   // layer-order note (D29); limited to that one line below
   `docs/guide/${'tail' + 'wind'}.md`,  // optional guide, added in P8
 ])
 
@@ -38,5 +38,11 @@ describe('R7: old CSS framework is gone', () => {
   it('is named only in CHANGELOG.md, its optional guide and the layer-order note', () => {
     const matches = walk(ROOT).filter((file) => WORD.test(readFileSync(join(ROOT, file), 'utf8')))
     expect(matches.filter((file) => !ALLOWED.has(file))).toEqual([])
+  })
+
+  it('names it on one line of the theming guide only: the layer-order note', () => {
+    const lines = readFileSync(join(ROOT, 'docs/guide/theming.md'), 'utf8').split('\n').filter((line) => WORD.test(line))
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toContain('@layer theme, base, quiver, components, utilities;')
   })
 })

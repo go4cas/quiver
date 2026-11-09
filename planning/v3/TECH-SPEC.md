@@ -532,13 +532,14 @@ Repo-wide checks (D34), all plain Vitest tests reading files, in `tests/repo/`:
 
 ## 7. CI layout
 
-`.github/workflows/test.yml` (triggers unchanged: push to `main`, pull requests):
+`.github/workflows/test.yml` (triggers: push to `main`, pull requests, and from P1 a manual `workflow_dispatch` for `screenshots-update`):
 
 | Job | Steps | From |
 |---|---|---|
 | `unit` | setup-bun `1.4.x` · `bun install --frozen-lockfile` · `bun run typecheck` · `bun run test` · setup-node `22` · `node packages/quiver/bin/quiver.js routes --dir packages/quiver/tests/fixtures/pages --out "$RUNNER_TEMP/routes.gen.js"` (proves S-34 on Node) | P2 (CLI step P4) |
 | `e2e` | setup-bun · install · `bunx playwright install --with-deps chromium` · `bun run test:e2e` | now |
-| `screenshots` | same as `e2e`, runs the visual-parity suite only; baselines live in the repo and are only updated on CI Linux Chromium (D35) | P1 |
+| `screenshots` | runs in the container `mcr.microsoft.com/playwright:v<bun.lock version>-noble` (DESIGN §8.3) · apt `unzip` · setup-bun · install · `bun run test:visual`; baselines live in the repo and are only updated on CI (D35) | P1 |
+| `screenshots-update` | only on a manual `workflow_dispatch` with `update-screenshots` (added to the triggers in P1), never on `main`; same container; `test:visual --update-snapshots=changed`, then commits the PNGs to the branch. The only job with `contents: write` | P1 |
 | `pack` | setup-bun · install · the X-4 `npm pack --dry-run --json` test for both packages (P8 adds it as a `pack:check` script) | P8 |
 
 `.github/workflows/docs.yml` doesn't change (W-2 keeps its command and output path).

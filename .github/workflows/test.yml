@@ -41,12 +41,11 @@ jobs:
   # for the version in bun.lock, which pins Chromium and the fallback system fonts.
   # Bump the tag with Playwright and re-capture the baseline in the same PR.
   screenshots:
+    if: ${{ !inputs.update-screenshots }}
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.63.0-noble
       options: --ipc=host
-    permissions:
-      contents: write   # only used by the dispatched update below
     steps:
       - uses: actions/checkout@v7
       - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
@@ -55,23 +54,37 @@ jobs:
           bun-version: 1.4.x
       - run: bun install --frozen-lockfile
       - name: Compare with the baseline
-        if: ${{ !inputs.update-screenshots }}
         run: bun run test:visual
-      - name: Re-capture and commit the baseline
-        if: ${{ inputs.update-screenshots }}
-        run: |
-          if [ "$GITHUB_REF_NAME" = "main" ]; then echo "Refusing to update screenshots on main"; exit 1; fi
-          bun run test:visual --update-snapshots=changed   # only captures beyond the tolerance, so sub-threshold noise never churns PNGs
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/visual/__screenshots__
-          if git diff --cached --quiet; then echo "Baseline unchanged"; exit 0; fi
-          git commit -m "test(visual): capture screenshot baseline on CI"
-          git push origin "HEAD:$GITHUB_REF_NAME"
       - uses: actions/upload-artifact@v7
         if: ${{ failure() }}
         with:
           name: visual-diffs
           path: test-results/
           retention-days: 7
+
+  # Manual run with update-screenshots: the only job that gets a write token.
+  screenshots-update:
+    if: ${{ inputs.update-screenshots && github.ref_name != 'main' }}
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --ipc=host
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.x
+      - run: bun install --frozen-lockfile
+      - name: Re-capture and commit the baseline
+        run: |
+          bun run test:visual --update-snapshots=changed   # only captures beyond the tolerance, so sub-threshold noise never churns PNGs
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/visual/__screenshots__
+          if git diff --cached --quiet; then echo "Baseline unchanged"; exit 0; fi
+          git commit -m "test(visual): re-capture screenshot baseline on CI (${GITHUB_SHA::7})"
+          git push origin "HEAD:$GITHUB_REF_NAME"
