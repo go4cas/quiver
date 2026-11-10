@@ -523,6 +523,7 @@ plugins/quiver/         Claude Code plugin with the /add-* commands (P7, N101); 
 - **W-4** Workspace dependencies use real ranges, never `workspace:` in the starter (D19, D34). Examples and recipes use `"@go4cas/quiver": "^3.0.0"` and `"arrow-use": "^0.1.0"` too, so copied examples install.
 - **W-5** Each workspace has its own `jsconfig.json`. The published packages' configs extend `../../jsconfig.base.json`; core's browser config has `"types": []`, so `import.meta.glob`/`.hot` fail typecheck (D33, R1). The starter's config is self-contained (the base's compiler options copied in, plus `"types": ["vite/client"]`), because a degit copy of `starter/` has no parent config to extend (N56; accepted with P2).
 - **W-6** Starter `main.js` passes `base: import.meta.env.BASE_URL` to `initRouter`, and `vite.config.js` sets `base: process.env.QUIVER_BASE ?? '/'`. This is how the sub-path e2e runs without changing app code.
+- **W-7** Recipes (P7, N105): `recipes/index.json` is the registry (per recipe: `files` copied into apps, `css` load order, `requires`, `packages`, `aliases`), checked by `recipes/tests/registry.test.js`. Apps install a recipe by copying its `files` to `src/quiver/<name>/`; the starter holds exact copies (`bun run recipes:sync`, `tests/repo/recipes-sync.test.js`).
 
 Repo-wide checks (D34), all plain Vitest tests reading files, in `tests/repo/`:
 

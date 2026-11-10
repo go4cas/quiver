@@ -60,6 +60,7 @@ async function exitAnimations(id) {
   // Arrow applies data-state="closing" on its next flush, so look once it has.
   await nextTick()
   if (typeof document === 'undefined') return
+  // Assumes one ToastContainer on the page (the layouts mount one each), so the first match is the toast.
   const el = document.querySelector(`.q-toast[data-id="${id}"]`)
   const animations = el && typeof el.getAnimations === 'function' ? el.getAnimations() : []
   // A cancelled animation rejects `finished`; the toast still goes.

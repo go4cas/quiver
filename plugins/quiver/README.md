@@ -13,7 +13,7 @@ The `/add-*` commands for Quiver apps (and plain Arrow.js apps). They copy **rec
 | `/add-feature <name — description>` | Plans, then builds a feature end to end |
 | `/add-test <file>` | Writes unit or e2e tests |
 
-With other plugins installed, a command may need its namespace: `/quiver:add-component toast`.
+Plugin commands are namespaced: type `/quiver:add-component toast` (the `/` menu also finds it as you type `add-component`). The short names above are used for readability.
 
 ## Install
 

@@ -223,7 +223,7 @@ For local component state that should survive Vite hot reloads in dev, use `hmrS
 
 ### Composables
 
-Call these inside a page or component function, never at module scope. `useRoute` and `useRouter` come from `@go4cas/quiver`; `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` from `arrow-use`; `useForm` and `useToast` are recipes (`src/quiver/useForm/useForm.js`, `src/quiver/toasts/toasts.js` in the starter):
+Call these inside a page or component function, never at module scope; the exception is shared state built on `arrow-use` (a module-level `useStorage` singleton, see below). `useRoute` and `useRouter` come from `@go4cas/quiver`; `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` from `arrow-use`; `useForm` and `useToast` are recipes (`src/quiver/useForm/useForm.js`, `src/quiver/toasts/toasts.js` in the starter):
 
 - `useRoute()` → `{ path(), params(), status(), meta() }` — reactive route accessors
 - `useRouter()` → `{ go(path), back(), forward() }` — navigation; each returns a promise that resolves when the navigation finishes
