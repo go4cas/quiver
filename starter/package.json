@@ -1,0 +1,30 @@
+{
+  "name": "quiver-starter",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.4",
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test --project=e2e",
+    "test:visual": "playwright test --project=visual-desktop --project=visual-mobile",
+    "typecheck": "tsc -p jsconfig.json"
+  },
+  "dependencies": {
+    "@arrow-js/core": "^1.0.6",
+    "@go4cas/quiver": "^3.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "jsdom": "^29.1.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
+  }
+}

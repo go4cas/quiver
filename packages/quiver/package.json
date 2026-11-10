@@ -1,0 +1,32 @@
+{
+  "name": "@go4cas/quiver",
+  "version": "3.0.0",
+  "description": "A small drop-in router, context and meta layer for Arrow.js apps.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/go4cas/quiver.git",
+    "directory": "packages/quiver"
+  },
+  "exports": {
+    ".": { "types": "./types/index.d.ts", "default": "./src/index.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["src", "types", "README.md", "LICENSE"],
+  "peerDependencies": {
+    "@arrow-js/core": "^1.0.6"
+  },
+  "devDependencies": {
+    "@arrow-js/core": "^1.0.6"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "typecheck": "tsc -p jsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

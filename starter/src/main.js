@@ -1,0 +1,19 @@
+import './style.css'
+import { provide, initRouter, createApp } from '@go4cas/quiver'
+import { routes, notFound } from './routes.js'
+import { layouts } from './layouts/index.js'
+import { LoadingCard } from './components/LoadingCard.js'
+import { ErrorCard } from './components/ErrorCard.js'
+import aliceAvatar from './assets/avatar-alice.svg'
+
+provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
+provide('currentUser', { name: 'Alice Nkosi', email: 'alice@example.com', avatar: aliceAvatar })
+
+await initRouter({ routes, notFound })
+createApp({
+  target: '#app',
+  layouts,
+  defaultLayout: 'basic',
+  loading: LoadingCard,
+  error: ({ message }) => ErrorCard(message),
+})

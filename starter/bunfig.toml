@@ -1,0 +1,4 @@
+[run]
+# Run package.json scripts and the tools they call (vite, vitest, vitepress)
+# on Bun instead of Node. Scripts stay plain, so `npm run` still works.
+bun = true
