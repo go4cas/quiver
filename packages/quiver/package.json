@@ -29,6 +29,9 @@
   "engines": {
     "node": ">=22.12"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "typecheck": "tsc -p jsconfig.json && tsc -p jsconfig.node.json",
     "test": "vitest run",

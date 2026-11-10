@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-10
+
 ### Removed
 
 - **Breaking:** Tailwind CSS. `tailwindcss`, `@tailwindcss/vite` and the Vite plugin are gone, and no markup uses utility classes. Apps built on the 2.x template that added their own Tailwind classes need Tailwind added back themselves, or the classes rewritten as plain CSS
@@ -14,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `"publishConfig": { "access": "public" }` in `@go4cas/quiver`, so the first publish of the scoped package is public without `--access public`
 - A plain-CSS token contract of 27 `--q-*` custom properties in `src/styles/tokens.css` (colours, radii, shadows, font stacks), including the new `--q-color-on-brand` and `--q-font-body`, with the `[data-theme]` / `[data-mode]` override blocks
 - `src/styles/base.css`, the reset that replaces Tailwind's preflight, and `src/styles/effects.css` for per-theme effects, all in the cascade layers `quiver.tokens`, `quiver.base`, `quiver.components`, `quiver.effects`. Unlayered app CSS beats them without `!important`
 - Component CSS beside each component and layout (`q-` classes for the reusable ones), with state as attributes (`aria-current`, `aria-pressed`, `data-type`, `data-state`) and hook classes `q-panel`, `q-sidebar`, `q-header`, `q-accent` for theme effects
@@ -202,6 +205,7 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[3.0.0]: https://github.com/go4cas/quiver/releases/tag/v3.0.0
 [2.1.0]: https://github.com/go4cas/quiver/releases/tag/v2.1.0
 [2.0.1]: https://github.com/go4cas/quiver/releases/tag/v2.0.1
 [2.0.0]: https://github.com/go4cas/quiver/releases/tag/v2.0.0
