@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- No bundler and no Quiver: Arrow and arrow-use, mapped to their unbundled
+         files. arrow-use imports @arrow-js/core by name, so both share one Arrow copy. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@arrow-js/core": "./vendor/@arrow-js/core/dist/index.mjs",
+          "arrow-use": "./vendor/arrow-use/src/index.js"
+        }
+      }
+    </script>
+    <title>arrow-use example</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { max-width: 40rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+      section { margin-block: 1.5rem; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

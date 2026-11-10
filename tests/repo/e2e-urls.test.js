@@ -19,7 +19,7 @@ function testFiles(dir) {
 const examples = existsSync(join(ROOT, 'examples'))
   ? readdirSync(join(ROOT, 'examples')).map((name) => join(ROOT, 'examples', name, 'tests'))
   : []
-const files = [join(ROOT, 'starter/tests/e2e'), ...examples].flatMap(testFiles)
+const files = [join(ROOT, 'starter/tests/e2e'), join(ROOT, 'packages/arrow-use/example/tests'), ...examples].flatMap(testFiles)
 
 describe('e2e URLs are relative (CI-3)', () => {
   it('finds the starter e2e tests', () => {

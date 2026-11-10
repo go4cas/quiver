@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@arrow-js/core": "^1.0.6",
-    "@go4cas/quiver": "^3.0.0"
+    "@go4cas/quiver": "^3.0.0",
+    "arrow-use": "^0.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

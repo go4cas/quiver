@@ -1,0 +1,34 @@
+{
+  "name": "arrow-use",
+  "version": "0.1.0",
+  "description": "Composables for Arrow.js: useFetch, useStorage, useMediaQuery, useEventListener.",
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/go4cas/quiver.git",
+    "directory": "packages/arrow-use"
+  },
+  "keywords": ["arrow-js", "arrow", "composables", "reactive"],
+  "exports": {
+    ".": { "types": "./types/index.d.ts", "default": "./src/index.js" },
+    "./package.json": "./package.json"
+  },
+  "files": ["src", "types", "README.md", "LICENSE"],
+  "peerDependencies": {
+    "@arrow-js/core": "^1.0.6"
+  },
+  "devDependencies": {
+    "@arrow-js/core": "^1.0.6"
+  },
+  "scripts": {
+    "typecheck": "tsc -p jsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "example": "bun example/serve.js",
+    "prepack": "tsc -p jsconfig.types.json",
+    "postpack": "node -e \"fs.rmSync('types',{recursive:true,force:true})\""
+  }
+}

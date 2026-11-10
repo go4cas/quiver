@@ -167,12 +167,12 @@ function LoginPage() {
 
 ## `useFetch(url, options?)`
 
-Fetches a JSON endpoint and returns reactive accessors for `data`, `loading`, `error`, and `status`. Cancels any in-flight request when `refetch()` is called or the component unmounts.
+Fetches a JSON endpoint and returns reactive accessors for `data`, `loading`, `error`, and `status`. Cancels any in-flight request when `refetch()` or `stop()` is called or the component unmounts. It comes from the [`arrow-use`](https://github.com/go4cas/quiver/tree/main/packages/arrow-use) composables package, which works in any Arrow app.
 
 **Must be called inside a page or `component()` factory** — not at module scope.
 
 ```js
-import { useFetch } from '../composables/useFetch.js'
+import { useFetch } from 'arrow-use'
 
 function PostsPage() {
   const posts = useFetch('https://jsonplaceholder.typicode.com/posts', {
@@ -198,6 +198,7 @@ function PostsPage() {
 | `status()` | `() => number \| null` | HTTP status code of the last response |
 | `refetch()` | `() => Promise<void>` | Re-triggers the fetch; cancels any in-flight request first |
 | `reset()` | `() => void` | Aborts any in-flight request and clears `data`, `error`, `status`, and `loading` |
+| `stop()` | `() => void` | Aborts any in-flight request and ignores later `refetch()` calls |
 
 | Option | Type | Default | Description |
 |---|---|---|---|
