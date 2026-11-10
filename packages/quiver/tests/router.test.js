@@ -163,24 +163,29 @@ describe('intercept filter (§2 step 1)', () => {
     expect(g).not.toHaveBeenCalled()
   })
 
-  it('a rollback navigation is not intercepted (no guard re-run, no remount)', async () => {
-    const nav = await start()
+  it('a rollback navigation changes the URL in place: no document load, no guard re-run (N72)', async () => {
+    const nav = await start({}, '/users')
     const g = vi.fn()
     guard(g)
-    nav.navigate('/', { history: 'replace', info: { rollback: true } })
+    nav.navigate('/users?page=2', { history: 'replace', info: { rollback: true } })
+    await nav.idle()
     expect(g).not.toHaveBeenCalled()
+    expect(nav.documentLoads).toEqual([])
+    expect(window.location.search).toBe('?page=2')
+    expect(useRoute().path()).toBe('/users')
   })
 })
 
 describe('guards (C-32, C-33)', () => {
-  it('a cancelling guard rolls back to url(from) and leaves the route untouched (C-28)', async () => {
-    const nav = await start({ base: '/app/' }, '/app/users')
+  it('a cancelling guard rolls back to the previous URL, query and hash kept, and leaves the route untouched (C-28)', async () => {
+    const nav = await start({ base: '/app/' }, '/app/users?page=3#c12')
     const a = vi.fn()
     after(a)
     guard(({ to }) => (to === '/login' ? false : undefined))
     nav.navigate('/app/login')
     await nav.idle()
-    expect(nav.navigate).toHaveBeenLastCalledWith('/app/users', { history: 'replace', info: { rollback: true } })
+    expect(nav.navigate).toHaveBeenLastCalledWith('http://localhost:3000/app/users?page=3#c12', { history: 'replace', info: { rollback: true } })
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe('/app/users?page=3#c12')
     expect(useRoute().path()).toBe('/users')
     expect(useRoute().status()).toBe('ready')
     expect(a).not.toHaveBeenCalled()
@@ -294,6 +299,27 @@ describe('hooks (C-25, C-34)', () => {
     await n.idle()
     expect(e2).toHaveBeenCalledTimes(1)
     expect(log).toHaveBeenCalledWith('[quiver] onError handler threw', err)
+  })
+
+  it('N66: a redirect to the path being navigated to proceeds, in-app as on the initial load', async () => {
+    const a = vi.fn()
+    const errors = vi.fn()
+    after(a)
+    onError(errors)
+    // An auth guard without a "to !== '/login'" exclusion.
+    guard(() => '/login')
+    const nav = await start({}, '/login?next=x')
+    expect(useRoute().status()).toBe('ready')
+    expect(window.location.search).toBe('?next=x')
+
+    // In-app: /users redirects to /login once, then /login proceeds.
+    nav.navigate('/users')
+    await nav.idle()
+    expect(useRoute().path()).toBe('/login')
+    expect(useRoute().status()).toBe('ready')
+    expect(errors).not.toHaveBeenCalled()
+    expect(a).toHaveBeenCalledWith({ from: '/login', to: '/login', status: 'ready' })
+    expect(nav.navigate).toHaveBeenCalledTimes(2)
   })
 
   it('C-27: in-app redirects are capped at 10 hops', async () => {

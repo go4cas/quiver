@@ -120,7 +120,7 @@ Every path the app sees or passes is **base-relative**: manifest keys, `go()`, g
 
 ### Navigation guards and hooks
 
-`beforeEach(fn)` from `@go4cas/quiver` registers a guard and returns an unregister function. The guard receives `{ from, to }`; return `false` to cancel, a path string to redirect (query and hash are kept), anything else to proceed. Guards also run on the initial page load with `from: null` — on first load, `false` redirects to `/` (there is no previous page to stay on). Redirects are capped at 10 hops.
+`beforeEach(fn)` from `@go4cas/quiver` registers a guard and returns an unregister function. The guard receives `{ from, to }`; return `false` to cancel, a path string to redirect (query and hash are kept), anything else to proceed. Guards also run on the initial page load with `from: null` — on first load, `false` redirects to `/` (there is no previous page to stay on). A redirect to the path already being navigated to proceeds, so a guard without a `to !== '/login'` check still reaches `/login`. Redirects are capped at 10 hops. Cancelling puts back the previous URL, query and hash included. Components nested inside a layout never get `onCleanup` (Arrow 1.0.6 limitation, N64), so don't rely on it there.
 
 `afterEach(({ from, to, status }) => …)` runs after every committed navigation (`status`: `'ready'`, `'not-found'` or `'error'`). `onError(({ error, from, to, phase }) => …)` runs for guard, load and render errors (`phase`: `'guard'`, `'load'`, `'render'`), after the error view is shown. Both return an unregister function; a throwing handler is logged and the others still run. For the initial load they fire inside `createApp()`.
 

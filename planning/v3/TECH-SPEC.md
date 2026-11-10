@@ -67,7 +67,7 @@ export function initRouter(options)
   *Check:* unit tests for all three branches, including a `<base>` pointing at a file, and that `document.baseURI` alone (no `<base>`) never changes the result (N1).
 - **C-14** If the current `location.pathname` is outside the base (C-20), `initRouter` throws `Current URL "<pathname>" is outside base "<base>".` Misconfiguration fails loud. *Check:* unit test.
 - **C-15** On success it adds the `navigate` listener, runs the initial navigation through the pipeline (§2) with `from: null`, and resolves once the route has loaded. It **does not reject** for guard, load or not-found outcomes. Those are recorded in router state and reported when `createApp()` mounts (C-44). It rejects only for C-10…C-14. *Check:* unit test with a rejecting loader: `await initRouter()` resolves and `useRoute().status()` is `'error'`.
-- **C-16** Initial-load guard semantics stay as in 2.x: `false` redirects to `/`, a string redirects, both via `history.replaceState` with the base applied, capped by C-27.
+- **C-16** Initial-load guard semantics stay as in 2.x: `false` redirects to `/`, a string redirects, both via `history.replaceState` with the base applied, capped by C-27. A redirect (or `false`) whose normalised path equals the current `to` proceeds instead, and in-app navigations follow the same rule (C-27, N66).
 
 ### 1.4 Base-relative paths and `url()`
 
@@ -120,7 +120,7 @@ export function onError(fn)
 
 - **C-30** `go(path)` calls `navigation.navigate(url(path))`. It keeps query and hash (2.x dropped them, N21). It resolves when `finished` settles, swallows `AbortError` (2.x behaviour) and rethrows anything else. *Check:* unit tests with a mocked `navigation`.
 - **C-31** `go()` before `initRouter()` or after `destroy()` throws `Quiver router is not initialised. Call initRouter() first.` *Check:* unit test.
-- **C-32** Guard contract is unchanged from 2.x except for paths (base-relative, C-21): `({ from, to }) => false | string | void | Promise<…>`. `false` cancels, a string redirects, anything else proceeds. A redirect string is base-relative and may carry query and hash, which are kept (N21). Guards run in registration order and stop at the first `false` or string.
+- **C-32** Guard contract is unchanged from 2.x except for paths (base-relative, C-21): `({ from, to }) => false | string | void | Promise<…>`. `false` cancels and puts back the previous URL, query and hash included (§2 step 3, N67); a string redirects; anything else proceeds. A redirect string is base-relative and may carry query and hash, which are kept (N21). Guards run in registration order and stop at the first `false` or string.
 - **C-33** Unregister functions are idempotent, and unregistering during a run does not skip the next handler in that run (the run iterates a copy). *Check:* unit test.
 - **C-34** `afterEach` and `onError` handlers are called synchronously in registration order and not awaited. A handler that throws is caught and logged with `console.error('[quiver] afterEach handler threw', err)` / `'[quiver] onError handler threw'`, and the remaining handlers still run (D24). *Check:* unit test with a throwing first handler.
 
@@ -176,7 +176,7 @@ export function destroy()
   6. unmounts the outlet: sets the mount's private `mounted` flag to `false` so Arrow drops the page chunk and runs component `onCleanup` callbacks, then `target.replaceChildren()`
   7. replaces router state with a fresh object `{ status: 'idle', path: '', params: {}, meta: {}, … }` and the base with `'/'`
   8. marks router and app as not initialised
-  It is idempotent, and works when only `initRouter()` ran. After it, `initRouter()` + `createApp()` work again. *Check:* unit tests: (a) a page component's `onCleanup` runs on `destroy()`; (b) after `destroy()`, `useRoute().status()` is `'idle'`, `inject('k')` is `undefined`, a navigate event is not intercepted, target is empty; (c) a full second `initRouter` + `createApp` cycle renders.
+  It is idempotent, and works when only `initRouter()` ran. After it, `initRouter()` + `createApp()` work again. **Caveat (Arrow 1.0.6, N64):** step 6 runs `onCleanup` only for a page component rendered without a layout. Components nested inside a layout's template (and any child component) are recycled with their parent and never get `onCleanup`, on `destroy()` or on navigation, as in 2.x. The P8 docs must say so; an upstream Arrow issue is drafted in N64. *Check:* unit tests: (a) a page component rendered without a layout has its `onCleanup` run on `destroy()`; (b) after `destroy()`, `useRoute().status()` is `'idle'`, `inject('k')` is `undefined`, a navigate event is not intercepted, target is empty; (c) a full second `initRouter` + `createApp` cycle renders.
 - **C-50** Internal state objects (router state, the mount's `mounted` flag) are replaced, not mutated back to defaults, on `destroy()`, so watchers from the old mount subscribe to an abandoned object and can be collected. Arrow 1.0.6 has no public unmount (N30). *Check:* covered by C-49 (c): a navigation after re-init doesn't re-render into the old, detached outlet (spy on the old page function).
 
 ### 1.7 Route reading, navigation helpers, meta, context
@@ -235,12 +235,12 @@ One pipeline handles in-app navigations, the initial load (C-15) and `retry()` (
    - `event.hashChange`
    - `event.downloadRequest !== null`
    - `event.formData !== null` (a form POST is left to the browser, N22)
-   - `event.info?.rollback` (guard-cancel rollback, 2.x)
+   - `event.info?.rollback` (guard-cancel rollback, 2.x). This one calls `event.intercept()` with no handler before returning, so the URL changes in place without a document load or a pipeline run (N72)
    - `stripBase(new URL(event.destination.url).pathname) === null` (outside the base, R3)
    
    Otherwise it calls `event.intercept({ handler })` and steps 2–8 run in the handler.
 2. **Epoch.** `const epoch = ++navEpoch`. After every `await`, a stale epoch returns at once: no state writes, no hooks.
-3. **Guards** with `{ from: currentPath | null, to }`. A throw goes to step 6 with `phase: 'guard'` (N2). `false`: in-app, `navigation.navigate(url(from), { history: 'replace', info: { rollback: true } })` and stop, no hooks; initial load, redirect to `/`. A string: `navigation.navigate(url(result), { history: 'replace', info: { redirects: n + 1 } })` (initial load: `history.replaceState`) and stop; the new navigation runs its own pipeline.
+3. **Guards** with `{ from: currentPath | null, to }`. A throw goes to step 6 with `phase: 'guard'` (N2). `false`: in-app, `navigation.navigate(fromUrl, { history: 'replace', info: { rollback: true } })` and stop, no hooks, where `fromUrl` is `navigation.currentEntry.url` captured in the `navigate` handler before `intercept()` commits the new URL, so the previous query and hash survive (N67); initial load, redirect to `/`. A string whose normalised path equals `to` proceeds to step 4 (C-16, N66). Any other string: `navigation.navigate(url(result), { history: 'replace', info: { redirects: n + 1 } })` (initial load: `history.replaceState`) and stop; the new navigation runs its own pipeline.
 4. **Load.** Clear meta watchers, set state `{ status: 'loading', path: to, params: {}, meta: {}, error: null }`. Pick the first sorted route (M-6) whose pattern matches; otherwise the `notFound` loader; otherwise not-found without a page. `await loader()`. A rejection, or a module whose `default` isn't a function, goes to step 6 with `phase: 'load'`. The bad-export message names the pattern: `Route "/users/:id" must default export a page function.` (D21).
 5. **Commit.** Set state `{ status: 'ready' | 'not-found', page, params, meta, layout }`, apply a static `meta.title`.
 6. **Error commit** (from 3 or 4). Set state `{ status: 'error', error, page: null, meta: {} }`. Queue `onError({ error, from, to, phase })`.
@@ -251,7 +251,7 @@ Rules:
 
 - **C-25** A navigation fires `afterEach` exactly once if it reaches step 5 or 6, and never if it is cancelled (`false`), redirected (the redirect target fires instead), or superseded. *Check:* unit tests for each case.
 - **C-26** Every error reaches the error view before `onError` runs (D24). *Check:* in the `onError` handler, the test asserts the error view's text is already in the target.
-- **C-27** Redirects are capped at 10 consecutive hops, counted through `info.redirects` (in-app) or the loop counter (initial load). The 11th hop goes to step 6 with `phase: 'guard'` and `Error('Too many redirects (10) from "<first to>".')`. 2.x only capped the initial load (N23). *Check:* unit test with a guard that always redirects.
+- **C-27** Redirects are capped at 10 consecutive hops, counted through `info.redirects` (in-app) or the loop counter (initial load). The 11th hop goes to step 6 with `phase: 'guard'` and `Error('Too many redirects (10) from "<first to>".')`. 2.x only capped the initial load (N23). A redirect to the current normalised `to` is not a hop: it proceeds, on the initial load and in-app alike (C-16, N66), so the cap only catches real cycles. *Check:* unit test with a guard that always redirects to a new path, and one with an unconditional `return '/login'` reaching `/login` both ways.
 - **C-28** A rollback, redirect or `retry()` never remounts a page that didn't change, and query-only changes re-run the pipeline (2.x behaviour). *Check:* existing 2.x rollback test, ported.
 
 ---
