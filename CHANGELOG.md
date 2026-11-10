@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AGENTS.md` and `llms.txt` ship inside `@go4cas/quiver` for agents working in apps; the starter's `CLAUDE.md` imports both from `node_modules`
 - `views` recipe: `LoadingView`, and `ErrorView` with a **Try again** button that calls `retry()` (the starter's 2.x error card ignored it) and a **Go home** link
 - `MenuLayout` reads its sidebar links from `provide('nav', [{ to, label }])`, and its logo, footer and sign-out from optional `logo`, `footer` (on `'app'`) and `signOut` (on `'currentUser'`), so apps configure it in `main.js` instead of editing it
+- `.d.ts` files for every entry point, generated from the JSDoc at `prepack`: `@go4cas/quiver`, `@go4cas/quiver/vite` and `@go4cas/quiver/bun` (the plugins' types included), and `arrow-use`
+- A rewritten documentation site: every guide updated for 3.0, a [2.x → 3.0 migration guide](https://go4cas.github.io/quiver/guide/migration), an optional Tailwind guide (exposing the `--q-*` tokens through a v4 `@theme`), an API reference for `@go4cas/quiver`, `/vite`, `/bun`, `/client`, the `quiver routes` CLI and `arrow-use`, a page per `arrow-use` composable and per recipe, and an examples page. Repo tests check that every export, CLI flag, recipe, composable and example is documented
+- `bun run pack:check` checks the file list of both npm tarballs, and `bun run pack:try` runs the examples and the starter, copied out of the repository, against the packed tarballs; a new `pack` CI job runs both
 
 ### Changed
 
@@ -62,6 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** the starter's `src/routes.js` is gone; `main.js` imports the manifest from `quiver:routes`, served by the `quiver()` plugin in `vite.config.js`, and `@go4cas/quiver/client` in `jsconfig.json` types it
 - Route discovery errors that 2.x ignored now fail the scan with a `[quiver]` message naming the files: a `not-found.js` below the pages root (2.x dropped it silently), two files for one route (`users.js` + `users/index.js`), two that differ only in the param name, or an invalid param name
 - A script reload (`location.reload()`, including Vite's dev-server full reload) now loads a new document; 2.x and earlier 3.0 work intercepted it as an in-app navigation, so Vite's reload did nothing. The error view's `retry()` still re-runs the route in place
+- `quiver routes` refuses an `--out` `.js` file inside `--dir` (exit code 2), which the scan would otherwise pick up as a page of its own manifest; a name starting with `_` there is fine. Under `--watch`, the watcher starts before the first write, so a page added during startup is not missed
+- The docs navbar shows the version of `@go4cas/quiver` (it read the root `package.json`, which has none since the workspace split)
 
 ### Fixed
 

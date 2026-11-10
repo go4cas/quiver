@@ -544,7 +544,7 @@ Repo-wide checks (D34), all plain Vitest tests reading files, in `tests/repo/`:
 | `e2e` | setup-bun · install · `bunx playwright install --with-deps chromium` · `bun run test:e2e` | now |
 | `screenshots` | runs in the container `mcr.microsoft.com/playwright:v<bun.lock version>-noble` (DESIGN §8.3) · apt `unzip` · setup-bun · install · `bun run test:visual`; baselines live in the repo and are only updated on CI (D35) | P1 |
 | `screenshots-update` | only on a manual `workflow_dispatch` with `update-screenshots` (added to the triggers in P1), never on `main`; same container; `test:visual --update-snapshots=changed`, then commits the PNGs to the branch. The only job with `contents: write` | P1 |
-| `pack` | setup-bun · install · the X-4 `npm pack --dry-run --json` test for both packages (P8 adds it as a `pack:check` script) | P8 |
+| `pack` | setup-bun · setup-node `22` · install · `bun run pack:check` (the X-4 `npm pack --dry-run --json` test for both packages, `tests/pack/`) · `bunx playwright install --with-deps chromium` · `bun run pack:try` (the examples and the starter, copied out, typecheck and e2e against the packed tarballs, N119) | P8 |
 
 `.github/workflows/docs.yml` doesn't change (W-2 keeps its command and output path).
 

@@ -1,29 +1,44 @@
 # @go4cas/quiver
 
-A small router, context and meta layer for [Arrow.js](https://arrow-js.com) apps. Quiver 3 is being built in phases (see `planning/v3/SPEC.md` in the repo); this package is not on npm yet.
+A drop-in router, context and meta layer for [Arrow.js](https://arrow-js.com) apps: routing on the Navigation API with layouts, guards, `afterEach`/`onError` hooks and base paths, `provide`/`inject`, and `useMeta`. File-based routes come from a Vite plugin, a `Bun.build` plugin or the `quiver routes` CLI. Plain JavaScript with generated `.d.ts` types; `@arrow-js/core` is the only peer dependency, and no CSS ships with it.
 
-```js
-import { provide, beforeEach, onError, initRouter, createApp, url } from '@go4cas/quiver'
-
-provide('app', { name: 'My app' })                 // 1. context
-beforeEach(({ to }) => (to === '/admin' ? '/login' : undefined))
-onError(({ error, phase }) => console.error(phase, error))  // 2. guards and hooks
-
-await initRouter({                                  // 3. router
-  routes: {
-    '/': () => import('./pages/index.js'),
-    '/users/:id': () => import('./pages/users/[id].js'),
-  },
-  notFound: () => import('./pages/not-found.js'),
-  base: '/my/app/',                                 // optional; default: <base href> directory, else '/'
-})
-
-const app = createApp({ target: '#app' })           // 4. mount (layouts, defaultLayout, loading, error optional)
-
-url('/users/42')                                    // '/my/app/users/42', for hrefs
-app.destroy()                                       // tear down; initRouter + createApp work again
+```bash
+bun add @go4cas/quiver @arrow-js/core
 ```
 
-Paths are base-relative everywhere except `url()` output. `@arrow-js/core` is a peer dependency. The router needs the [Navigation API](https://developer.mozilla.org/docs/Web/API/Navigation_API) (Chrome/Edge 102+, Safari 26.2+, Firefox 147+).
+```js
+// vite.config.js
+import quiver from '@go4cas/quiver/vite'
+export default { plugins: [quiver()] }    // serves quiver:routes from src/pages/
+```
+
+```js
+// src/main.js
+import { provide, beforeEach, onError, initRouter, createApp, url } from '@go4cas/quiver'
+import routes, { notFound } from 'quiver:routes'
+
+provide('app', { name: 'My app' })                                   // 1. context
+beforeEach(({ to }) => (to === '/admin' ? '/login' : undefined))      // 2. guards and hooks
+onError(({ error, phase }) => console.error(phase, error))
+await initRouter({ routes, notFound, base: import.meta.env.BASE_URL }) // 3. router
+const app = createApp({ target: '#app' })                            // 4. mount (layouts, defaultLayout, loading, error optional)
+
+url('/users/42')   // the base-aware href, e.g. '/my/app/users/42'
+app.destroy()      // tear down; initRouter() + createApp() work again
+```
+
+| Entry | |
+|---|---|
+| `@go4cas/quiver` | `initRouter`, `createApp`, `destroy`, `go`, `beforeEach`, `afterEach`, `onError`, `useRoute`, `useRouter`, `useMeta`, `url`, `provide`, `inject`, and the shared types |
+| `@go4cas/quiver/vite` | Vite plugin for `quiver:routes` |
+| `@go4cas/quiver/bun` | `Bun.build` plugin for `quiver:routes` |
+| `@go4cas/quiver/client` | types for `quiver:routes` (add to `compilerOptions.types`) |
+| `quiver routes [--dir] [--out] [--watch]` | CLI that writes the manifest to `src/routes.gen.js` |
+
+The package also carries `recipes/` (toasts, layouts, theme tokens, views and more, to copy into your app), `AGENTS.md` and `llms.txt` for AI assistants.
+
+Paths are base-relative everywhere except `url()` output. The router needs the [Navigation API](https://developer.mozilla.org/docs/Web/API/Navigation_API): Chrome/Edge 102+, Safari 26.2+, Firefox 147+. The plugins and CLI run on Node 22.12+ or Bun 1.4.4+.
+
+Docs: <https://go4cas.github.io/quiver/> · [API reference](https://go4cas.github.io/quiver/api/core) · [Migrating from 2.x](https://go4cas.github.io/quiver/guide/migration)
 
 MIT licensed.

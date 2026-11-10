@@ -64,8 +64,11 @@ examples/            # One small app per build mode, each copyable on its own (S
 ├── bun/             # Bun.build + @go4cas/quiver/bun (splitting); build.js, serve.js
 └── no-build/        # No bundler: import map for @arrow-js/core and @go4cas/quiver, hand-written src/routes.js
 
-docs/                # VitePress docs site (workspace quiver-docs)
-tests/repo/          # Repo-wide checks (Vitest): R7 grep, package boundaries, starter deps, core config, package.json rules, examples, recipe copies
+docs/                # VitePress docs site (workspace quiver-docs): guide/, api/ (one page per entry point + CLI),
+                     # arrow-use/ (one page per composable), recipes/ (one page per recipe), examples.md
+tests/repo/          # Repo-wide checks (Vitest): R7 grep, package boundaries, starter deps, core config, package.json rules,
+                     # examples, recipe copies, docs coverage
+tests/pack/          # `bun run pack:check`: npm pack --dry-run file lists for both packages (X-4)
 ```
 
 The `/add-*` slash commands live in the Quiver plugin (`plugins/quiver/commands/`); `.claude/settings.json` offers it in this repo (or run `claude --plugin-dir plugins/quiver`). In this repo they work on the starter, so their `src/` and `tests/` paths are relative to `starter/`, and they read recipes from `recipes/`. Recipe files in `starter/src/quiver/` are copies: change `recipes/<name>/`, then run `bun run recipes:sync`.
@@ -85,6 +88,8 @@ bun run test:visual   # Screenshot parity — only matches inside the pinned Pla
 bun run typecheck     # Type-check every workspace via JSDoc (tsc --noEmit, checkJs)
 bun run build         # Production build of the starter
 bun run recipes:sync  # Copy recipes/ into starter/src/quiver/ after editing a recipe
+bun run pack:check    # npm pack --dry-run for both packages: exact file lists, .d.ts, recipes (X-4)
+bun run pack:try      # Copy the examples and the starter out, install the packed tarballs, typecheck + e2e
 bun run docs:dev      # Start docs site locally
 bun run docs:build    # Build docs site
 ```
@@ -147,7 +152,7 @@ export default MyPage
 - `[param].js` → dynamic segment; read params with `useRoute().params()` inside the function
 - `not-found.js` handles 404 (only at the root of `pages/`; a nested one is a scan error)
 - Files and folders starting with `_` or `.` are not routes (`pages/_parts/Card.js`). Two files for one route, or two that differ only in the param name, are a scan error naming both
-- The `quiver()` plugin from `@go4cas/quiver/vite` (in `vite.config.js`) builds the manifest; `main.js` imports it as `import routes, { notFound } from 'quiver:routes'`. Adding or removing a page reloads the dev server's page; never hand-edit a manifest. Without Vite: `@go4cas/quiver/bun` for `Bun.build`, or `quiver routes [--watch]` writing `src/routes.gen.js`
+- The `quiver()` plugin from `@go4cas/quiver/vite` (in `vite.config.js`) builds the manifest; `main.js` imports it as `import routes, { notFound } from 'quiver:routes'`. Adding or removing a page reloads the dev server's page; never hand-edit a manifest. Without Vite: `@go4cas/quiver/bun` for `Bun.build`, or `quiver routes [--watch]` writing `src/routes.gen.js` (an `--out` `.js` file inside `--dir` is a usage error unless its name starts with `_`)
 - `useMeta` also accepts functions for reactive values: `` useMeta({ title: () => `Team (${userState.users.length})` }) `` — the router stops these watchers automatically on every navigation (see `src/pages/users/[id].js` for a working example)
 
 ### Base path and links
@@ -290,7 +295,9 @@ To add a theme: token blocks (light + dark) in `recipes/theme/tokens.css`, optio
 - E2E: Playwright in `starter/tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`. Every test runs twice, in the `root` project (port 5173) and the `subpath` project (port 5174, app under `/sub/app/`), so navigate with relative URLs (`page.goto('users')`, `page.goto('./')`, `toHaveURL('users')`), never a leading `/` (a repo test enforces it)
 - arrow-use example: `packages/arrow-use/example/` is a vanilla Arrow app (import map, no Quiver) whose Playwright smoke test runs from `bun run test:e2e` on port `5183`; it checks every composable and that Arrow loads from one URL (TECH-SPEC U-11)
 - Examples: each folder in `examples/` has a Playwright smoke suite run by `bun run test:e2e`, once at `/` and once under `/sub/app/`, on fixed ports (vite `5180`/`5190`, bun `5181`/`5191`, no-build `5182`/`5192`; TECH-SPEC CI-1, CI-5). The Bun and no-build examples take the base from `<base href>`, which their `serve.js` fills in from `QUIVER_BASE`. `examples/no-build` also asserts that Arrow loads from one URL. Examples use real ranges (`^3.0.0`), never `workspace:`, and import nothing from outside their own folder, so each can be copied out
-- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter or examples; arrow-use imports no Quiver and nothing outside its package), W-11 (no `workspace:` ranges in `starter/package.json`), CI-3 (relative e2e URLs), core's config (no ambient types, version `3.0.0`), W-13 (`packages.test.js`: `package.json` rules X-1/X-2 for both published packages, arrow-use `0.1.0`), the examples (`examples.test.js`: ranges, scripts, ports, self-contained imports, the no-build import map), and `recipes-sync.test.js` (`starter/src/quiver/` is an exact copy of `recipes/`)
+- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter or examples; arrow-use imports no Quiver and nothing outside its package), W-11 (no `workspace:` ranges in `starter/package.json`), CI-3 (relative e2e URLs), core's config (no ambient types, version `3.0.0`), W-13 (`packages.test.js`: `package.json` rules X-1/X-2 for both published packages, arrow-use `0.1.0`), the examples (`examples.test.js`: ranges, scripts, ports, self-contained imports, the no-build import map), `recipes-sync.test.js` (`starter/src/quiver/` is an exact copy of `recipes/`), and `docs.test.js` (D36: every export of `@go4cas/quiver`, `/vite`, `/bun` and `arrow-use` has a heading on its `docs/api/` page, every `quiver routes` flag is on `docs/api/cli.md`, every recipe and composable has its own page and every `examples/` folder is linked from `docs/examples.md`, and no 2.x-only string (NOTES N115) appears in `docs/` or `README.md` outside the migration guide)
+- Docs: a new export, CLI flag, recipe, composable or example needs its docs page in the same PR, or `docs.test.js` fails. `bun run docs:build` must stay green (VitePress fails on dead links)
+- Packaging: `bun run pack:check` (CI `pack` job) asserts both tarballs' file lists; `prepack` emits `.d.ts` for `src/` and `src/node/` with `tsc -p jsconfig.types.json`. `bun run pack:try` (same job) runs the examples and the starter, copied out of the repo, against the packed tarballs
 - Visual: Playwright in `starter/tests/visual/` compares every page state in 5 themes × 2 modes with the baseline in `starter/tests/visual/__screenshots__/` (tolerance `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`; never loosen it). The baseline only matches inside `mcr.microsoft.com/playwright:v<version>-noble`, so CI's `screenshots` job runs it there; re-capture an intended visual change by running the `Tests` workflow by hand with `update-screenshots` on your branch (see `starter/tests/visual/README.md`)
 - Unit and E2E must pass before a task is complete; the `screenshots` CI job must pass before merge
 
@@ -298,7 +305,7 @@ To add a theme: token blocks (light + dark) in `recipes/theme/tokens.css`, optio
 
 ## Scope
 
-Quiver is being refactored from a starter template into a drop-in library (v3). The plan, requirements and phases are in [`planning/v3/SPEC.md`](planning/v3/SPEC.md), with decisions recorded in [`planning/v3/DECISIONS.md`](planning/v3/DECISIONS.md), the CSS design (tokens, `base.css`, recipe CSS, screenshot parity) in [`planning/v3/DESIGN.md`](planning/v3/DESIGN.md), findings in [`planning/v3/NOTES.md`](planning/v3/NOTES.md), and final signatures, manifest and scanner formats, exports maps, workspace and CI layout in [`planning/v3/TECH-SPEC.md`](planning/v3/TECH-SPEC.md). Build PRs cite the TECH-SPEC rule IDs (`C-…`, `M-…`, `S-…`, `X-…`, `W-…`, `CI-…`, `U-…`) they implement. For v3 work, the spec is the source of truth, and the conventions above describe the 2.x code until each phase updates them.
+Quiver has been refactored from a starter template into a drop-in library (v3); P8 prepares the 3.0.0 release. The plan, requirements and phases are in [`planning/v3/SPEC.md`](planning/v3/SPEC.md), with decisions recorded in [`planning/v3/DECISIONS.md`](planning/v3/DECISIONS.md), the CSS design (tokens, `base.css`, recipe CSS, screenshot parity) in [`planning/v3/DESIGN.md`](planning/v3/DESIGN.md), findings in [`planning/v3/NOTES.md`](planning/v3/NOTES.md), and final signatures, manifest and scanner formats, exports maps, workspace and CI layout in [`planning/v3/TECH-SPEC.md`](planning/v3/TECH-SPEC.md). Build PRs cite the TECH-SPEC rule IDs (`C-…`, `M-…`, `S-…`, `X-…`, `W-…`, `CI-…`, `U-…`) they implement. For v3 work, the spec is the source of truth; with P8 every convention above describes the v3 code. Publishing to npm, tags and releases happen only with the maintainer's go-ahead.
 
 In scope:
 
