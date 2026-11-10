@@ -1,5 +1,5 @@
 import { html } from '@arrow-js/core'
-import { useFetch } from '../composables/useFetch.js'
+import { useFetch } from 'arrow-use'
 
 export const meta = {
   layout: 'menu',
