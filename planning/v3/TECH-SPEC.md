@@ -391,8 +391,8 @@ quiver routes [--dir <pages dir>] [--out <file>] [--watch]
 
 - **S-30** Writes `generateManifest(scan, f => relative specifier from dirname(out))`. Specifiers always start with `./` or `../`.
 - **S-31** Writes only when the content changed (no mtime churn under `--watch`).
-- **S-32** Exit codes: `0` success; `1` scan error (messages on stderr); `2` usage error (unknown command or flag, prints usage). `quiver --help` and `quiver routes --help` print usage and exit `0`.
-- **S-33** `--watch` uses `fs.watch(dir, { recursive: true })`, debounced 50 ms. A scan error under `--watch` is printed and the watcher keeps running.
+- **S-32** Exit codes: `0` success; `1` scan error (messages on stderr); `2` usage error (unknown command or flag, or an `--out` `.js` file inside `--dir` that the scanner would pick up as a page, N114; prints usage). `quiver --help` and `quiver routes --help` print usage and exit `0`.
+- **S-33** `--watch` uses `fs.watch(dir, { recursive: true })`, debounced 50 ms, started before the first write (N114). A scan error under `--watch` is printed and the watcher keeps running.
 - **S-34** `bin/quiver.js` starts with `#!/usr/bin/env node` and uses no Bun-only API, so it runs on Node ≥ 22.12 (D20) and on Bun.
 
 ### 4.6 Parity (P4 Done-when)
@@ -565,7 +565,7 @@ These turn SPEC §7 "Composables" (D7, D8) into checks. P6 implements them; the 
 - **U-3 Nothing at import.** Importing `src/index.js` under Vitest `environment: 'node'` (no `window`, `document`, `localStorage`, `matchMedia`) succeeds, and module top levels contain only imports, exports and declarations. *Check:* node-environment test.
 - **U-4 Guarded at call time.** Each composable called in the node environment returns its full shape without throwing, and its getters return the documented no-browser default (table below). *Check:* one test per composable.
 - **U-5 Inside and outside components.** Each composable called outside `component()` doesn't throw and returns `stop()`. Called inside a mounted `component()`, its cleanup runs when the component unmounts (Arrow's `onCleanup` throws outside a component, so it's registered with `try { onCleanup(stop) } catch {}`). *Check:* two tests per composable: outside → `stop()` releases (listener removed, request aborted); inside → unmount releases without calling `stop()`.
-- **U-6 Getters, plus `stop`.** The return value is a plain object. Every state member is a zero-argument function; there are no raw values and no exposed `reactive()` objects. Every return includes `stop()`, which is idempotent and leaves getters returning their last value. *Check:* a shape test iterates the returned object: every member is a function, and `stop` is present.
+- **U-6 Getters, plus `stop`.** The return value is a plain object. Every state member is a zero-argument function; there are no raw values and no exposed `reactive()` objects. Every return includes `stop()`, which is idempotent and leaves getters returning their last value, except that a request in flight is aborted, so `useFetch().loading()` is `false` after `stop()`. *Check:* a shape test iterates the returned object: every member is a function, and `stop` is present.
 - **U-7 Options last.** Signatures are `useX(required…, options = {})`; every option is optional with a default in JSDoc. *Check:* review against the JSDoc; typecheck catches missing defaults under `strict`.
 - **U-8 One file per composable.** `src/useX.js` exports a named `useX`; `src/index.js` re-exports each and nothing else; no default exports. *Check:* a test lists `src/use*.js` and compares with `Object.keys(await import('../src/index.js'))`.
 - **U-9 Typed.** Every export has `@param`/`@returns` JSDoc and the package typechecks under `strict` + `checkJs`; `prepack`'s `.d.ts` has no `any` on exported signatures except where the JSDoc says `any` on purpose (`useFetch` `data()`). *Check:* `bun run typecheck`; P8 inspects the `.d.ts`.
