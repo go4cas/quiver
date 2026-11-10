@@ -25,6 +25,11 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run test
+      # S-34: the CLI runs on Node, not only on Bun.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node packages/quiver/bin/quiver.js routes --dir packages/quiver/tests/fixtures/pages --out "$RUNNER_TEMP/routes.gen.js"
 
   e2e:
     runs-on: ubuntu-latest

@@ -1,6 +1,14 @@
 # Routing
 
-Routes are generated automatically from files in `src/pages/`. You never register routes manually: `src/routes.js` turns the folder into a route manifest (pattern → loader) and `src/main.js` passes it to `initRouter({ routes, notFound })` from `@go4cas/quiver`.
+Routes are generated automatically from files in `src/pages/`. You never register routes manually: the `quiver()` plugin from `@go4cas/quiver/vite` (in `vite.config.js`) turns the folder into a route manifest (pattern → loader), served as the virtual module `quiver:routes`, and `src/main.js` passes it to `initRouter({ routes, notFound })` from `@go4cas/quiver`:
+
+```js
+import routes, { notFound } from 'quiver:routes'
+
+await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
+```
+
+In dev, adding or removing a page reloads the browser with the new manifest; editing a page uses normal HMR.
 
 ---
 
@@ -17,6 +25,24 @@ Routes are generated automatically from files in `src/pages/`. You never registe
 - A file named `index.js` maps to the directory path.
 - Segments wrapped in `[brackets]` become dynamic params (`:param`).
 - Static routes are prioritised over dynamic ones at the same depth.
+- Files and folders whose name starts with `_` or `.` are skipped, so `src/pages/_parts/Card.js` is not a route.
+- `src/pages/not-found.js` is the 404 page, not a route. A `not-found.js` in a subfolder is an error.
+- Two files for the same route (`users.js` and `users/index.js`), or two that differ only in the param name (`[id].js` and `[slug].js` in one folder), are an error naming both files. So is an invalid param name such as `[1st].js`. In dev the error shows in Vite's overlay; `vite build` fails.
+
+### Without Vite
+
+The same scanner works with `Bun.build` and with no bundler at all:
+
+```js
+// Bun.build: the virtual module, with code splitting (one chunk per page)
+import quiver from '@go4cas/quiver/bun'
+await Bun.build({ entrypoints: ['src/main.js'], outdir: 'dist', splitting: true, plugins: [quiver()] })
+```
+
+```sh
+# Any setup: write the manifest to a file, and import './routes.gen.js' instead of 'quiver:routes'
+quiver routes [--dir src/pages] [--out src/routes.gen.js] [--watch]
+```
 
 ---
 
@@ -164,8 +190,8 @@ matchPath('/users', '/users')             // {}
 scoreRoute('/')                           // 0  — specificity; static beats dynamic
 scoreRoute('/users')                      // 10
 scoreRoute('/users/:id')                  // 11
-fileToRoutePath('./pages/users/[id].js')  // '/users/:id' — in the starter's src/routes.js
-fileToRoutePath('./pages/index.js')       // '/'
+fileToRoutePath('users/[id].js')          // '/users/:id' — in src/node/scanner.js
+fileToRoutePath('index.js')               // '/'
 ```
 
 ---

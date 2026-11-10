@@ -1,6 +1,7 @@
 import './style.css'
 import { provide, initRouter, createApp } from '@go4cas/quiver'
-import { routes, notFound } from './routes.js'
+// File-based routes: every file under pages/ is a route (the quiver() plugin in vite.config.js).
+import routes, { notFound } from 'quiver:routes'
 import { layouts } from './layouts/index.js'
 import { LoadingCard } from './components/LoadingCard.js'
 import { ErrorCard } from './components/ErrorCard.js'

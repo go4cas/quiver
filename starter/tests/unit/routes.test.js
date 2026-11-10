@@ -1,34 +1,20 @@
 import { describe, it, expect } from 'vitest'
-import { fileToRoutePath, routes, notFound } from '../../src/routes.js'
+import routes, { notFound } from 'quiver:routes'
 
-describe('fileToRoutePath', () => {
-  it('converts index.js to root', () => {
-    expect(fileToRoutePath('./pages/index.js')).toBe('/')
-  })
-
-  it('converts a top-level page', () => {
-    expect(fileToRoutePath('./pages/about.js')).toBe('/about')
-  })
-
-  it('converts a nested index to the directory path', () => {
-    expect(fileToRoutePath('./pages/users/index.js')).toBe('/users')
-  })
-
-  it('converts a dynamic segment', () => {
-    expect(fileToRoutePath('./pages/users/[id].js')).toBe('/users/:id')
-  })
-
-  it('converts a nested dynamic segment', () => {
-    expect(fileToRoutePath('./pages/blog/[slug]/comments.js')).toBe('/blog/:slug/comments')
-  })
-})
-
+// The manifest the quiver() Vite plugin builds from src/pages/ (vitest.config.js).
 describe('route manifest', () => {
   it('has one pattern per page and leaves not-found.js out', () => {
-    expect(Object.keys(routes).sort()).toEqual(['/', '/login', '/posts', '/toasts', '/users', '/users/:id'])
+    expect(Object.keys(routes)).toEqual(['/', '/login', '/posts', '/toasts', '/users', '/users/:id'])
   })
 
-  it('exports the top-level not-found page as notFound', () => {
+  it('loads each page module', async () => {
+    for (const load of Object.values(routes)) {
+      expect(typeof (await load()).default).toBe('function')
+    }
+  })
+
+  it('exports the top-level not-found page as notFound', async () => {
     expect(typeof notFound).toBe('function')
+    expect(typeof (await /** @type {NonNullable<typeof notFound>} */ (notFound)()).default).toBe('function')
   })
 })

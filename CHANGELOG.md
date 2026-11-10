@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `destroy()` (also `app.destroy()`) tears down the router, guards, hooks, context, meta watchers and the mounted app, so `initRouter()` + `createApp()` can run again
 - Route manifests are validated (each mistake is a `TypeError` naming the key), and routes are sorted deterministically whatever the key order
 - The starter runs under a sub-path with `QUIVER_BASE=/sub/app/`, and every e2e test also runs that way (`subpath` Playwright project)
+- File-based routing as part of `@go4cas/quiver`: the Vite plugin `@go4cas/quiver/vite` and the Bun plugin `@go4cas/quiver/bun` serve the route manifest for `src/pages/` as the virtual module `quiver:routes` (`import routes, { notFound } from 'quiver:routes'`), and the `quiver routes [--dir] [--out] [--watch]` CLI writes it to `src/routes.gen.js` for any other setup. All three use one scanner with the 2.x file rules. The Bun plugin works with `Bun.build({ splitting: true })`, one chunk per page. In Vite dev, adding or removing a page reloads the browser with the new manifest
+- Files and folders in `src/pages/` whose name starts with `_` or `.` are skipped, so pages folders can hold partials
 
 ### Changed
 
@@ -43,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Form POST and download navigations are left to the browser instead of being intercepted
 - A guard that cancels a navigation now puts back the previous URL with its query and hash, and no longer reloads the page
 - A guard redirect to the path already being navigated to proceeds in-app as it does on the first load, so a guard like `() => '/login'` no longer hits the redirect cap on `/login`
+- **Breaking:** the starter's `src/routes.js` is gone; `main.js` imports the manifest from `quiver:routes`, served by the `quiver()` plugin in `vite.config.js`, and `src/quiver-routes.d.ts` types it
+- Route discovery errors that 2.x ignored now fail the scan with a `[quiver]` message naming the files: a `not-found.js` below the pages root (2.x dropped it silently), two files for one route (`users.js` + `users/index.js`), two that differ only in the param name, or an invalid param name
+- A script reload (`location.reload()`, including Vite's dev-server full reload) now loads a new document; 2.x and earlier 3.0 work intercepted it as an in-app navigation, so Vite's reload did nothing. The error view's `retry()` still re-runs the route in place
 
 ### Fixed
 
