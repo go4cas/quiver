@@ -56,7 +56,7 @@ These are symptoms of the template model, not Audition problems. v3 turns Quiver
 - R4. **No hidden state the app can't reset.** Module singletons stay, but `destroy()` removes the navigate listener, clears guards, `afterEach`/`onError` handlers, context and meta watchers, resets router state to `idle`, and empties the target; `initRouter` + `createApp` work again afterwards (D25). No module reads `window` at import time (`routerState` starts at `path: ''`).
 - R5. **One Arrow copy.** `@arrow-js/core` is a `peerDependency` of every package, and published files import it by its bare name.
 - R6. **No-build works.** Core and composables run unbundled from a CDN behind an import map.
-- R7. **Tailwind-free.** Repo-wide `grep -ri tailwind`, excluding `planning/`, `node_modules/` and `bun.lock`, matches only `CHANGELOG.md`, the optional Tailwind guide and the layer-order note (D29). A Vitest test runs it in CI (D34).
+- R7. **Tailwind-free.** Repo-wide `grep -ri tailwind`, excluding `planning/`, `node_modules/` and `bun.lock`, matches only `CHANGELOG.md`, the optional Tailwind guide and the layer-order note (D29), plus the 2.x migration guide and the docs sidebar's one link to the Tailwind guide (N116). A Vitest test runs it in CI (D34).
 - R8. **Agent context ships with the package.** `AGENTS.md` and `llms.txt` describe the public API and are included in the npm tarball.
 - R9. **2.x users have a path.** A migration guide maps every 2.x pattern to its v3 replacement.
 
