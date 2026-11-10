@@ -150,7 +150,7 @@ Exported from `@go4cas/quiver`. Pages and components normally only need `useRout
 | Export | Returns | Description |
 |---|---|---|
 | `initRouter({ routes, notFound })` | `Promise<void>` | Takes the route manifest (pattern → loader) and the not-found page loader, attaches the Navigation API listener, runs guards, and resolves the initial route. Await it before `createApp()` |
-| `go(path)` | `Promise<void>` | Navigates to `path` (trailing slash and query string normalised); resolves when navigation completes. Prefer `useRouter().go()` in pages |
+| `go(path)` | `Promise<void>` | Navigates to the base-relative `path` (query and hash kept); resolves when navigation completes. Prefer `useRouter().go()` in pages |
 | `beforeEach(guard)` | `() => void` | Registers `({ from, to }) => string \| false \| void`; returns the unregister function |
 
 The router's path helpers live in `packages/quiver/src/router.js` and are internal (not exported from the package). They behave like this:

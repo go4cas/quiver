@@ -1,308 +1,429 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import {
-  scoreRoute,
-  normalizePath,
-  matchPath,
-  initRouter,
-  destroyRouter,
-  resolveRoute,
-  go,
-  beforeEach as beforeEachGuard,
-} from '../src/router.js'
-import { routerState } from '../src/state.js'
+import { nextTick } from '@arrow-js/core'
+import { initRouter, go, beforeEach as guard, afterEach as after, onError } from '../src/router.js'
+import { destroy } from '../src/app.js'
+import { useRoute } from '../src/route.js'
+import { installNavigation, setLocation } from './helpers/navigation.js'
 
-// A stand-in for an app's route manifest (pattern → loader).
-const page = () => null
+const page = () => ''
+const ok = () => ({ default: page })
 const routes = {
-  '/': () => ({ default: page }),
-  '/users': () => ({ default: page }),
+  '/': ok,
+  '/users': ok,
   '/users/:id': async () => ({ default: page }),
-  '/login': () => ({ default: page }),
+  '/login': ok,
 }
-const notFound = () => ({ default: page })
 
-describe('scoreRoute', () => {
-  it('gives root path the lowest score so it is checked last', () => {
-    expect(scoreRoute('/')).toBe(0)
+afterEach(() => {
+  destroy()
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+  setLocation('/')
+})
+
+/**
+ * @param {Partial<import('../src/types.js').InitRouterOptions>} [options]
+ * @param {string} [at]
+ */
+async function start(options = {}, at = '/') {
+  const nav = installNavigation()
+  setLocation(at)
+  await initRouter({ routes, ...options })
+  return nav
+}
+
+describe('initRouter: startup errors', () => {
+  it('C-10: names the Navigation API browsers when navigation is missing', async () => {
+    vi.stubGlobal('navigation', undefined)
+    await expect(initRouter({ routes })).rejects.toThrow(
+      'Quiver needs the Navigation API (Chrome/Edge 102+, Safari 26.2+, Firefox 147+). See https://go4cas.github.io/quiver/guide/routing#browser-support',
+    )
   })
 
-  it('root scores lower than any real route', () => {
-    expect(scoreRoute('/')).toBeLessThan(scoreRoute('/users'))
+  it('C-11: a second initRouter() before destroy() throws', async () => {
+    await start()
+    await expect(initRouter({ routes })).rejects.toThrow('initRouter() was already called. Call destroy() first.')
   })
 
-  it('ranks static routes above dynamic ones of the same depth', () => {
-    expect(scoreRoute('/users/profile')).toBeGreaterThan(scoreRoute('/users/:id'))
+  it('C-12: an invalid manifest rejects with a TypeError before any navigation work', async () => {
+    const nav = installNavigation()
+    await expect(initRouter({ routes: { users: ok } })).rejects.toThrow(TypeError)
+    expect(nav.addEventListener).not.toHaveBeenCalled()
+    // Validation failure leaves the router uninitialised, so a fixed call works.
+    await expect(initRouter({ routes })).resolves.toBeUndefined()
   })
 
-  it('ranks more specific (longer) routes above shorter ones', () => {
-    expect(scoreRoute('/users/:id')).toBeGreaterThan(scoreRoute('/users'))
+  it('C-13: a base that does not start with / rejects with a TypeError', async () => {
+    installNavigation()
+    await expect(initRouter({ routes, base: 'app/' })).rejects.toThrow(TypeError)
   })
 
-  it('ranks all-static above mixed static/dynamic of same depth', () => {
-    expect(scoreRoute('/a/b')).toBeGreaterThan(scoreRoute('/a/:b'))
+  it('C-14: the current URL outside the base throws', async () => {
+    installNavigation()
+    setLocation('/elsewhere')
+    await expect(initRouter({ routes, base: '/app/' })).rejects.toThrow('Current URL "/elsewhere" is outside base "/app/".')
+  })
+
+  it('C-15: a rejecting loader still resolves, with status error', async () => {
+    await expect(start({ routes: { '/': () => Promise.reject(new Error('down')) } })).resolves.toBeDefined()
+    expect(useRoute().status()).toBe('error')
+  })
+
+  it('the base without its trailing slash counts as inside and resolves to /', async () => {
+    await start({ base: '/app/' }, '/app')
+    expect(useRoute().path()).toBe('/')
+    expect(useRoute().status()).toBe('ready')
   })
 })
 
-describe('normalizePath', () => {
-  it('strips a trailing slash', () => {
-    expect(normalizePath('/users/')).toBe('/users')
-  })
-
-  it('preserves the root slash', () => {
-    expect(normalizePath('/')).toBe('/')
-  })
-
-  it('strips a query string', () => {
-    expect(normalizePath('/users?foo=bar')).toBe('/users')
-  })
-
-  it('strips a hash fragment', () => {
-    expect(normalizePath('/users#section')).toBe('/users')
-  })
-
-  it('defaults to root when called with no argument', () => {
-    expect(normalizePath()).toBe('/')
-  })
-
-  it('strips both query string and hash', () => {
-    expect(normalizePath('/users?foo=bar#section')).toBe('/users')
-  })
-})
-
-describe('matchPath', () => {
-  it('matches an exact static path and returns empty params', () => {
-    expect(matchPath('/users', '/users')).toEqual({})
-  })
-
-  it('matches root against root', () => {
-    expect(matchPath('/', '/')).toEqual({})
-  })
-
-  it('extracts a dynamic param', () => {
-    expect(matchPath('/users/:id', '/users/42')).toEqual({ id: '42' })
-  })
-
-  it('returns null on a static segment mismatch', () => {
-    expect(matchPath('/users/:id', '/posts/42')).toBeNull()
-  })
-
-  it('returns null when segment count differs', () => {
-    expect(matchPath('/users/:id', '/users/42/extra')).toBeNull()
-  })
-
-  it('decodes a URL-encoded param value', () => {
-    expect(matchPath('/users/:id', '/users/hello%20world')).toEqual({ id: 'hello world' })
-  })
-
-  it('falls back to the raw segment on a malformed percent-escape', () => {
-    expect(matchPath('/users/:id', '/users/%zz')).toEqual({ id: '%zz' })
-  })
-
-  it('returns null when route has more segments than url', () => {
-    expect(matchPath('/users/:id/profile', '/users/42')).toBeNull()
-  })
-})
-
-describe('initRouter — guards on initial load', () => {
-  afterEach(() => {
-    destroyRouter()
-    vi.unstubAllGlobals()
-    history.replaceState(null, '', '/')
-  })
-
-  it('runs guards for the first load with from=null and follows a redirect', async () => {
-    vi.stubGlobal('navigation', {
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })
-    history.replaceState(null, '', '/users/42')
-
-    const seen = []
-    const off = beforeEachGuard(({ from, to }) => {
+describe('initRouter: initial-load guards (C-16)', () => {
+  it('runs guards with from=null and follows a redirect, base applied', async () => {
+    const seen = /** @type {unknown[]} */ ([])
+    guard(({ from, to }) => {
       seen.push({ from, to })
-      if (to === '/users/42') return '/'
+      if (to === '/users/42') return '/login?next=42#top'
     })
+    await start({ base: '/app/' }, '/app/users/42')
 
-    await initRouter({ routes, notFound })
-    off()
-
-    expect(seen[0]).toEqual({ from: null, to: '/users/42' })
-    // Guards re-ran for the redirect target, then the router settled on it.
-    expect(seen[1]).toEqual({ from: null, to: '/' })
-    expect(window.location.pathname).toBe('/')
+    expect(seen).toEqual([{ from: null, to: '/users/42' }, { from: null, to: '/login' }])
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe('/app/login?next=42#top')
+    expect(useRoute().path()).toBe('/login')
   })
 
-  it('a guard returning false on initial load redirects to /', async () => {
-    vi.stubGlobal('navigation', {
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })
-    history.replaceState(null, '', '/users/42')
+  it('a guard returning false redirects to /', async () => {
+    guard(({ to }) => (to === '/users/42' ? false : undefined))
+    await start({ base: '/app/' }, '/app/users/42')
+    expect(window.location.pathname).toBe('/app/')
+    expect(useRoute().status()).toBe('ready')
+  })
 
-    const off = beforeEachGuard(({ to }) => (to === '/users/42' ? false : undefined))
-    await initRouter({ routes, notFound })
-    off()
+  it('C-27: caps initial redirects at 10 with a guard error', async () => {
+    let n = 0
+    guard(() => `/hop/${n++}`)
+    await start({ routes: { ...routes, '/hop/:n': ok } }, '/start')
+    expect(useRoute().status()).toBe('error')
+    expect(n).toBe(11)
+  })
 
-    expect(window.location.pathname).toBe('/')
-    expect(routerState.status).toBe('ready')
+  it('a throwing guard on the initial load is a guard error', async () => {
+    guard(() => { throw new Error('nope') })
+    await start()
+    expect(useRoute().status()).toBe('error')
   })
 })
 
-function makeNavStub() {
-  /** @type {Record<string, Function>} */
-  const listeners = {}
-  return {
-    addEventListener: (/** @type {string} */ name, /** @type {Function} */ fn) => { listeners[name] = fn },
-    removeEventListener: vi.fn(),
-    navigate: vi.fn(() => ({ finished: Promise.resolve() })),
-    listeners,
-  }
-}
+describe('base-relative paths (C-21)', () => {
+  it('guards, hooks and useRoute().path() see base-relative, normalised paths', async () => {
+    const nav = await start({ base: '/app/' }, '/app/')
+    const seen = /** @type {unknown[]} */ ([])
+    guard((ctx) => { seen.push(['guard', ctx]) })
+    after((ctx) => { seen.push(['after', ctx]) })
 
-/** @param {string} url @param {object} [info] */
-function makeEvent(url, info) {
-  return {
-    canIntercept: true,
-    hashChange: false,
-    info,
-    destination: { url },
-    /** @type {(() => Promise<void>) | null} */
-    handler: null,
-    intercept(/** @type {{ handler: () => Promise<void> }} */ opts) { this.handler = opts.handler },
-  }
-}
+    nav.navigate('/app/users/7/?tab=a#b')
+    await nav.idle()
 
-describe('handleNavigate — guard cancel, redirect, rollback', () => {
-  afterEach(() => {
-    destroyRouter()
-    vi.unstubAllGlobals()
-    history.replaceState(null, '', '/')
+    expect(useRoute().path()).toBe('/users/7')
+    expect(useRoute().params()).toEqual({ id: '7' })
+    expect(seen).toEqual([
+      ['guard', { from: '/', to: '/users/7' }],
+      ['after', { from: '/', to: '/users/7', status: 'ready' }],
+    ])
+  })
+})
+
+describe('intercept filter (§2 step 1)', () => {
+  it('does not intercept a navigation outside the base (R3)', async () => {
+    const nav = await start({ base: '/app/' }, '/app/')
+    const g = vi.fn()
+    guard(g)
+    nav.navigate('/apple')
+    nav.navigate('/other/page')
+    await nav.idle()
+    expect(nav.documentLoads).toEqual(['http://localhost:3000/apple', 'http://localhost:3000/other/page'])
+    expect(g).not.toHaveBeenCalled()
   })
 
-  it('a cancelling guard rolls back with info.rollback and leaves the route untouched', async () => {
-    const nav = makeNavStub()
-    vi.stubGlobal('navigation', nav)
-    history.replaceState(null, '', '/')
-    await initRouter({ routes, notFound })
+  it('intercepts /app for base /app/ and resolves it to /', async () => {
+    const nav = await start({ base: '/app/' }, '/app/users')
+    nav.navigate('/app')
+    await nav.idle()
+    expect(nav.documentLoads).toEqual([])
+    expect(useRoute().path()).toBe('/')
+  })
 
-    const off = beforeEachGuard(({ to }) => (to === '/users/42' ? false : undefined))
-    const event = makeEvent('http://localhost/users/42')
-    nav.listeners.navigate(event)
-    await event.handler?.()
-    off()
-
-    expect(nav.navigate).toHaveBeenCalledWith('/', { history: 'replace', info: { rollback: true } })
-    expect(routerState.path).toBe('/')
-    expect(routerState.status).toBe('ready')
+  it('leaves form POSTs, downloads and hash changes to the browser', async () => {
+    const nav = await start()
+    const g = vi.fn()
+    guard(g)
+    nav.dispatch('/users', { type: 'push', formData: new FormData() })
+    nav.dispatch('/users', { type: 'push', downloadRequest: 'file.txt' })
+    nav.dispatch('/#section', { type: 'push' })
+    await nav.idle()
+    expect(nav.documentLoads).toHaveLength(3)
+    expect(g).not.toHaveBeenCalled()
   })
 
   it('a rollback navigation is not intercepted (no guard re-run, no remount)', async () => {
-    const nav = makeNavStub()
-    vi.stubGlobal('navigation', nav)
-    history.replaceState(null, '', '/')
-    await initRouter({ routes, notFound })
-
-    const guard = vi.fn()
-    const off = beforeEachGuard(guard)
-    const event = makeEvent('http://localhost/', { rollback: true })
-    nav.listeners.navigate(event)
-    off()
-
-    expect(event.handler).toBeNull() // intercept was never called
-    expect(guard).not.toHaveBeenCalled()
-  })
-
-  it('a guard returning a path redirects via replace navigation', async () => {
-    const nav = makeNavStub()
-    vi.stubGlobal('navigation', nav)
-    history.replaceState(null, '', '/')
-    await initRouter({ routes, notFound })
-
-    const off = beforeEachGuard(({ to }) => (to === '/users/42' ? '/login' : undefined))
-    const event = makeEvent('http://localhost/users/42')
-    nav.listeners.navigate(event)
-    await event.handler?.()
-    off()
-
-    expect(nav.navigate).toHaveBeenCalledWith('/login', { history: 'replace' })
+    const nav = await start()
+    const g = vi.fn()
+    guard(g)
+    nav.navigate('/', { history: 'replace', info: { rollback: true } })
+    expect(g).not.toHaveBeenCalled()
   })
 })
 
-describe('resolveRoute — manifest', () => {
-  afterEach(() => {
-    destroyRouter()
-    vi.unstubAllGlobals()
-    history.replaceState(null, '', '/')
+describe('guards (C-32, C-33)', () => {
+  it('a cancelling guard rolls back to url(from) and leaves the route untouched (C-28)', async () => {
+    const nav = await start({ base: '/app/' }, '/app/users')
+    const a = vi.fn()
+    after(a)
+    guard(({ to }) => (to === '/login' ? false : undefined))
+    nav.navigate('/app/login')
+    await nav.idle()
+    expect(nav.navigate).toHaveBeenLastCalledWith('/app/users', { history: 'replace', info: { rollback: true } })
+    expect(useRoute().path()).toBe('/users')
+    expect(useRoute().status()).toBe('ready')
+    expect(a).not.toHaveBeenCalled()
   })
 
-  /** @param {Record<string, () => any>} manifest @param {() => any} [nf] */
-  async function start(manifest, nf) {
-    vi.stubGlobal('navigation', makeNavStub())
-    await initRouter({ routes: manifest, notFound: nf })
-  }
-
-  it('matches the most specific pattern whatever the key order', async () => {
-    const byId = () => null
-    const profile = () => null
-    await start({ '/users/:id': () => ({ default: byId }), '/users/profile': () => ({ default: profile }) })
-
-    await resolveRoute('/users/profile')
-    expect(routerState.page).toBe(profile)
-    await resolveRoute('/users/7')
-    expect(routerState.page).toBe(byId)
-    expect(routerState.params).toEqual({ id: '7' })
+  it('a redirect string is base-relative and keeps query and hash (N21)', async () => {
+    const nav = await start({ base: '/app/' }, '/app/')
+    guard(({ to }) => (to === '/users' ? '/login?next=users#form' : undefined))
+    nav.navigate('/app/users')
+    await nav.idle()
+    expect(nav.navigate).toHaveBeenCalledWith('/app/login?next=users#form', { history: 'replace', info: { redirects: 1, first: '/users' } })
+    expect(useRoute().path()).toBe('/login')
+    expect(window.location.search).toBe('?next=users')
   })
 
-  it('uses the notFound loader for unmatched paths', async () => {
-    const missing = () => null
-    await start(routes, () => ({ default: missing }))
-
-    await resolveRoute('/nope')
-    expect(routerState.status).toBe('not-found')
-    expect(routerState.page).toBe(missing)
+  it('run in registration order and stop at the first false or string', async () => {
+    const order = /** @type {string[]} */ ([])
+    guard(() => { order.push('a') })
+    guard(() => { order.push('b'); return false })
+    guard(() => { order.push('c') })
+    const nav = await start()
+    order.length = 0
+    await go('/users')
+    await nav.idle()
+    expect(order).toEqual(['a', 'b'])
   })
 
-  it('names the pattern when a page module has no default export', async () => {
-    await start({ '/bad': () => ({}) })
-
-    await resolveRoute('/bad')
-    expect(routerState.status).toBe('error')
-    expect(routerState.error).toBe('Route "/bad" must default export a page function.')
-  })
-})
-
-describe('resolveRoute — supersession', () => {
-  afterEach(() => {
-    destroyRouter()
-    vi.unstubAllGlobals()
-  })
-
-  it('a superseded resolve does not overwrite the newer navigation', async () => {
-    vi.stubGlobal('navigation', makeNavStub())
-    await initRouter({ routes, notFound })
-    // Start resolving a dynamic route, then immediately navigate elsewhere.
-    const first = resolveRoute('/users/42')
-    const second = resolveRoute('/')
-    await Promise.all([first, second])
-
-    expect(routerState.path).toBe('/')
-    expect(routerState.status).toBe('ready')
-    expect(routerState.params).toEqual({})
+  it('unregister is idempotent and does not skip the next guard mid-run', async () => {
+    const order = /** @type {string[]} */ ([])
+    /** @type {() => void} */
+    let offA = () => {}
+    offA = guard(() => { order.push('a'); offA(); offA() })
+    guard(() => { order.push('b') })
+    const offC = guard(() => { order.push('c') })
+    offC()
+    offC()
+    await start()
+    expect(order).toEqual(['a', 'b'])
   })
 })
 
-describe('go — abort handling', () => {
-  afterEach(() => vi.unstubAllGlobals())
+describe('hooks (C-25, C-34)', () => {
+  it('afterEach fires once per committed navigation', async () => {
+    const nav = await start()
+    const a = vi.fn()
+    after(a)
+    await go('/users')
+    await nav.idle()
+    await go('/nope')
+    await nav.idle()
+    expect(a.mock.calls).toEqual([
+      [{ from: '/', to: '/users', status: 'ready' }],
+      [{ from: '/users', to: '/nope', status: 'not-found' }],
+    ])
+  })
+
+  it('a redirect fires afterEach for the target only', async () => {
+    const nav = await start()
+    const a = vi.fn()
+    after(a)
+    guard(({ to }) => (to === '/users' ? '/login' : undefined))
+    await go('/users')
+    await nav.idle()
+    expect(a.mock.calls).toEqual([[{ from: '/', to: '/login', status: 'ready' }]])
+  })
+
+  it('a superseded navigation fires no hooks', async () => {
+    const nav = await start()
+    const a = vi.fn()
+    after(a)
+    /** @type {(v: any) => void} */
+    let release = () => {}
+    const slow = new Promise((r) => { release = r })
+    destroy()
+    installNavigation()
+    await initRouter({ routes: { '/': ok, '/slow': () => slow, '/fast': ok } })
+    after(a)
+    const n = /** @type {any} */ (globalThis).navigation
+    n.navigate('/slow')
+    n.navigate('/fast')
+    release({ default: page })
+    await n.idle()
+    await nav.idle()
+    expect(a.mock.calls).toEqual([[{ from: '/', to: '/fast', status: 'ready' }]])
+    expect(useRoute().path()).toBe('/fast')
+  })
+
+  it('a throwing handler is logged and the rest still run', async () => {
+    const nav = await start()
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const err = new Error('hook')
+    const second = vi.fn()
+    after(() => { throw err })
+    after(second)
+    const e2 = vi.fn()
+    onError(() => { throw err })
+    onError(e2)
+    await go('/users')
+    await nav.idle()
+    expect(second).toHaveBeenCalledTimes(1)
+    expect(log).toHaveBeenCalledWith('[quiver] afterEach handler threw', err)
+
+    destroy()
+    installNavigation()
+    setLocation('/')
+    onError(() => { throw err })
+    onError(e2)
+    const n = /** @type {any} */ (globalThis).navigation
+    await initRouter({ routes: { '/': ok, '/bad': () => Promise.reject(new Error('x')) } })
+    n.navigate('/bad')
+    await n.idle()
+    expect(e2).toHaveBeenCalledTimes(1)
+    expect(log).toHaveBeenCalledWith('[quiver] onError handler threw', err)
+  })
+
+  it('C-27: in-app redirects are capped at 10 hops', async () => {
+    const nav = await start({ routes: { ...routes, '/hop/:n': ok } })
+    const errors = vi.fn()
+    const a = vi.fn()
+    onError(errors)
+    after(a)
+    let n = 0
+    guard(({ to }) => (to.startsWith('/hop') || to === '/users' ? `/hop/${n++}` : undefined))
+    nav.navigate('/users')
+    await nav.idle()
+    expect(n).toBe(11)
+    expect(useRoute().status()).toBe('error')
+    expect(errors).toHaveBeenCalledTimes(1)
+    const ctx = errors.mock.calls[0][0]
+    expect(ctx.phase).toBe('guard')
+    expect(ctx.error.message).toBe('Too many redirects (10) from "/users".')
+    expect(a).toHaveBeenCalledWith({ from: '/', to: '/hop/9', status: 'error' })
+  })
+
+  it('a throwing guard reaches onError with phase guard', async () => {
+    const nav = await start()
+    const errors = vi.fn()
+    onError(errors)
+    const boom = new Error('guard down')
+    guard(({ to }) => { if (to === '/users') throw boom })
+    nav.navigate('/users')
+    await nav.idle()
+    expect(errors).toHaveBeenCalledWith({ error: boom, from: '/', to: '/users', phase: 'guard' })
+    expect(useRoute().status()).toBe('error')
+    expect(useRoute().path()).toBe('/users')
+  })
+})
+
+describe('go (C-30, C-31)', () => {
+  it('navigates to url(path), keeping query and hash', async () => {
+    const nav = await start({ base: '/app/' }, '/app/')
+    await go('/users?tab=a#top')
+    expect(nav.navigate).toHaveBeenCalledWith('/app/users?tab=a#top')
+    await nav.idle()
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe('/app/users?tab=a#top')
+  })
 
   it('swallows AbortError when a navigation is preempted', async () => {
+    const nav = await start()
     const abortErr = Object.assign(new Error('aborted'), { name: 'AbortError' })
-    vi.stubGlobal('navigation', { navigate: vi.fn(() => ({ finished: Promise.reject(abortErr) })) })
+    nav.navigate.mockReturnValueOnce({ committed: Promise.resolve(), finished: Promise.reject(abortErr) })
     await expect(go('/users')).resolves.toBeUndefined()
   })
 
   it('rethrows non-abort navigation errors', async () => {
+    const nav = await start()
     const err = Object.assign(new Error('boom'), { name: 'SecurityError' })
-    vi.stubGlobal('navigation', { navigate: vi.fn(() => ({ finished: Promise.reject(err) })) })
+    nav.navigate.mockReturnValueOnce({ committed: Promise.resolve(), finished: Promise.reject(err) })
     await expect(go('/users')).rejects.toThrow('boom')
+  })
+
+  it('throws before initRouter() and after destroy()', async () => {
+    const msg = 'Quiver router is not initialised. Call initRouter() first.'
+    expect(() => go('/')).toThrow(msg)
+    await start()
+    destroy()
+    expect(() => go('/')).toThrow(msg)
+  })
+})
+
+describe('manifest matching (M-6, M-7)', () => {
+  it('matches the most specific pattern whatever the key order', async () => {
+    const byId = () => 'id'
+    const profile = () => 'profile'
+    const nav = await start({ routes: { '/users/:id': () => ({ default: byId }), '/users/profile': () => ({ default: profile }), '/': ok } })
+    await go('/users/profile')
+    await nav.idle()
+    expect(useRoute().path()).toBe('/users/profile')
+    expect(useRoute().params()).toEqual({})
+    await go('/users/7')
+    await nav.idle()
+    expect(useRoute().params()).toEqual({ id: '7' })
+  })
+
+  it('uses the notFound loader for unmatched paths', async () => {
+    await start({ notFound: ok }, '/nope')
+    expect(useRoute().status()).toBe('not-found')
+  })
+
+  it('without notFound an unmatched path is not-found', async () => {
+    await start({}, '/nope')
+    expect(useRoute().status()).toBe('not-found')
+  })
+
+  it('names the pattern when a page module has no default export (load error)', async () => {
+    const nav = await start({ routes: { '/': ok, '/bad': () => /** @type {any} */ ({}) } })
+    const errors = vi.fn()
+    onError(errors)
+    await go('/bad')
+    await nav.idle()
+    expect(useRoute().status()).toBe('error')
+    expect(errors.mock.calls[0][0].phase).toBe('load')
+    expect(errors.mock.calls[0][0].error.message).toBe('Route "/bad" must default export a page function.')
+  })
+
+  it('applies a static meta.title after load', async () => {
+    document.title = ''
+    await start({ routes: { '/': () => ({ default: page, meta: { title: 'Home' } }) } })
+    expect(document.title).toBe('Home')
+  })
+
+  it('query-only changes re-run the pipeline', async () => {
+    const nav = await start()
+    const a = vi.fn()
+    after(a)
+    await go('/?q=1')
+    await nav.idle()
+    expect(a).toHaveBeenCalledWith({ from: '/', to: '/', status: 'ready' })
+  })
+})
+
+describe('useRoute reactivity (C-60)', () => {
+  it('getters follow navigations', async () => {
+    const nav = await start()
+    const route = useRoute()
+    const seen = /** @type {string[]} */ ([])
+    const { watch } = await import('@arrow-js/core')
+    const [, stop] = watch(() => { seen.push(`${route.path()}:${route.status()}`) })
+    await go('/users/9')
+    await nav.idle()
+    await nextTick()
+    stop()
+    expect(seen.at(-1)).toBe('/users/9:ready')
+    expect(route.params()).toEqual({ id: '9' })
   })
 })

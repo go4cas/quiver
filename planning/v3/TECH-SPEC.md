@@ -518,7 +518,7 @@ planning/               not a workspace
   So §9 rule 4's `bun run typecheck && bun run test && bun run test:e2e` works unchanged from the root, and `docs.yml`'s `bun run docs:build` still writes `docs/.vitepress/dist` (D19).
 - **W-3** Shared dev tools (`typescript`, `vitest`, `jsdom`, `@playwright/test`) are root `devDependencies`. The starter also lists the ones it uses (`vite`, `vitest`, `jsdom`, `@playwright/test`, `typescript`), because a degit copy has no root. Nothing new is added beyond §11 Q-A.
 - **W-4** Workspace dependencies use real ranges, never `workspace:` in the starter (D19, D34). Examples and recipes use `"@go4cas/quiver": "^3.0.0"` and `"arrow-use": "^0.1.0"` too, so copied examples install.
-- **W-5** Each workspace's `jsconfig.json` extends `../jsconfig.base.json` (or `../../`). Core's browser config has `"types": []`, so `import.meta.glob`/`.hot` fail typecheck (D33, R1). The starter keeps `"types": ["vite/client"]`.
+- **W-5** Each workspace has its own `jsconfig.json`. The published packages' configs extend `../../jsconfig.base.json`; core's browser config has `"types": []`, so `import.meta.glob`/`.hot` fail typecheck (D33, R1). The starter's config is self-contained (the base's compiler options copied in, plus `"types": ["vite/client"]`), because a degit copy of `starter/` has no parent config to extend (N56; accepted with P2).
 - **W-6** Starter `main.js` passes `base: import.meta.env.BASE_URL` to `initRouter`, and `vite.config.js` sets `base: process.env.QUIVER_BASE ?? '/'`. This is how the sub-path e2e runs without changing app code.
 
 Repo-wide checks (D34), all plain Vitest tests reading files, in `tests/repo/`:

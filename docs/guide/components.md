@@ -132,7 +132,7 @@ Direct imports keep the dependency graph explicit and avoid import cycles throug
 
 | Component | Props | Notes |
 |---|---|---|
-| `Link` | `{ to, children, class? }` | `<a>` that navigates via the router instead of reloading. Sets `aria-current="page"` when the path equals `to` or is nested under it (`/users/42` for `to: '/users'`; never for `'/'`); omitted otherwise |
+| `Link` | `{ to, children, class? }` | A plain `<a href>` (through `url()`, so it carries the base path) that the Navigation API turns into an in-app navigation; Cmd/Ctrl/middle-click open a new tab. Sets `aria-current="page"` when the path equals `to` or is nested under it (`/users/42` for `to: '/users'`; never for `'/'`); omitted otherwise |
 | `Counter` | `{ label }` | Local-state demo: `component()`, `watch()`, `onCleanup()`, `hmrState` (see above) |
 | `UserCard` | a `userState.users` entry: `{ id, name, role, team, status, avatar }` | `status` `'online'` / `'away'` get coloured badges. Render with `.key(user.id)` |
 | `ThemeToggle` | none | `<button aria-label="Toggle light/dark mode">` that flips `uiState.mode` |

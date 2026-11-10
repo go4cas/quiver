@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A visual-parity suite (`bun run test:visual`): every page state in 5 themes × 2 modes, desktop and mobile, 190 screenshots, run by a new `screenshots` CI job in the pinned Playwright image
 - A repo test that fails if Tailwind reappears outside the changelog and the theming guide's layer-order note
 - Repo tests that fail if core imports from the starter, if `starter/package.json` uses a `workspace:` range, or if core's typecheck config gains ambient types
+- `initRouter({ base })`: apps can live under a sub-path. The base comes from the option, else the directory of `<base href>`, else `/`. Every path the app sees or passes (`go()`, guards, hooks, manifest keys, `useRoute().path()`) is base-relative, and navigations outside the base load normally
+- `url(path)` for base-aware hrefs (query and hash kept; absolute URLs unchanged)
+- `afterEach(fn)` and `onError(fn)` hooks. Guard, load and render errors all reach the error view, which now receives `{ message, error, retry }`
+- `destroy()` (also `app.destroy()`) tears down the router, guards, hooks, context, meta watchers and the mounted app, so `initRouter()` + `createApp()` can run again
+- Route manifests are validated (each mistake is a `TypeError` naming the key), and routes are sorted deterministically whatever the key order
+- The starter runs under a sub-path with `QUIVER_BASE=/sub/app/`, and every e2e test also runs that way (`subpath` Playwright project)
 
 ### Changed
 
@@ -30,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Root scripts (`dev`, `build`, `test`, `test:e2e`, `typecheck`, `docs:*`) run across the workspaces with `bun run --filter`; each workspace has its own `jsconfig.json`, and core's has no `vite/client` types
 - `ThemeSelector`'s `THEMES` entries are `{ id, label, swatch, swatchDark? }` (hex colours) instead of Tailwind `bg-[…]` class strings
 - `bun run test:e2e` runs only the e2e project; `bun run test:visual` runs the screenshot projects
+- **Breaking:** `createApp()` mounts straight into `target` with no wrapper `<div>` and replaces the target's existing children. Core's bare loading/error views have no classes. An unknown layout renders the page bare with a warning instead of falling back to `defaultLayout`; a page without `meta.layout` still gets `defaultLayout`
+- **Breaking:** startup mistakes throw: `createApp()` before `await initRouter()`, a second `initRouter()`/`createApp()` before `destroy()`, a missing `target`, a current URL outside the base, `go()` before `initRouter()`
+- `go()` and guard redirect strings keep their query and hash (2.x dropped them)
+- `Link` is a plain anchor (`href` via `url()`) without a click handler, so Cmd/Ctrl/middle-click open a new tab
+- Form POST and download navigations are left to the browser instead of being intercepted
 
 ### Fixed
 

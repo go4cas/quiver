@@ -9,7 +9,8 @@ import aliceAvatar from './assets/avatar-alice.svg'
 provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
 provide('currentUser', { name: 'Alice Nkosi', email: 'alice@example.com', avatar: aliceAvatar })
 
-await initRouter({ routes, notFound })
+// BASE_URL is Vite's `base` ('/' unless QUIVER_BASE is set, see vite.config.js).
+await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
 createApp({
   target: '#app',
   layouts,

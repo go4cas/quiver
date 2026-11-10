@@ -1,11 +1,13 @@
 import { component, html } from '@arrow-js/core'
-import { go, useRoute } from '@go4cas/quiver'
+import { url, useRoute } from '@go4cas/quiver'
 
-// Link — navigation anchor with reactive active state.
+// Link: a plain anchor with a reactive active state. The Navigation API already
+// intercepts same-origin clicks, so there is no @click handler, and Cmd/Ctrl/
+// middle-click open a new tab as usual (D18). url() adds the app's base path.
 // Props:
-//   to       — target path string
-//   children — ArrowTemplate or string for link content
-//   class    — base class string (active item gets aria-current="page" for CSS targeting)
+//   to       base-relative target path, e.g. '/users'
+//   children ArrowTemplate or string for link content
+//   class    base class string (the active link gets aria-current="page" for CSS)
 export const Link = component(/** @param {{ to: string, children?: any, class?: string }} props */ ({ to, children, class: cls = '' }) => {
   const route = useRoute()
   const isActive = () =>
@@ -13,10 +15,9 @@ export const Link = component(/** @param {{ to: string, children?: any, class?: 
 
   return html`
     <a
-      href="${to}"
+      href="${url(to)}"
       class="${cls}"
       aria-current="${() => (isActive() ? 'page' : false)}"
-      @click="${/** @param {Event} e */ (e) => { e.preventDefault(); go(to) }}"
     >${children}</a>
   `
 })
