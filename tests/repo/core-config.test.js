@@ -17,10 +17,10 @@ describe('core package config', () => {
     expect(config.exclude).toEqual(['src/node'])
   })
 
-  it('typechecks src/node/ and bin/ separately, with only Node types (W-5, T12)', () => {
+  it('typechecks src/node/, bin/ and scripts/ separately, with only Node types (W-5, T12)', () => {
     const config = json('jsconfig.node.json')
     expect(config.compilerOptions.types).toEqual(['node'])
-    expect(config.include).toEqual(['src/node', 'bin'])
+    expect(config.include).toEqual(['src/node', 'bin', 'scripts'])
     expect(json('package.json').scripts.typecheck).toBe('tsc -p jsconfig.json && tsc -p jsconfig.node.json')
   })
 

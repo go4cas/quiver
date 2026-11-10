@@ -35,7 +35,7 @@ Quiver ships with context files and Claude Code slash commands that make AI assi
 
 - **`AGENTS.md`** — the single source of truth, read directly by Codex and GitHub Copilot: conventions, Arrow.js rules, composables, theming, folder structure
 - **`CLAUDE.md`** — loaded automatically by Claude Code; imports `AGENTS.md` so every tool shares one context
-- **`/add-page`**, **`/add-layout`**, **`/add-component`**, **`/add-state`**, **`/add-composable`**, **`/add-theme`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks
+- **`/add-page`**, **`/add-layout`**, **`/add-component`**, **`/add-state`**, **`/add-composable`**, **`/add-theme`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks, shipped as the Quiver plugin in [`plugins/quiver/`](plugins/quiver) (`/plugin marketplace add go4cas/quiver`, then `/plugin install quiver@quiver`). They copy recipes (toasts, layouts, theme switcher, views, `useForm`, …) from [`recipes/`](recipes), e.g. `/add-component toast`
 
 See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 

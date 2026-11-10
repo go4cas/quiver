@@ -1,0 +1,10 @@
+{
+  "name": "quiver",
+  "version": "3.0.0",
+  "description": "Quiver's /add-* commands for Arrow.js apps: copy recipes (toasts, theme, theme switcher, layouts, views, Link, useForm, hmrState) from the installed @go4cas/quiver and scaffold pages, components, layouts, state, composables, themes and tests.",
+  "author": { "name": "go4cas" },
+  "homepage": "https://go4cas.github.io/quiver/",
+  "repository": "https://github.com/go4cas/quiver",
+  "license": "MIT",
+  "keywords": ["arrow-js", "quiver", "recipes", "scaffolding"]
+}

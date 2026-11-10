@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "quiver@quiver": true
+  },
+  "extraKnownMarketplaces": {
+    "quiver": {
+      "source": {
+        "source": "directory",
+        "path": "./"
+      }
+    }
+  }
+}

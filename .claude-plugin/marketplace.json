@@ -1,0 +1,16 @@
+{
+  "name": "quiver",
+  "owner": { "name": "go4cas" },
+  "metadata": {
+    "description": "The Quiver Claude Code plugin, served from the Quiver repository."
+  },
+  "plugins": [
+    {
+      "name": "quiver",
+      "source": "./plugins/quiver",
+      "description": "Quiver's /add-* commands: copy recipes from @go4cas/quiver and scaffold Arrow.js app code.",
+      "version": "3.0.0",
+      "license": "MIT"
+    }
+  ]
+}

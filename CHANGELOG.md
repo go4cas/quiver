@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Three example apps, one per build mode, each with an e2e smoke test at `/` and under `/sub/app/` in CI: `examples/vite` (the `quiver()` Vite plugin, dev server and production build), `examples/bun` (`Bun.build` with `@go4cas/quiver/bun` and page splitting) and `examples/no-build` (no bundler: an import map for `@arrow-js/core` and `@go4cas/quiver`, one Arrow copy, a hand-written route manifest). The Bun and no-build examples set the base path with `<base href>` alone
 - `arrow-use` 0.1.0, a composables package for any Arrow.js app (no Quiver needed) in `packages/arrow-use/`: `useFetch` (moved from the starter), `useStorage` (`localStorage`/`sessionStorage`, synced across tabs, memory fallback), `useMediaQuery` and `useEventListener`. Each returns getters plus `stop()`, cleans up when its `component()` unmounts, and can be imported outside a browser. Option and return types are exported too (`UseFetchReturn`, `UseStorageReturn<T>`, …). Includes a vanilla Arrow example with an import map and a smoke test
 - `useFetch().stop()`: aborts the request in flight and ignores later `refetch()` calls
+- Recipes: `recipes/` holds the opinionated pieces as copy-in code you own: `theme` (`tokens.css`, `base.css`, optional `effects.css` and fonts), `link`, `toasts`, `theme-switcher`, `useForm`, `hmrState`, `layouts` and `views`. Each has JS, CSS where it has styles, a README and tests; `recipes/index.json` lists their files, CSS order, dependencies and aliases. They ship inside the `@go4cas/quiver` tarball under `recipes/` (copied in at `prepack`, not in `exports`). `toasts`, `useForm` and `hmrState` import only `@arrow-js/core`, so plain Arrow apps can use them
+- The Quiver Claude Code plugin (`plugins/quiver/`, installable with `/plugin marketplace add go4cas/quiver` and `/plugin install quiver@quiver`): the eight `/add-*` commands, now usable in any app. `/add-component`, `/add-layout`, `/add-theme` and `/add-composable` install the matching recipe from `node_modules/@go4cas/quiver/recipes/` (e.g. `/add-component toast` in a plain Arrow app gives it working toasts) and otherwise scaffold new code
+- `AGENTS.md` and `llms.txt` ship inside `@go4cas/quiver` for agents working in apps; the starter's `CLAUDE.md` imports both from `node_modules`
+- `views` recipe: `LoadingView`, and `ErrorView` with a **Try again** button that calls `retry()` (the starter's 2.x error card ignored it) and a **Go home** link
+- `MenuLayout` reads its sidebar links from `provide('nav', [{ to, label }])`, and its logo, footer and sign-out from optional `logo`, `footer` (on `'app'`) and `signOut` (on `'currentUser'`), so apps configure it in `main.js` instead of editing it
 
 ### Changed
 
@@ -43,6 +48,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Root scripts (`dev`, `build`, `test`, `test:e2e`, `typecheck`, `docs:*`) run across the workspaces with `bun run --filter`; each workspace has its own `jsconfig.json`, and core's has no `vite/client` types
 - `ThemeSelector`'s `THEMES` entries are `{ id, label, swatch, swatchDark? }` (hex colours) instead of Tailwind `bg-[…]` class strings
 - `bun run test:e2e` runs only the e2e project; `bun run test:visual` runs the screenshot projects
+- **Breaking:** the starter's reusable pieces moved into recipe copies under `starter/src/quiver/`: `components/{Link,ToastContainer,ThemeSelector,ThemeToggle,LoadingCard,ErrorCard}.js`, `composables/{useForm,useToast}.js`, `state/{toastState,uiState}.js`, `utils/hmrState.js`, `styles/` and the two layouts. Imports change accordingly (for example `useToast` and `toastState` now come from `src/quiver/toasts/toasts.js`, `useForm` from `src/quiver/useForm/useForm.js`); `LoadingCard`/`ErrorCard` are `LoadingView`/`ErrorView`; the screenshots are unchanged
+- **Breaking:** `uiState` is replaced by the theme switcher's `themeState` (`theme()`, `mode()`, `setTheme()`, `setMode()`, `toggleMode()`), built on one shared `useStorage` per key and `useMediaQuery`. The stored `ui-theme`/`ui-mode` values are read as before; the mode now follows the system setting until the user picks one, and nothing is written to storage until then
+- Toasts leave when their exit animation ends (`el.getAnimations()`), not after a fixed 200 ms, so they also go at once with reduced motion or without the CSS. `toastState.dismiss()` returns a promise that resolves once the toast is removed
+- The `/add-*` commands moved from `.claude/commands/` into the plugin; in this repository `.claude/settings.json` offers the plugin instead
 - **Breaking:** `createApp()` mounts straight into `target` with no wrapper `<div>` and replaces the target's existing children. Core's bare loading/error views have no classes. An unknown layout renders the page bare with a warning instead of falling back to `defaultLayout`; a page without `meta.layout` still gets `defaultLayout`
 - **Breaking:** startup mistakes throw: `createApp()` before `await initRouter()`, a second `initRouter()`/`createApp()` before `destroy()`, a missing `target`, a current URL outside the base, `go()` before `initRouter()`
 - `go()` and guard redirect strings keep their query and hash (2.x dropped them)
@@ -60,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-theme panel and float shadows now apply in mono, glass, retro and brutalist; 2.1's compiled shadow utilities always used the default shadow
 - Brand buttons are readable in mono dark (contrast 1.04 → 18.97), retro dark (1.51 → 13.29) and brutalist (1.53 → 13.71)
 - The brutalist sidebar border sits only on the edge facing the content, not on all four sides
+- After a non-dismissible toast had gone, later toasts no longer rendered, because of an Arrow 1.0.6 slot bug; the toast's dismiss slot now always renders a template
 
 ## [2.1.0] - 2026-10-01
 

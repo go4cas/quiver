@@ -2,12 +2,20 @@ import './style.css'
 import { provide, initRouter, createApp } from '@go4cas/quiver'
 // File-based routes: every file under pages/ is a route (the quiver() plugin in vite.config.js).
 import routes, { notFound } from 'quiver:routes'
+// Imported first so the stored theme is on <html> before anything renders.
+import './quiver/theme-switcher/theme-switcher.js'
 import { layouts } from './layouts/index.js'
-import { LoadingCard } from './components/LoadingCard.js'
-import { ErrorCard } from './components/ErrorCard.js'
+import { LoadingView, ErrorView } from './quiver/views/views.js'
 import aliceAvatar from './assets/avatar-alice.svg'
 
-provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
+// What MenuLayout shows (src/quiver/layouts/README.md).
+provide('app', { name: 'Quiver', tagline: 'The Demo Hub', logo: '/logo.svg', footer: 'quiver starter' })
+provide('nav', [
+  { to: '/', label: 'Dashboard' },
+  { to: '/users', label: 'Team' },
+  { to: '/posts', label: 'Posts' },
+  { to: '/toasts', label: 'Toasts' },
+])
 provide('currentUser', { name: 'Alice Nkosi', email: 'alice@example.com', avatar: aliceAvatar })
 
 // BASE_URL is Vite's `base` ('/' unless QUIVER_BASE is set, see vite.config.js).
@@ -16,6 +24,6 @@ createApp({
   target: '#app',
   layouts,
   defaultLayout: 'basic',
-  loading: LoadingCard,
-  error: ({ message }) => ErrorCard(message),
+  loading: LoadingView,
+  error: ErrorView,
 })
