@@ -51,6 +51,16 @@
         "vite": "^8.3.1",
       },
     },
+    "packages/arrow-use": {
+      "name": "arrow-use",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@arrow-js/core": "^1.0.6",
+      },
+      "peerDependencies": {
+        "@arrow-js/core": "^1.0.6",
+      },
+    },
     "packages/quiver": {
       "name": "@go4cas/quiver",
       "version": "3.0.0",
@@ -70,6 +80,7 @@
       "dependencies": {
         "@arrow-js/core": "^1.0.6",
         "@go4cas/quiver": "^3.0.0",
+        "arrow-use": "^0.1.0",
       },
       "devDependencies": {
         "@playwright/test": "^1.63.0",
@@ -418,6 +429,8 @@
     "@vueuse/shared": ["@vueuse/shared@12.8.2", "", { "dependencies": { "vue": "^3.5.13" } }, "sha512-dznP38YzxZoNloI0qpEfpkms8knDtaoQ6Y/sfS0L7Yki4zh40LFHEhur0odJC6xTHG5dxWVPiUWBXn+wCG2s5w=="],
 
     "algoliasearch": ["algoliasearch@5.52.0", "", { "dependencies": { "@algolia/abtesting": "1.18.0", "@algolia/client-abtesting": "5.52.0", "@algolia/client-analytics": "5.52.0", "@algolia/client-common": "5.52.0", "@algolia/client-insights": "5.52.0", "@algolia/client-personalization": "5.52.0", "@algolia/client-query-suggestions": "5.52.0", "@algolia/client-search": "5.52.0", "@algolia/ingestion": "1.52.0", "@algolia/monitoring": "1.52.0", "@algolia/recommend": "5.52.0", "@algolia/requester-browser-xhr": "5.52.0", "@algolia/requester-fetch": "5.52.0", "@algolia/requester-node-http": "5.52.0" } }, "sha512-0ZzY9mjqV7gop/AH8pIBiAS8giXP7WcSiUfoFYIzYAK9QC5c37E4SIVtJVBMwlURc0/uNt2o4RcNRvdHa4CJ5w=="],
+
+    "arrow-use": ["arrow-use@workspace:packages/arrow-use"],
 
     "assertion-error": ["assertion-error@2.0.1", "", {}, "sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA=="],
 
