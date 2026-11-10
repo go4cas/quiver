@@ -55,6 +55,16 @@ describe('engines (D20, §5.1, §5.2)', () => {
   })
 })
 
+describe('publishConfig (X-1, N120)', () => {
+  it('core is scoped, so it publishes as public without --access public', () => {
+    expect(pkgOf('packages/quiver').publishConfig).toEqual({ access: 'public' })
+  })
+
+  it('arrow-use is unscoped and public by default, so it sets none', () => {
+    expect(pkgOf('packages/arrow-use')).not.toHaveProperty('publishConfig')
+  })
+})
+
 describe('core ships the recipes and the agent docs (SPEC P7, D32, X-10)', () => {
   const pkg = pkgOf('packages/quiver')
 

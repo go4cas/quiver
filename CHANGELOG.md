@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `"publishConfig": { "access": "public" }` in `@go4cas/quiver`, so the first publish of the scoped package is public without `--access public`
 - A plain-CSS token contract of 27 `--q-*` custom properties in `src/styles/tokens.css` (colours, radii, shadows, font stacks), including the new `--q-color-on-brand` and `--q-font-body`, with the `[data-theme]` / `[data-mode]` override blocks
 - `src/styles/base.css`, the reset that replaces Tailwind's preflight, and `src/styles/effects.css` for per-theme effects, all in the cascade layers `quiver.tokens`, `quiver.base`, `quiver.components`, `quiver.effects`. Unlayered app CSS beats them without `!important`
 - Component CSS beside each component and layout (`q-` classes for the reusable ones), with state as attributes (`aria-current`, `aria-pressed`, `data-type`, `data-state`) and hook classes `q-panel`, `q-sidebar`, `q-header`, `q-accent` for theme effects

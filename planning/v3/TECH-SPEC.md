@@ -405,7 +405,7 @@ quiver routes [--dir <pages dir>] [--out <file>] [--watch]
 
 Common rules for both published packages (D20):
 
-- **X-1** `"type": "module"`, `"license": "MIT"`, a `LICENSE` file, `"sideEffects": false`, an `exports` map with `"types"` first and `"default"` second in each condition object, `"./package.json"` exported. No `main`, `module` or `browser` field.
+- **X-1** `"type": "module"`, `"license": "MIT"`, a `LICENSE` file, `"sideEffects": false`, an `exports` map with `"types"` first and `"default"` second in each condition object, `"./package.json"` exported. No `main`, `module` or `browser` field. The scoped `@go4cas/quiver` sets `"publishConfig": { "access": "public" }` (N120); the unscoped `arrow-use` needs none.
 - **X-2** `peerDependencies` is exactly `{ "@arrow-js/core": "^1.0.6" }`. `dependencies` is absent. `@arrow-js/core` is also in `devDependencies` for tests.
 - **X-3** Published runtime files are the untouched source. `prepack` only adds generated files (`types/`, and for core `recipes/`); `postpack` removes them. Both paths are in `.gitignore`.
 - **X-4** Every `exports` target and every `files` entry exists after `prepack`. *Check:* a test (P8) runs `npm pack --dry-run --json` per package and asserts the file list: runtime files, `.d.ts` per runtime file, `LICENSE`, `README.md`, and for core `AGENTS.md`, `llms.txt`, `recipes/**`, `bin/quiver.js`, `client.d.ts`.
