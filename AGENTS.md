@@ -12,9 +12,11 @@ The repo is a Bun workspace (planning/v3/TECH-SPEC.md §6). The core package and
 
 ```
 packages/quiver/     # @go4cas/quiver — the core package, edit with care
-├── src/             # index.js (public entry), router.js, app.js, context.js, meta.js,
-│                    # state.js (private router state), route.js (useRoute/useRouter)
-└── tests/           # Unit tests for core (Vitest, jsdom)
+├── src/             # index.js (public entry, exactly 13 names), router.js (pipeline, guards, hooks),
+│                    # app.js (createApp/destroy), base.js (base path, url()), match.js (patterns),
+│                    # state.js (private router state), route.js (useRoute/useRouter), context.js,
+│                    # meta.js, types.js (shared typedefs)
+└── tests/           # Unit tests for core (Vitest, jsdom; helpers/navigation.js fakes the Navigation API)
 
 starter/             # The starter app (degit target: go4cas/quiver/starter)
 ├── src/
@@ -112,9 +114,15 @@ export default MyPage
 - `not-found.js` handles 404
 - `useMeta` also accepts functions for reactive values: `` useMeta({ title: () => `Team (${userState.users.length})` }) `` — the router stops these watchers automatically on every navigation (see `src/pages/users/[id].js` for a working example)
 
-### Navigation guards
+### Base path and links
 
-`beforeEach(fn)` from `@go4cas/quiver` registers a guard and returns an unregister function. The guard receives `{ from, to }`; return `false` to cancel, a path string to redirect, anything else to proceed. Guards also run on the initial page load with `from: null` — on first load, `false` redirects to `/` (there is no previous page to stay on).
+Every path the app sees or passes is **base-relative**: manifest keys, `go()`, guard `from`/`to` and redirects, hook paths, `useRoute().path()`. Only `url(path)` adds the base, for `href`s and public assets: `` html`<a href="${url('/users')}">` ``, `` src="${url('/logo.svg')}" ``. The starter passes `base: import.meta.env.BASE_URL` to `initRouter()`, so `QUIVER_BASE=/sub/app/ bun run dev` serves it under a sub-path. Use the `Link` component or a plain `<a href="${url(path)}">` for navigation; never add an `@click` that calls `go()` (the Navigation API already intercepts the click, and the handler breaks Cmd/Ctrl/middle-click).
+
+### Navigation guards and hooks
+
+`beforeEach(fn)` from `@go4cas/quiver` registers a guard and returns an unregister function. The guard receives `{ from, to }`; return `false` to cancel, a path string to redirect (query and hash are kept), anything else to proceed. Guards also run on the initial page load with `from: null` — on first load, `false` redirects to `/` (there is no previous page to stay on). Redirects are capped at 10 hops.
+
+`afterEach(({ from, to, status }) => …)` runs after every committed navigation (`status`: `'ready'`, `'not-found'` or `'error'`). `onError(({ error, from, to, phase }) => …)` runs for guard, load and render errors (`phase`: `'guard'`, `'load'`, `'render'`), after the error view is shown. Both return an unregister function; a throwing handler is logged and the others still run. For the initial load they fire inside `createApp()`.
 
 ```js
 import { beforeEach } from '@go4cas/quiver'
@@ -124,7 +132,7 @@ beforeEach(({ from, to }) => {
 })
 ```
 
-Register guards in `starter/src/main.js` before `await initRouter({ routes, notFound })`.
+Startup order is fixed: `provide()` → `beforeEach()`/`afterEach()`/`onError()` → `await initRouter({ routes, notFound, base })` → `createApp({ target, ... })`. `createApp()` before `initRouter()` resolves throws, and so does a second `initRouter()` or `createApp()` before `destroy()`. `destroy()` (or `app.destroy()`) tears everything down (listener, guards, hooks, context, meta watchers, router state, the mounted target), after which the sequence can run again.
 
 ### State modules
 
@@ -182,7 +190,8 @@ For local component state that should survive Vite hot reloads in dev, use `hmrS
 Call these inside a page or component function, never at module scope. `useRoute` and `useRouter` come from `@go4cas/quiver`; the others are in `starter/src/composables/`:
 
 - `useRoute()` → `{ path(), params(), status(), meta() }` — reactive route accessors
-- `useRouter()` → `{ go(path), back(), forward() }` — navigation
+- `useRouter()` → `{ go(path), back(), forward() }` — navigation; each returns a promise that resolves when the navigation finishes
+- `url(path)` (from `@go4cas/quiver`) → the base-aware href for a base-relative path; absolute URLs pass through
 - `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` — form state; `validate` may be sync or async, return `{}` when valid or `{ fieldName: 'message' }` on errors; a thrown `onSubmit` error is caught and written to `form.message`
 - `useFetch(url, options)` → `{ data(), loading(), error(), status(), refetch(), reset() }` — HTTP with reactive state; options: `{ immediate = true, transform, ...fetchOptions }`; refetch aborts the previous in-flight request. **Use this for API calls — do not hand-roll fetch + loading/error state.**
 - `useToast()` → `{ success(msg, opts), error(msg, opts), warning(msg, opts), info(msg, opts), dismiss(id) }` — **use this for user notifications — do not build ad-hoc banners.** Options per call: `{ duration, dismissible }`
@@ -193,7 +202,7 @@ Call these inside a page or component function, never at module scope. `useRoute
 
 ### Layouts
 
-`meta.layout: 'menu'` (sidebar + header) or `'basic'` (centred card). Register new layouts in `src/layouts/index.js`; `main.js` passes that object to `createApp({ layouts, defaultLayout: 'basic' })`, so pages without `meta.layout` get `'basic'`.
+`meta.layout: 'menu'` (sidebar + header) or `'basic'` (centred card). Register new layouts in `src/layouts/index.js`; `main.js` passes that object to `createApp({ layouts, defaultLayout: 'basic' })`, so pages without `meta.layout` get `'basic'`. An unknown layout name renders the page bare with a `console.warn`. `createApp` also takes the `loading` view and the `error` view, which receives `{ message, error, retry }`; core's bare defaults are `<p>Loading…</p>` and `<p role="alert">message</p>`, and core renders no wrapper element and no `class`.
 
 ### Theming
 
@@ -207,7 +216,7 @@ To add a theme: token blocks (light + dark) in `src/styles/tokens.css`, optional
 
 ### Dependency injection
 
-`provide(key, value)` (from `@go4cas/quiver`) in `main.js` before `initRouter()` and `createApp()`; `inject(key, fallback)` anywhere. The context is app-global — last `provide` for a key wins. Built-in keys:
+`provide(key, value)` (from `@go4cas/quiver`) in `main.js` before `initRouter()` and `createApp()`; `inject(key, fallback)` anywhere. The context is app-global — last `provide` for a key wins, and `destroy()` clears it. Core reserves no keys; the starter's conventions are:
 - `'app'` — `{ name, tagline }` — used by `MenuLayout` sidebar
 - `'currentUser'` — `{ name, email, avatar }` — used by `MenuLayout` header
 
@@ -216,8 +225,8 @@ To add a theme: token blocks (light + dark) in `src/styles/tokens.css`, optional
 ## Testing
 
 - Unit: Vitest in `packages/quiver/tests/` (core) and `starter/tests/unit/` (starter) — test pure functions with `describe`/`it`
-- E2E: Playwright in `starter/tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`
-- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter), W-11 (no `workspace:` ranges in `starter/package.json`), and core's config (no ambient types, version `3.0.0`)
+- E2E: Playwright in `starter/tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`. Every test runs twice, in the `root` project (port 5173) and the `subpath` project (port 5174, app under `/sub/app/`), so navigate with relative URLs (`page.goto('users')`, `page.goto('./')`, `toHaveURL('users')`), never a leading `/` (a repo test enforces it)
+- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter), W-11 (no `workspace:` ranges in `starter/package.json`), CI-3 (relative e2e URLs), and core's config (no ambient types, version `3.0.0`)
 - Visual: Playwright in `starter/tests/visual/` compares every page state in 5 themes × 2 modes with the baseline in `starter/tests/visual/__screenshots__/` (tolerance `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`; never loosen it). The baseline only matches inside `mcr.microsoft.com/playwright:v<version>-noble`, so CI's `screenshots` job runs it there; re-capture an intended visual change by running the `Tests` workflow by hand with `update-screenshots` on your branch (see `starter/tests/visual/README.md`)
 - Unit and E2E must pass before a task is complete; the `screenshots` CI job must pass before merge
 
