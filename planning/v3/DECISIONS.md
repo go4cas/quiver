@@ -170,6 +170,17 @@ planning/             unchanged
 - **The baseline is captured on the CI runner** (Linux Chromium) from the untouched 2.1 CSS, as P1's first commit. Captures from macOS don't match Linux.
 - **Motion is frozen during capture,** with `animations: 'disabled'` and no live toasts.
 
+## Topic 12 — docs coverage at release (P8)
+
+Raised 2026-11-10 when Cas asked whether P8 leaves the docs, references, product site and examples up to date. The examples were covered (P5, P6 U-11, the starter) and so were P8's new pages. Four gaps were not, and none of them were §2 non-goals:
+
+1. The existing guide pages still describe 2.x, and no phase rewrote them. P8's only docs check was "the docs build is green", which passes with stale pages.
+2. There was no API reference page. Signatures lived only in `.d.ts`, `llms.txt` and the READMEs.
+3. The landing page (`docs/index.md`) still says "starter template".
+4. There were no site pages for `arrow-use` or the recipes, and the docs didn't link the examples.
+
+- **D36 — Cas: add all four to P8.** P8 rewrites every existing guide page, the landing page and the root README for v3. It adds an API reference section (core, `/vite`, `/bun`, the `quiver routes` CLI, `arrow-use`), a page per `arrow-use` composable, a page per recipe, and an examples page. Three Vitest checks prove it: export coverage on the API reference, a page for every recipe and composable plus a link to every example, and no 2.x-only strings outside the migration guide and CHANGELOG. P8 grows from M to L.
+
 ## Still open
 
 - Whether `arrow-use` is still free at P8 (Topic 1).
