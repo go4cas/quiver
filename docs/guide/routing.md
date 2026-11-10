@@ -10,6 +10,12 @@ await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
 
 In dev, adding or removing a page reloads the browser with the new manifest; editing a page uses normal HMR.
 
+To typecheck that import, add Quiver's client types to `jsconfig.json` (the starter already has them):
+
+```json
+{ "compilerOptions": { "types": ["vite/client", "@go4cas/quiver/client"] } }
+```
+
 ---
 
 ## File naming rules

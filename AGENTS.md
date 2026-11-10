@@ -19,13 +19,13 @@ packages/quiver/     # @go4cas/quiver — the core package, edit with care
 │   └── node/        # Node/Bun only, never imported by browser code: scanner.js (pages/ → manifest),
 │                    # vite.js (@go4cas/quiver/vite), bun.js (@go4cas/quiver/bun)
 ├── bin/quiver.js    # `quiver routes [--dir] [--out] [--watch]` CLI, writes routes.gen.js
+├── client.d.ts      # Types for `quiver:routes` (@go4cas/quiver/client, add to jsconfig "types")
 └── tests/           # Unit tests for core (Vitest, jsdom; helpers/navigation.js fakes the Navigation API;
                      # fixtures/pages/ is the route parity fixture, fixtures/broken/ the scanner error cases)
 
 starter/             # The starter app (degit target: go4cas/quiver/starter)
 ├── src/
 │   ├── pages/       # File-based routes — add your pages here
-│   ├── quiver-routes.d.ts # Types for `import routes, { notFound } from 'quiver:routes'` (the quiver() plugin in vite.config.js)
 │   ├── layouts/     # Page wrapper layouts — add layouts here, register in layouts/index.js
 │   ├── components/  # Reusable UI components — add components here
 │   ├── state/       # Global reactive state modules — add stores here
@@ -68,7 +68,7 @@ Always run `bun run typecheck && bun run test && bun run test:e2e` before comple
 
 ## Types
 
-The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict`. Each workspace has its own `jsconfig.json`: core's extends `jsconfig.base.json` and has `"types": []`, so `import.meta.glob`/`.hot`/`.env` fail its typecheck (SPEC R1); core's `src/node/` and `bin/` are excluded from it and checked by `jsconfig.node.json` with only Node types (`@types/node`, a core dev dependency); the starter's is self-contained (a degit copy has no repo root) and keeps `vite/client` types. CI enforces a clean `bun run typecheck`. When adding code:
+The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict`. Each workspace has its own `jsconfig.json`: core's extends `jsconfig.base.json` and has `"types": []`, so `import.meta.glob`/`.hot`/`.env` fail its typecheck (SPEC R1); core's `src/node/` and `bin/` are excluded from it and checked by `jsconfig.node.json` with only Node types (`@types/node`, a core dev dependency); the starter's is self-contained (a degit copy has no repo root) and has `"types": ["vite/client", "@go4cas/quiver/client"]`, the second typing `import … from 'quiver:routes'`. CI enforces a clean `bun run typecheck`. When adding code:
 
 - Annotate exported functions with `@param`/`@returns`; use `@typedef` for shared shapes and `@template` for generics
 - Reuse existing typedefs via import syntax: `/** @typedef {import('../state/userState.js').User} User */`

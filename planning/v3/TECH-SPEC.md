@@ -408,7 +408,7 @@ Common rules for both published packages (D20):
 - **X-1** `"type": "module"`, `"license": "MIT"`, a `LICENSE` file, `"sideEffects": false`, an `exports` map with `"types"` first and `"default"` second in each condition object, `"./package.json"` exported. No `main`, `module` or `browser` field.
 - **X-2** `peerDependencies` is exactly `{ "@arrow-js/core": "^1.0.6" }`. `dependencies` is absent. `@arrow-js/core` is also in `devDependencies` for tests.
 - **X-3** Published runtime files are the untouched source. `prepack` only adds generated files (`types/`, and for core `recipes/`); `postpack` removes them. Both paths are in `.gitignore`.
-- **X-4** Every `exports` target and every `files` entry exists after `prepack`. *Check:* a test (P8) runs `npm pack --dry-run --json` per package and asserts the file list: runtime files, `.d.ts` per runtime file, `LICENSE`, `README.md`, and for core `AGENTS.md`, `llms.txt`, `recipes/**`, `bin/quiver.js`.
+- **X-4** Every `exports` target and every `files` entry exists after `prepack`. *Check:* a test (P8) runs `npm pack --dry-run --json` per package and asserts the file list: runtime files, `.d.ts` per runtime file, `LICENSE`, `README.md`, and for core `AGENTS.md`, `llms.txt`, `recipes/**`, `bin/quiver.js`, `client.d.ts`.
 
 ### 5.1 `@go4cas/quiver` (`packages/quiver/package.json`)
 
@@ -423,10 +423,11 @@ Common rules for both published packages (D20):
     ".":      { "types": "./types/index.d.ts",     "default": "./src/index.js" },
     "./vite": { "types": "./types/node/vite.d.ts", "default": "./src/node/vite.js" },
     "./bun":  { "types": "./types/node/bun.d.ts",  "default": "./src/node/bun.js" },
+    "./client": { "types": "./client.d.ts" },
     "./package.json": "./package.json"
   },
   "bin": { "quiver": "./bin/quiver.js" },
-  "files": ["src", "types", "bin", "recipes", "AGENTS.md", "llms.txt", "README.md", "LICENSE"],
+  "files": ["src", "types", "bin", "client.d.ts", "recipes", "AGENTS.md", "llms.txt", "README.md", "LICENSE"],
   "peerDependencies": { "@arrow-js/core": "^1.0.6" },
   "engines": { "node": ">=22.12" },
   "scripts": {
@@ -440,6 +441,7 @@ Common rules for both published packages (D20):
 
 - **X-10** `recipes/` lives at the repo root (D19) and is copied into `packages/quiver/recipes/` by `prepack`, because npm's `files` can't reach outside the package folder (N24). The copy excludes each recipe's tests and the recipes workspace's `package.json`/`jsconfig.json`. Recipes are not in `exports` (D32).
 - **X-11** `prepack` emits `.d.ts` into `types/` with `tsc -p jsconfig.types.json` (`declaration`, `emitDeclarationOnly`, `outDir: types`, includes `src`). TS 7.0.2 emits declarations from the 2.x JSDoc cleanly (N26).
+- **X-13** `./client` is a types-only entry: the hand-written `client.d.ts` declares the virtual module `quiver:routes` (default `RouteManifest`, `notFound: RouteLoader | undefined`). Apps add `"@go4cas/quiver/client"` to `compilerOptions.types` (N74, agreed with P4).
 - **X-12** The version is `3.0.0` from P2 on, not a prerelease. Bun links the starter's `^3.0.0` to the workspace only when the workspace version satisfies the range; `3.0.0-alpha.0` makes `bun install` go to npm and fail (N18).
 
 ### 5.2 `arrow-use` (`packages/arrow-use/package.json`)
@@ -652,5 +654,5 @@ Accept or change these in the review of this PR. Each is the smallest rule that 
 
 ## 11. Open questions for Cas
 
-- **Q-A (new dev dependency).** *P4 adds it pending Cas's answer on the P4 PR (N80).* The scanner, both plugins and the CLI import `node:fs/promises` and `node:path`. Under `checkJs` + `strict`, `tsc` fails with TS2591 ("Cannot find name 'node:fs/promises'… install type definitions for node") without `@types/node` (N19). Recommendation: add `@types/node` (22.x) as a **dev** dependency of `packages/quiver` only, used by `jsconfig.node.json`. The alternative is leaving `src/node/` and `bin/` out of typecheck, which weakens CI. This needs your OK under §9 rule 8.
+- **Q-A (new dev dependency).** *Answered: yes (Cas, 2026-11-10); P4 adds it (N80).* The scanner, both plugins and the CLI import `node:fs/promises` and `node:path`. Under `checkJs` + `strict`, `tsc` fails with TS2591 ("Cannot find name 'node:fs/promises'… install type definitions for node") without `@types/node` (N19). Recommendation: add `@types/node` (22.x) as a **dev** dependency of `packages/quiver` only, used by `jsconfig.node.json`. The alternative is leaving `src/node/` and `bin/` out of typecheck, which weakens CI. This needs your OK under §9 rule 8.
 - **Q-B (plugin location).** P7 must pick where the Claude Code plugin lives (`plugins/quiver/` vs a root `.claude-plugin/`). It doesn't affect any API here, so it's left to P7 unless you have a preference.

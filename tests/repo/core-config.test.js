@@ -24,6 +24,13 @@ describe('core package config', () => {
     expect(json('package.json').scripts.typecheck).toBe('tsc -p jsconfig.json && tsc -p jsconfig.node.json')
   })
 
+  it('ships the quiver:routes types as a types-only ./client entry (N74)', () => {
+    const pkg = json('package.json')
+    expect(pkg.exports['./client']).toEqual({ types: './client.d.ts' })
+    expect(pkg.files).toContain('client.d.ts')
+    expect(readFileSync(join(CORE, 'client.d.ts'), 'utf8')).toMatch(/declare module 'quiver:routes'/)
+  })
+
   it('is version 3.0.0, not a prerelease', () => {
     expect(json('package.json').version).toBe('3.0.0')
   })

@@ -141,7 +141,6 @@ No need to touch these for normal development.
 | `src/main.js` | Entry point. Only change it to add a top-level `provide()` call, a guard, or a layout. |
 | `vitest.config.js` | Leave unless changing which test directories are scanned. |
 | `playwright.config.js` | Leave unless changing test directories or the dev server port. |
-| `src/quiver-routes.d.ts` | Types for the `quiver:routes` import, so `bun run typecheck` knows the manifest's shape. |
 | `vite.config.js` | Adds the `quiver()` plugin that builds the route manifest from `src/pages/`. Leave unless adding Vite plugins. |
 
 ## App bootstrap

@@ -14,10 +14,11 @@
     ".":      { "types": "./types/index.d.ts",     "default": "./src/index.js" },
     "./vite": { "types": "./types/node/vite.d.ts", "default": "./src/node/vite.js" },
     "./bun":  { "types": "./types/node/bun.d.ts",  "default": "./src/node/bun.js" },
+    "./client": { "types": "./client.d.ts" },
     "./package.json": "./package.json"
   },
   "bin": { "quiver": "./bin/quiver.js" },
-  "files": ["src", "types", "bin", "README.md", "LICENSE"],
+  "files": ["src", "types", "bin", "client.d.ts", "README.md", "LICENSE"],
   "peerDependencies": {
     "@arrow-js/core": "^1.0.6"
   },
