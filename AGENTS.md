@@ -23,13 +23,18 @@ packages/quiver/     # @go4cas/quiver — the core package, edit with care
 └── tests/           # Unit tests for core (Vitest, jsdom; helpers/navigation.js fakes the Navigation API;
                      # fixtures/pages/ is the route parity fixture, fixtures/broken/ the scanner error cases)
 
+packages/arrow-use/  # arrow-use — Arrow-only composables (VueUse-style), no Quiver imports (SPEC §7, TECH-SPEC §8)
+├── src/             # index.js (re-exports only), useFetch.js, useStorage.js, useMediaQuery.js, useEventListener.js
+├── tests/           # Unit tests against bare @arrow-js/core (jsdom; no-browser.test.js runs in node)
+└── example/         # Vanilla Arrow app behind an import map (no Quiver, no bundler); e2e smoke test, port 5183
+
 starter/             # The starter app (degit target: go4cas/quiver/starter)
 ├── src/
 │   ├── pages/       # File-based routes — add your pages here
 │   ├── layouts/     # Page wrapper layouts — add layouts here, register in layouts/index.js
 │   ├── components/  # Reusable UI components — add components here
 │   ├── state/       # Global reactive state modules — add stores here
-│   ├── composables/ # Reusable logic functions (useFetch, useForm, useToast) — add composables here
+│   ├── composables/ # Reusable logic functions (useForm, useToast) — add composables here
 │   ├── utils/       # Pure helper functions (hmrState)
 │   ├── styles/      # Theme: tokens.css (contract), base.css (reset), effects.css, fonts/
 │   ├── app.css      # Starter page styles (plus Counter.css, UserCard.css beside their components)
@@ -46,7 +51,7 @@ examples/            # One small app per build mode, each copyable on its own (S
 └── no-build/        # No bundler: import map for @arrow-js/core and @go4cas/quiver, hand-written src/routes.js
 
 docs/                # VitePress docs site (workspace quiver-docs)
-tests/repo/          # Repo-wide checks (Vitest): R7 grep, package boundaries, starter deps, core config, examples
+tests/repo/          # Repo-wide checks (Vitest): R7 grep, package boundaries, starter deps, core config, package.json rules, examples
 ```
 
 The `/add-*` slash commands in `.claude/commands/` write to the starter; their `src/` and `tests/` paths are relative to `starter/`.
@@ -198,14 +203,25 @@ For local component state that should survive Vite hot reloads in dev, use `hmrS
 
 ### Composables
 
-Call these inside a page or component function, never at module scope. `useRoute` and `useRouter` come from `@go4cas/quiver`; the others are in `starter/src/composables/`:
+Call these inside a page or component function, never at module scope. `useRoute` and `useRouter` come from `@go4cas/quiver`; `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` from `arrow-use`; `useForm` and `useToast` are in `starter/src/composables/`:
 
 - `useRoute()` → `{ path(), params(), status(), meta() }` — reactive route accessors
 - `useRouter()` → `{ go(path), back(), forward() }` — navigation; each returns a promise that resolves when the navigation finishes
 - `url(path)` (from `@go4cas/quiver`) → the base-aware href for a base-relative path; absolute URLs pass through
 - `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` — form state; `validate` may be sync or async, return `{}` when valid or `{ fieldName: 'message' }` on errors; a thrown `onSubmit` error is caught and written to `form.message`
-- `useFetch(url, options)` → `{ data(), loading(), error(), status(), refetch(), reset() }` — HTTP with reactive state; options: `{ immediate = true, transform, ...fetchOptions }`; refetch aborts the previous in-flight request. **Use this for API calls — do not hand-roll fetch + loading/error state.**
+- `useFetch(url, options)` (from `arrow-use`) → `{ data(), loading(), error(), status(), refetch(), reset(), stop() }` — HTTP with reactive state; options: `{ immediate = true, transform, ...fetchOptions }`; refetch aborts the previous in-flight request; `stop()` aborts and ignores later refetches. **Use this for API calls — do not hand-roll fetch + loading/error state.**
+- `useStorage(key, initial, { storage, serializer })`, `useMediaQuery(query)`, `useEventListener(target, type, handler, options)` (from `arrow-use`) → `{ value(), set(), remove(), stop() }`, `{ matches(), stop() }`, `{ stop() }` — persisted state synced across tabs, a reactive media query, a listener removed on unmount. Use these instead of hand-wiring `localStorage`, `matchMedia` or `addEventListener` in a component
 - `useToast()` → `{ success(msg, opts), error(msg, opts), warning(msg, opts), info(msg, opts), dismiss(id) }` — **use this for user notifications — do not build ad-hoc banners.** Options per call: `{ duration, dismissible }`
+
+### arrow-use (`packages/arrow-use/`)
+
+Rules for every composable in the package (TECH-SPEC U-1…U-11); `tests/conventions.test.js` and `tests/repo/boundaries.test.js` check most of them:
+
+- Imports are relative or exactly `@arrow-js/core` (peer only). Never `@go4cas/quiver`, never `@arrow-js/core/internal`
+- One file `src/useX.js` per composable with a named export; `src/index.js` only re-exports; no default exports
+- Signature `useX(required…, options = {})`; return a plain object of zero-argument getters plus an idempotent `stop()`. Keep values raw and drive reactivity with a `reactive({ version })` counter, so getters never return reactive proxies
+- Nothing runs at import; check browser APIs (`fetch`, `matchMedia`, storage, `window`) at call time and return the no-browser defaults (TECH-SPEC §8.1 table)
+- Register cleanup with `try { onCleanup(stop) } catch {}` (Arrow's `onCleanup` throws outside a component). Test both: outside → `stop()` releases; inside a mounted `component()` (`tests/helpers/mount.js`) → unmount releases. Cleanup only runs for a component that is itself the slot value (NOTES N64)
 
 ### Toasts
 
@@ -235,11 +251,12 @@ To add a theme: token blocks (light + dark) in `src/styles/tokens.css`, optional
 
 ## Testing
 
-- Unit: Vitest in `packages/quiver/tests/` (core) and `starter/tests/unit/` (starter) — test pure functions with `describe`/`it`
+- Unit: Vitest in `packages/quiver/tests/` (core), `packages/arrow-use/tests/` (composables, against bare Arrow) and `starter/tests/unit/` (starter) — test pure functions with `describe`/`it`
 - Route discovery: `packages/quiver/tests/routes-parity.test.js` runs the Vite plugin, the Bun plugin and the CLI on `tests/fixtures/pages/` and compares each with `tests/fixtures/pages.manifest.txt` (TECH-SPEC S-40); update that file when the fixture or the manifest format changes. The Bun splitting test spawns `bun`, so Bun must be on `PATH`
 - E2E: Playwright in `starter/tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`. Every test runs twice, in the `root` project (port 5173) and the `subpath` project (port 5174, app under `/sub/app/`), so navigate with relative URLs (`page.goto('users')`, `page.goto('./')`, `toHaveURL('users')`), never a leading `/` (a repo test enforces it)
+- arrow-use example: `packages/arrow-use/example/` is a vanilla Arrow app (import map, no Quiver) whose Playwright smoke test runs from `bun run test:e2e` on port `5183`; it checks every composable and that Arrow loads from one URL (TECH-SPEC U-11)
 - Examples: each folder in `examples/` has a Playwright smoke suite run by `bun run test:e2e`, once at `/` and once under `/sub/app/`, on fixed ports (vite `5180`/`5190`, bun `5181`/`5191`, no-build `5182`/`5192`; TECH-SPEC CI-1, CI-5). The Bun and no-build examples take the base from `<base href>`, which their `serve.js` fills in from `QUIVER_BASE`. `examples/no-build` also asserts that Arrow loads from one URL. Examples use real ranges (`^3.0.0`), never `workspace:`, and import nothing from outside their own folder, so each can be copied out
-- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter or examples), W-11 (no `workspace:` ranges in `starter/package.json`), CI-3 (relative e2e URLs), core's config (no ambient types, version `3.0.0`), and the examples (`examples.test.js`: ranges, scripts, ports, self-contained imports, the no-build import map)
+- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter or examples; arrow-use imports no Quiver and nothing outside its package), W-11 (no `workspace:` ranges in `starter/package.json`), CI-3 (relative e2e URLs), core's config (no ambient types, version `3.0.0`), W-13 (`packages.test.js`: `package.json` rules X-1/X-2 for both published packages, arrow-use `0.1.0`), and the examples (`examples.test.js`: ranges, scripts, ports, self-contained imports, the no-build import map)
 - Visual: Playwright in `starter/tests/visual/` compares every page state in 5 themes × 2 modes with the baseline in `starter/tests/visual/__screenshots__/` (tolerance `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`; never loosen it). The baseline only matches inside `mcr.microsoft.com/playwright:v<version>-noble`, so CI's `screenshots` job runs it there; re-capture an intended visual change by running the `Tests` workflow by hand with `update-screenshots` on your branch (see `starter/tests/visual/README.md`)
 - Unit and E2E must pass before a task is complete; the `screenshots` CI job must pass before merge
 
