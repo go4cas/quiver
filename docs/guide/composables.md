@@ -1,240 +1,110 @@
 # Composables
 
-Composables are plain functions that encapsulate reusable logic. Your own live in `src/composables/`; `useRoute` and `useRouter` come from `@go4cas/quiver`. Call them inside page or component functions.
+A composable is a function you call inside a page or component that hands back reactive getters and actions. Quiver's come from three places:
 
----
+| From | Composables | Needs |
+|---|---|---|
+| [`@go4cas/quiver`](/api/core) | `useRoute()`, `useRouter()`, `useMeta()` | the router |
+| [`arrow-use`](/arrow-use/) | `useFetch()`, `useStorage()`, `useMediaQuery()`, `useEventListener()` | only `@arrow-js/core` |
+| [recipes](/recipes/) (copied into `src/quiver/`) | `useToast()`, `useForm()`, `hmrState()` | only `@arrow-js/core` |
 
-## `useRoute()`
+Before writing your own, check these: use `useFetch` for API calls instead of a hand-rolled fetch with loading and error state, `useToast` for notifications instead of an ad-hoc banner, and `useStorage`, `useMediaQuery` and `useEventListener` instead of wiring `localStorage`, `matchMedia` or `addEventListener` by hand.
 
-Returns reactive accessors for the current route state.
-
-```js
-import { useRoute } from '@go4cas/quiver'
-
-function MyPage() {
-  const route = useRoute()
-
-  return html`
-    <p>Path: ${() => route.path()}</p>
-    <p>User ID: ${() => route.params().id}</p>
-  `
-}
-```
-
-| Accessor | Returns |
-|---|---|
-| `route.path()` | Current URL path string |
-| `route.params()` | Object of dynamic route params |
-| `route.status()` | Router status: `'idle'` · `'loading'` · `'ready'` · `'not-found'` · `'error'` |
-| `route.meta()` | The `meta` object exported by the current page |
-
-Each accessor is a function — always call it inside a `${}` slot so Arrow.js can track it reactively.
-
----
-
-## `useRouter()`
-
-Returns navigation methods.
+## Route and navigation
 
 ```js
-import { useRouter } from '@go4cas/quiver'
+import { useRoute, useRouter, useMeta } from '@go4cas/quiver'
 
-function MyPage() {
-  const router = useRouter()
+export default function UserPage() {
+  const route = useRoute()      // path(), params(), status(), meta()
+  const router = useRouter()    // go(path), back(), forward()
+  useMeta({ title: () => `User ${route.params().id}` })
 
   return html`
-    <button @click="${() => router.go('/users')}">Users</button>
+    <h1>User ${() => route.params().id}</h1>
     <button @click="${() => router.back()}">Back</button>
-    <button @click="${() => router.forward()}">Forward</button>
   `
 }
 ```
 
-| Method | Description |
-|---|---|
-| `router.go(path)` | Navigate to a path (trailing slash and query string normalised); returns a Promise that resolves when navigation completes |
-| `router.back()` | Navigate back in history; returns a Promise |
-| `router.forward()` | Navigate forward in history; returns a Promise |
+Details in [Routing](./routing#reading-the-route) and the [API reference](/api/core#useroute).
 
-Uses the browser's [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API) internally.
-
----
-
-## `useToast()`
-
-Triggers global toast notifications backed by the reactive `toastState` singleton. Call it inside any page or component.
+## Data, storage, media queries, events: `arrow-use`
 
 ```js
-import { useToast } from '../composables/useToast.js'
+import { useFetch, useStorage, useMediaQuery, useEventListener } from 'arrow-use'
 
-function MyPage() {
+const posts = useFetch('/api/posts', { transform: (all) => all.slice(0, 10) })
+html`
+  ${() => (posts.loading() ? html`<p>Loading…</p>` : html``)}
+  ${() => (posts.error() ? html`<p role="alert">${posts.error()}</p>` : html``)}
+  <ul>${() => (posts.data() ?? []).map((p) => html`<li>${p.title}</li>`.key(p.id))}</ul>
+  <button @click="${() => posts.refetch()}">Refresh</button>
+`
+```
+
+Every `arrow-use` composable returns getters plus `stop()`, cleans up when its `component()` unmounts, and can be imported on a server or in tests. One page per composable: [`useFetch`](/arrow-use/useFetch), [`useStorage`](/arrow-use/useStorage), [`useMediaQuery`](/arrow-use/useMediaQuery), [`useEventListener`](/arrow-use/useEventListener).
+
+## Toasts, forms, hot-reload state: recipes
+
+These are files in your app, not package exports. Install them with `/add-component toast` and `/add-composable useForm` (or by hand, see [recipes](/recipes/#installing-a-recipe)), then import them from `src/quiver/`:
+
+```js
+import { useToast } from '../quiver/toasts/toasts.js'
+import { useForm } from '../quiver/useForm/useForm.js'
+
+export default function ProfilePage() {
   const toast = useToast()
-
-  return html`
-    <button @click="${() => toast.success('Changes saved.')}">Save</button>
-    <button @click="${() => toast.error('Something went wrong.', { duration: 0 })}">Error</button>
-  `
-}
-```
-
-| Method | Description |
-|---|---|
-| `success` · `error` · `warning` · `info` `(msg, opts?)` | Add a toast of that type; returns its id |
-| `dismiss(id)` | Remove the toast immediately |
-
-| `opts` | Type | Default | Description |
-|---|---|---|---|
-| `duration` | `number` | `4000` | Auto-dismiss delay in ms; `0` = never auto-dismiss |
-| `dismissible` | `boolean` | `true` | Render a close button |
-
-Toasts render bottom-right. To change the defaults for every toast, edit them in `add()` in `src/state/toastState.js`; to move the stack, edit the position classes in `src/components/ToastContainer.js`.
-
----
-
-## `useForm(initialValues, options)`
-
-Manages form state, validation, and submission. **Must be called inside a page function** — not at module scope — so state resets on each navigation.
-
-```js
-import { useForm } from '../composables/useForm.js'
-
-function LoginPage() {
-  const { form, handleSubmit, field } = useForm(
-    { email: '', password: '' },
-    {
-      // validate may be sync or async — it is awaited either way
-      validate(values) {
-        const errors = {}
-        if (!values.email) errors.email = 'Email is required.'
-        return errors
-      },
-      async onSubmit(values, form) {
-        await loginUser(values)
-        form.message = `Signed in as ${values.email}`
-      },
-    }
-  )
-
-  const emailField = field('email')
+  const { form, handleSubmit, field } = useForm({ email: '' }, {
+    validate: (v) => (v.email.includes('@') ? {} : { email: 'Enter an email address' }),
+    onSubmit: async (values) => {
+      await api.saveProfile(values)
+      toast.success('Profile saved.')
+    },
+  })
+  const email = field('email')
 
   return html`
     <form @submit="${handleSubmit}">
-      <input type="email" @input="${emailField.set}" />
-      ${() => emailField.error() ? html`<p>${() => emailField.error()}</p>` : ''}
-      <button
-        type="submit"
-        class="submit"
-        aria-disabled="${() => form.submitting ? 'true' : 'false'}"
-      >${() => form.submitting ? 'Signing in…' : 'Sign in'}</button>
+      <label>Email <input value="${() => email.get()}" @input="${email.set}" /></label>
+      <p role="alert">${() => email.error() ?? ''}</p>
+      <button aria-disabled="${() => String(form.submitting)}">Save</button>
     </form>
-    <p>${() => form.message}</p>
   `
 }
 ```
 
-| Option | Description |
-|---|---|
-| `validate(values)` | Sync or async. Return `{ fieldName: message }` to block submission, or `{}` to allow it |
-| `onSubmit(values, form)` | Async; runs after validation passes. Receives the values and the reactive `form` |
+See [`toasts`](/recipes/toasts), [`useForm`](/recipes/useForm) and [`hmrState`](/recipes/hmrState).
 
-**`useForm` returns:**
+## Writing your own
 
-| Value | Description |
-|---|---|
-| `form` | Reactive state object (see below) |
-| `handleSubmit` | Event handler — attach to `@submit`; calls `preventDefault()`, validates, then runs `onSubmit` |
-| `field(name)` | Returns `{ get, set, error }` accessors for a named field |
-
-**`form` properties:**
-
-| Property | Type | Description |
-|---|---|---|
-| `form.values` | object | Current field values |
-| `form.errors` | object | Validation errors keyed by field name |
-| `form.submitting` | boolean | `true` while `onSubmit` is running |
-| `form.submitted` | boolean | `true` after a successful submission |
-| `form.message` | string | Set inside `onSubmit` to display a status message; if `onSubmit` throws, the error message is written here |
-
-**`field(name)` accessors:**
-
-| Accessor | Usage |
-|---|---|
-| `field.get()` | Reactive getter — use in `${}` slots |
-| `field.set` | Input event handler — attach to `@input` |
-| `field.error()` | Reactive error string or `undefined` |
-
----
-
-## `useFetch(url, options?)`
-
-Fetches a JSON endpoint and returns reactive accessors for `data`, `loading`, `error`, and `status`. Cancels any in-flight request when `refetch()` or `stop()` is called or the component unmounts. It comes from the [`arrow-use`](https://github.com/go4cas/quiver/tree/main/packages/arrow-use) composables package, which works in any Arrow app.
-
-**Must be called inside a page or `component()` factory** — not at module scope.
+`/add-composable useName` scaffolds one in `src/composables/` with a unit test. Follow the same rules as `arrow-use`, and it will compose with everything above:
 
 ```js
-import { useFetch } from 'arrow-use'
+// src/composables/useCounter.js
+import { reactive } from '@arrow-js/core'
 
-function PostsPage() {
-  const posts = useFetch('https://jsonplaceholder.typicode.com/posts', {
-    transform: (data) => data.slice(0, 10),
-  })
-
-  return html`
-    ${() => posts.loading() ? html`<p>Loading…</p>` : ''}
-    ${() => posts.error()   ? html`<p>Error: ${() => posts.error()}</p>` : ''}
-    ${() => (posts.data() ?? []).map((post) =>
-      html`<article><h2>${() => post.title}</h2></article>`.key(post.id)
-    )}
-    <button @click="${() => posts.refetch()}">Refresh</button>
-  `
+/**
+ * @param {number} [initial]
+ * @returns {{ count: () => number, increment: () => void, stop: () => void }}
+ */
+export function useCounter(initial = 0) {
+  const state = reactive({ count: initial })
+  return {
+    count: () => state.count,          // getters, so callers stay reactive
+    increment: () => { state.count++ },
+    stop: () => {},                    // release listeners, timers, requests
+  }
 }
 ```
 
-| Return value | Type | Description |
-|---|---|---|
-| `data()` | `() => any \| null` | Parsed JSON response (or transformed value); `null` until the first success |
-| `loading()` | `() => boolean` | `true` while the request is in flight |
-| `error()` | `() => string \| null` | Error message, or `null` on success |
-| `status()` | `() => number \| null` | HTTP status code of the last response |
-| `refetch()` | `() => Promise<void>` | Re-triggers the fetch; cancels any in-flight request first |
-| `reset()` | `() => void` | Aborts any in-flight request and clears `data`, `error`, `status`, and `loading` |
-| `stop()` | `() => void` | Aborts any in-flight request and ignores later `refetch()` calls |
+1. Return getters, not raw values or the `reactive()` object.
+2. Return `stop()` that releases whatever the composable holds, and register it with `try { onCleanup(stop) } catch {}`, since `onCleanup` throws outside a component.
+3. Touch no browser API at import time; check `window`, `fetch` or `localStorage` when the function is called.
+4. Required arguments first, then one `options = {}` object.
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `immediate` | `boolean` | `true` | Fetch on mount; set `false` for manual trigger |
-| `transform` | `(data) => any` | identity | Applied to the parsed JSON before storing |
-| `method` | `string` | `'GET'` | HTTP method |
-| `headers` | `object` | `{}` | Request headers |
-| `body` | `string` | — | Request body |
+The [`arrow-use` overview](/arrow-use/#conventions) has the full list.
 
-Any other `fetch` option is passed through. A caller-supplied `signal` is combined with the internal abort controller, so either can cancel the request.
+## Where to call them
 
----
-
-## `provide(key, value)` / `inject(key, fallback?)`
-
-App-level dependency injection for passing configuration or services down to any layout or component without prop-drilling.
-
-**Provide in `src/main.js`:**
-
-```js
-import { provide } from '@go4cas/quiver'
-
-provide('app', { name: 'My App', tagline: 'Built with Quiver' })
-```
-
-**Inject inside a layout or component function:**
-
-```js
-import { inject } from '@go4cas/quiver'
-
-export function MenuLayout(content) {
-  const app = inject('app', { name: 'Quiver', tagline: '' })
-  // use app.name, app.tagline ...
-}
-```
-
-`inject` must be called inside the function body, not at module scope — calling it at the top level of a file creates a circular import dependency.
-
-The second argument to `inject` is the fallback, returned when the key was never provided or is `null`/`undefined`. Calling `provide` again with the same key overwrites it. Call `provide` in `src/main.js` before `createApp()`.
+Inside the page or component function, not at module scope: each page render then gets fresh state, and cleanup ties to the component. The exception is shared state, such as a module-level `useStorage` singleton ([State](./state#persisted-state)).

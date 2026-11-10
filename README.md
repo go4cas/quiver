@@ -1,16 +1,23 @@
 <img src="docs/public/logo.svg" alt="Quiver" height="96">
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/go4cas/quiver)
+```bash
+bunx degit go4cas/quiver/starter my-app
+```
 
-An [Arrow.js](https://arrow-js.com) starter template with file-based routing, layouts, reactive state, composables, and a full testing setup — built for AI-assisted development, with context files and slash commands for Claude Code, Codex, and Copilot included.
+A drop-in router, context and meta layer for [Arrow.js](https://arrow-js.com), with composables for any Arrow app, copy-in UI recipes, and a starter app that puts them together.
 
-**Stack:** Arrow.js · Vite · plain CSS (`--q-*` tokens) · Vitest · Playwright
+- **[`@go4cas/quiver`](packages/quiver)**: routing on the Navigation API with layouts, guards, `afterEach`/`onError`, base paths, `provide`/`inject` and `useMeta`. File-based routes through a Vite plugin, a `Bun.build` plugin or the `quiver routes` CLI. 13 exports, one peer dependency, no CSS.
+- **[`arrow-use`](packages/arrow-use)**: `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` for any Arrow app, with or without Quiver.
+- **[Recipes](recipes)**: theme tokens (`--q-*`), toasts, a theme switcher, layouts, loading and error views, `Link`, `useForm`, `hmrState`. Copied into your app, then yours.
+- **[The starter](starter)**: a full app with five themes in plain CSS, Vitest, Playwright and screenshot tests, and agent docs for Claude Code, Codex and Copilot.
+
+**Docs:** <https://go4cas.github.io/quiver/>
+
+> **Not on npm yet.** `@go4cas/quiver` 3.0.0 and `arrow-use` 0.1.0 are ready but unpublished, so a fresh starter copy can't install them yet. Until then, clone this repository and run `bun install && bun run dev` at its root, or use the 2.x template: `bunx degit go4cas/quiver#v2.1.0 my-app`.
 
 ---
 
 ## Getting started
-
-**Prerequisites:** [Bun](https://bun.com) 1.4+ (or Node.js 22.12+ with npm, without a lockfile: `npm install && npm run dev` in a starter copy, `npm run dev --workspace=quiver-starter` in a clone of this repository, whose root scripts call Bun)
 
 ```bash
 bunx degit go4cas/quiver/starter my-app
@@ -19,101 +26,77 @@ bun install
 bun run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173).
+Open <http://localhost:5173>. With npm: `npx degit …`, then `npm install && npm run dev` (Node 22.12+). Or [open it in StackBlitz](https://stackblitz.com/github/go4cas/quiver).
 
-> **Quiver 3 is not on npm yet.** The starter depends on `@go4cas/quiver` `^3.0.0`, so a fresh copy installs once 3.0.0 is published. Until then, clone this repository and run `bun install && bun run dev` at its root, or use the 2.x template: `bunx degit go4cas/quiver#v2.1.0 my-app`.
+Or add Quiver to an Arrow app you already have:
 
-This repository is a Bun workspace: the core package `@go4cas/quiver` is in [`packages/quiver/`](packages/quiver), the starter app in [`starter/`](starter), and the docs site in [`docs/`](docs). The root scripts below run across all of them.
+```bash
+bun add @go4cas/quiver @arrow-js/core
+```
 
-**Browser support:** the router is built on the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API) — Chrome/Edge 102+, Safari 26.2+, Firefox 147+.
+```js
+// vite.config.js
+import quiver from '@go4cas/quiver/vite'
+export default { plugins: [quiver()] }      // routes from src/pages/
+```
+
+```js
+// src/main.js
+import { initRouter, createApp } from '@go4cas/quiver'
+import routes, { notFound } from 'quiver:routes'
+
+await initRouter({ routes, notFound })
+createApp({ target: '#app' })
+```
+
+Using `Bun.build` or no bundler at all? See [Getting started](https://go4cas.github.io/quiver/guide/getting-started) and the [examples](https://go4cas.github.io/quiver/examples).
+
+**Browser support:** the router needs the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API): Chrome/Edge 102+, Safari 26.2+, Firefox 147+.
+
+**Upgrading from the 2.x template?** Read the [migration guide](https://go4cas.github.io/quiver/guide/migration).
 
 ---
 
 ## AI tooling
 
-Quiver ships with context files and Claude Code slash commands that make AI assistants immediately productive in this codebase:
+- `AGENTS.md` and `llms.txt` ship inside `@go4cas/quiver`; the starter's `CLAUDE.md` imports both from `node_modules`.
+- The Quiver Claude Code plugin has `/add-page`, `/add-component`, `/add-layout`, `/add-composable`, `/add-theme`, `/add-state`, `/add-feature` and `/add-test`. They install recipes (`/add-component toast`) or scaffold code. Install it with `/plugin marketplace add go4cas/quiver`, then `/plugin install quiver@quiver`.
 
-- **`AGENTS.md`** — the single source of truth, read directly by Codex and GitHub Copilot: conventions, Arrow.js rules, composables, theming, folder structure
-- **`CLAUDE.md`** — loaded automatically by Claude Code; imports `AGENTS.md` so every tool shares one context
-- **`/add-page`**, **`/add-layout`**, **`/add-component`**, **`/add-state`**, **`/add-composable`**, **`/add-theme`**, **`/add-feature`**, **`/add-test`** — Claude Code slash commands for the most common tasks, shipped as the Quiver plugin in [`plugins/quiver/`](plugins/quiver) (`/plugin marketplace add go4cas/quiver`, then `/plugin install quiver@quiver`). They copy recipes (toasts, layouts, theme switcher, views, `useForm`, …) from [`recipes/`](recipes), e.g. `/add-component toast`
-
-See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
+See the [AI tooling guide](https://go4cas.github.io/quiver/guide/ai).
 
 ---
 
-## Scripts
+## This repository
 
-| Command                | Description                          |
-| ---------------------- | ------------------------------------ |
-| `bun run dev`          | Start the Vite dev server            |
-| `bun run build`        | Production build to `dist/`          |
-| `bun run preview`      | Preview the production build locally |
-| `bun run test`         | Run unit tests once (Vitest)         |
-| `bun run test:watch`   | Run unit tests in watch mode         |
-| `bun run test:e2e`     | Run end-to-end tests (Playwright)    |
-| `bun run test:visual`  | Screenshot parity (CI image only)    |
-| `bun run typecheck`    | Type-check every workspace via JSDoc (tsc) |
-| `bun run docs:dev`     | Start the documentation site locally |
-| `bun run docs:build`   | Build the documentation site         |
-| `bun run docs:preview` | Preview the built documentation site |
-
----
-
-## Folder structure
+A Bun workspace:
 
 ```
-packages/quiver/     # @go4cas/quiver: router, provide/inject, useMeta, useRoute, useRouter, createApp
-starter/             # The starter app (the degit target), laid out as below
-docs/                # The documentation site (VitePress)
-tests/repo/          # Repo-wide checks (Vitest)
+packages/quiver/     @go4cas/quiver: router, createApp, hooks, context, meta; /vite, /bun, /client, the CLI
+packages/arrow-use/  arrow-use: the composables, with a vanilla Arrow example
+recipes/             the copy-in recipes and their registry (shipped inside @go4cas/quiver)
+plugins/quiver/      the Claude Code plugin with the /add-* commands
+starter/             the starter app (the degit target)
+examples/            vite, bun, no-build: one small app per build mode
+docs/                this documentation site (VitePress)
+tests/repo/          repo-wide checks; tests/pack/ checks the npm tarballs
 ```
 
-Inside `starter/`:
-
-```
-src/
-├── pages/           # File-based routes — add your pages here
-├── layouts/         # Page wrapper components — add your layouts here
-├── components/      # Reusable UI components — add your components here
-├── state/           # Global reactive state modules — add your stores here
-├── composables/     # Reusable logic functions — add your composables here
-├── utils/           # Pure helper functions
-├── styles/          # Theme: tokens.css, base.css, effects.css, fonts/
-├── app.css          # The app's own page styles
-├── style.css        # CSS entry: layer order + imports
-└── main.js          # App entry point
-
-tests/
-├── unit/            # Unit tests for composables, state and utilities (Vitest)
-├── e2e/             # End-to-end tests (Playwright)
-└── visual/          # Screenshot parity, 5 themes × 2 modes (Playwright)
-```
-
----
-
-## Documentation
-
-### Developer guide
-
-- [Getting started](docs/guide/getting-started.md) — what to add, what to leave alone
-- [Why Quiver](docs/guide/why-quiver.md) — an honest comparison with the alternatives
-- [Feature workflow](docs/guide/workflow.md) — step-by-step walkthrough for adding a feature
-- [Getting started](docs/guide/getting-started.md) — install, scripts, folder structure, createApp
-- [Components](docs/guide/components.md) — component(), local state, built-in components
-- [Routing](docs/guide/routing.md) — file-based routing, guards, useMeta, router API
-- [Layouts](docs/guide/layouts.md) — page layouts, DI keys, creating new layouts
-- [State](docs/guide/state.md) — reactive() stores, built-in state modules
-- [Composables](docs/guide/composables.md) — useRoute, useRouter, useForm, useFetch, useToast, provide/inject
-- [Testing](docs/guide/testing.md) — unit tests and E2E tests
-- [Troubleshooting](docs/guide/troubleshooting.md) — common gotchas and their fixes
-
----
+| Command | What it does |
+|---|---|
+| `bun run dev` | Start the starter's Vite dev server |
+| `bun run build` | Production build of the starter |
+| `bun run typecheck` | Type-check every workspace (JSDoc, `tsc`) |
+| `bun run test` | Repo checks, then every workspace's unit tests |
+| `bun run test:e2e` | Playwright in the starter, the examples, `arrow-use` and the recipes |
+| `bun run test:visual` | Screenshot parity (only inside the pinned Playwright image) |
+| `bun run pack:check` | `npm pack --dry-run` file lists for both packages |
+| `bun run pack:try` | The examples and the starter, copied out, against the packed tarballs |
+| `bun run recipes:sync` | Copy `recipes/` into `starter/src/quiver/` after editing a recipe |
+| `bun run docs:dev` / `docs:build` | Docs site |
 
 ## Contributing
 
-Bug reports, fixes, and documentation improvements are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
-
----
+Bug reports, fixes and documentation improvements are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## Licence
 
