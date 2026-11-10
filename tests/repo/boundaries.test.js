@@ -38,7 +38,7 @@ const CORE = 'packages/quiver'
 const ARROW_USE = 'packages/arrow-use'
 const USE_FORM = 'recipes/useForm'
 const APP_DIRS = ['starter', 'recipes', 'examples']
-const APP_PACKAGES = ['quiver-starter', 'quiver-recipes']
+const APP_PACKAGES = ['quiver-starter', 'quiver-recipes', 'quiver-example-vite', 'quiver-example-bun', 'quiver-example-no-build']
 
 describe('W-10: package boundaries', () => {
   it('finds the import statements it checks', () => {

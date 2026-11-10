@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- serve.js replaces %BASE% with QUIVER_BASE (default '/'). Relative URLs below,
+         import map included, resolve against it, and initRouter() reads it as the base. -->
+    <base href="%BASE%" />
+    <!-- Map only the two bare specifiers. Quiver's own files import @arrow-js/core by
+         name, so the app and Quiver share this one Arrow copy. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@arrow-js/core": "./vendor/@arrow-js/core/dist/index.mjs",
+          "@go4cas/quiver": "./vendor/@go4cas/quiver/src/index.js"
+        }
+      }
+    </script>
+    <title>Quiver · No-build example</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

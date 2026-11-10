@@ -89,10 +89,15 @@ describe('quiver routes', () => {
     const out = join(cwd, 'src', 'routes.gen.js')
     const read = () => { try { return readFileSync(out, 'utf8') } catch { return '' } }
     const child = spawn('node', [CLI, 'routes', '--watch'], { cwd })
+    let stdout = ''
     let stderr = ''
+    child.stdout.on('data', (d) => { stdout += d })
     child.stderr.on('data', (d) => { stderr += d })
     try {
-      await until(() => read().includes("'/about'"))
+      // The CLI writes the manifest before it calls fs.watch(). Wait for the
+      // watcher, or a page added in between is never seen (N88).
+      await until(() => stdout.includes('Watching'))
+      expect(read()).toContain("'/about'")
 
       writeFileSync(join(pages, 'contact.js'), "export default () => 'contact'\n")
       await until(() => read().includes("'/contact'"))

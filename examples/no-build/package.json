@@ -1,0 +1,21 @@
+{
+  "name": "quiver-example-no-build",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "scripts": {
+    "dev": "bun serve.js",
+    "typecheck": "tsc -p jsconfig.json",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@arrow-js/core": "^1.0.6",
+    "@go4cas/quiver": "^3.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "typescript": "^7.0.2"
+  }
+}

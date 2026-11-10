@@ -17,6 +17,40 @@
         "vitepress": "^1.6.4",
       },
     },
+    "examples/bun": {
+      "name": "quiver-example-bun",
+      "dependencies": {
+        "@arrow-js/core": "^1.0.6",
+        "@go4cas/quiver": "^3.0.0",
+      },
+      "devDependencies": {
+        "@playwright/test": "^1.63.0",
+        "typescript": "^7.0.2",
+      },
+    },
+    "examples/no-build": {
+      "name": "quiver-example-no-build",
+      "dependencies": {
+        "@arrow-js/core": "^1.0.6",
+        "@go4cas/quiver": "^3.0.0",
+      },
+      "devDependencies": {
+        "@playwright/test": "^1.63.0",
+        "typescript": "^7.0.2",
+      },
+    },
+    "examples/vite": {
+      "name": "quiver-example-vite",
+      "dependencies": {
+        "@arrow-js/core": "^1.0.6",
+        "@go4cas/quiver": "^3.0.0",
+      },
+      "devDependencies": {
+        "@playwright/test": "^1.63.0",
+        "typescript": "^7.0.2",
+        "vite": "^8.3.1",
+      },
+    },
     "packages/quiver": {
       "name": "@go4cas/quiver",
       "version": "3.0.0",
@@ -526,6 +560,12 @@
     "punycode": ["punycode@2.3.1", "", {}, "sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg=="],
 
     "quiver-docs": ["quiver-docs@workspace:docs"],
+
+    "quiver-example-bun": ["quiver-example-bun@workspace:examples/bun"],
+
+    "quiver-example-no-build": ["quiver-example-no-build@workspace:examples/no-build"],
+
+    "quiver-example-vite": ["quiver-example-vite@workspace:examples/vite"],
 
     "quiver-starter": ["quiver-starter@workspace:starter"],
 
