@@ -25,7 +25,9 @@
     "recipes:sync": "node scripts/sync-recipes.js",
     "docs:dev": "bun run --filter quiver-docs dev",
     "docs:build": "bun run --filter quiver-docs build",
-    "docs:preview": "bun run --filter quiver-docs preview"
+    "docs:preview": "bun run --filter quiver-docs preview",
+    "pack:check": "vitest run --config tests/pack/vitest.config.js",
+    "pack:try": "node scripts/try-packed.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
