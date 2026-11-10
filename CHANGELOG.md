@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File-based routing as part of `@go4cas/quiver`: the Vite plugin `@go4cas/quiver/vite` and the Bun plugin `@go4cas/quiver/bun` serve the route manifest for `src/pages/` as the virtual module `quiver:routes` (`import routes, { notFound } from 'quiver:routes'`), and the `quiver routes [--dir] [--out] [--watch]` CLI writes it to `src/routes.gen.js` for any other setup. All three use one scanner with the 2.x file rules. The Bun plugin works with `Bun.build({ splitting: true })`, one chunk per page. In Vite dev, adding or removing a page reloads the browser with the new manifest
 - Files and folders in `src/pages/` whose name starts with `_` or `.` are skipped, so pages folders can hold partials
 - `@go4cas/quiver/client`: types for `quiver:routes`. Add it to `compilerOptions.types`, as with `vite/client`
+- Three example apps, one per build mode, each with an e2e smoke test at `/` and under `/sub/app/` in CI: `examples/vite` (the `quiver()` Vite plugin, dev server and production build), `examples/bun` (`Bun.build` with `@go4cas/quiver/bun` and page splitting) and `examples/no-build` (no bundler: an import map for `@arrow-js/core` and `@go4cas/quiver`, one Arrow copy, a hand-written route manifest). The Bun and no-build examples set the base path with `<base href>` alone
 
 ### Changed
 
