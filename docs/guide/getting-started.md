@@ -10,7 +10,7 @@ Open the full Quiver starter in your browser — no installation needed.
 
 - [Bun](https://bun.com) 1.4+ — the supported package manager and runtime
 
-No Bun? `npm install && npm run dev` also works on Node.js 22.12+ (required by Vitest 5); this is how the StackBlitz button runs the project. `bun.lock` is the only lockfile, so npm resolves fresh versions.
+No Bun? npm on Node.js 22.12+ (required by Vitest 5) works too. In a starter copy, run `npm install && npm run dev`. In a clone of the repository, the root scripts call Bun, so run `npm install && npm run dev --workspace=quiver-starter`; this is how the StackBlitz button runs the project. `bun.lock` is the only lockfile, so npm resolves fresh versions.
 
 ## Browser support
 
