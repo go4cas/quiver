@@ -56,13 +56,20 @@ test('a link outside the base loads a new document', async ({ page }, info) => {
 test('Cmd/Ctrl-click opens a new tab and leaves the page alone', async ({ page, context }) => {
   await page.goto('./')
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+  const team = page.getByRole('link', { name: 'Team' })
+  await expect(team).toBeVisible()
   const before = page.url()
-  const [popup] = await Promise.all([
-    context.waitForEvent('page'),
-    page.getByRole('link', { name: 'Team' }).click({ modifiers: ['ControlOrMeta'] }),
-  ])
-  await popup.waitForLoadState()
-  expect(new URL(popup.url()).pathname).toMatch(/\/users$/)
+  // Record document requests from now on. This page makes none (it must not
+  // navigate), so one for /users comes from the new tab. Checking the request,
+  // not the new tab's load, keeps the test independent of how fast the dev
+  // server answers a second tab under parallel load (N71).
+  /** @type {string[]} */
+  const opened = []
+  context.on('request', (request) => {
+    if (request.isNavigationRequest()) opened.push(request.url())
+  })
+  await team.click({ modifiers: ['ControlOrMeta'] })
+  await expect.poll(() => opened.some((u) => new URL(u).pathname.endsWith('/users')), { timeout: 20000 }).toBe(true)
   expect(page.url()).toBe(before)
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
 })
