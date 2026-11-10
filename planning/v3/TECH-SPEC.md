@@ -529,7 +529,7 @@ Repo-wide checks (D34), all plain Vitest tests reading files, in `tests/repo/`:
 
 - **W-10** `boundaries.test.js`: nothing under `packages/quiver/` imports from `starter/`, `recipes/` or `examples/`; nothing under `packages/arrow-use/` imports `@go4cas/quiver` or a relative path outside the package; nothing under `recipes/useForm/` imports `@go4cas/quiver` (D32).
 - **W-11** `starter-deps.test.js`: no value in `starter/package.json` starts with `workspace:`.
-- **W-12** `tailwind.test.js`: the R7 grep. Walks the repo excluding `.git/`, `node_modules/`, `planning/`, `bun.lock` and build output; matches only in `CHANGELOG.md`, the Tailwind guide and the layer-order note (D29). Active from P1.
+- **W-12** `tailwind.test.js`: the R7 grep. Walks the repo excluding `.git/`, `node_modules/`, `planning/`, `bun.lock` and build output; matches only in `CHANGELOG.md`, the Tailwind guide, the layer-order note (D29), `docs/guide/migration.md`, and exactly one line of `docs/.vitepress/config.js` (the sidebar link to the Tailwind guide, N116). Active from P1.
 - **W-13** `packages.test.js`: X-1, X-2 and engines rules for both published packages.
 
 ---
