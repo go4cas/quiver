@@ -28,7 +28,7 @@ no local state          can hold reactive state
 ```js
 // src/components/UserCard.js
 import { component, html } from '@arrow-js/core'
-import { go } from '../framework/router.js'
+import { go } from '@go4cas/quiver'
 import { userState } from '../state/userState.js'
 
 const STATUS_CLASSES = {
@@ -68,7 +68,7 @@ export const UserCard = component((user) => html`
 
 **`@click="${() => userState.removeUser(user.id)}"`** — event handlers are arrow functions assigned to the `@eventName` attribute. Components can read from and write to any global state module directly; there is no prop-drilling or event-emission system.
 
-**`go('/users/' + user.id)`** — imperative navigation via the router helper. Components don't need `useRouter()` for simple navigation; the `go` function imported from the framework is sufficient.
+**`go('/users/' + user.id)`** — imperative navigation via the router helper. Components don't need `useRouter()` for simple navigation; the `go` function imported from `@go4cas/quiver` is sufficient.
 
 ---
 

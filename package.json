@@ -1,34 +1,33 @@
 {
-  "name": "quiver",
-  "version": "2.1.0",
+  "name": "quiver-monorepo",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "starter",
+    "docs"
+  ],
   "engines": {
-    "bun": ">=1.4",
+    "bun": ">=1.4.4",
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "vite --open",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test --project=e2e",
-    "test:visual": "playwright test --project=visual-desktop --project=visual-mobile",
-    "typecheck": "tsc --project jsconfig.json",
-    "docs:dev": "vitepress dev docs --open",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
-  },
-  "dependencies": {
-    "@arrow-js/core": "^1.0.6"
+    "dev": "bun run --filter quiver-starter dev",
+    "build": "bun run --filter quiver-starter build",
+    "preview": "bun run --filter quiver-starter preview",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "vitest run && bun run --filter '*' test",
+    "test:watch": "bun run --filter quiver-starter test:watch",
+    "test:e2e": "bun run --filter '*' test:e2e",
+    "test:visual": "bun run --filter quiver-starter test:visual",
+    "docs:dev": "bun run --filter quiver-docs dev",
+    "docs:build": "bun run --filter quiver-docs build",
+    "docs:preview": "bun run --filter quiver-docs preview"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "jsdom": "^29.1.0",
     "typescript": "^7.0.2",
-    "vite": "^8.3.1",
-    "vitepress": "^1.6.4",
     "vitest": "^5.0.2"
   }
 }

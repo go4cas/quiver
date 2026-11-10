@@ -1,5 +1,7 @@
 Add a new feature to this Quiver app: $ARGUMENTS
 
+In the Quiver repository the app lives in `starter/`: the `src/` and `tests/` paths below are relative to it.
+
 The argument is a feature name and optional brief description (e.g. `blog — list and read blog posts`, `cart — add items and checkout`).
 
 Follow this process:
@@ -26,7 +28,7 @@ Execute the plan in this order:
 3. **Pages** — create each in `src/pages/<path>.js`. Structure:
    ```js
    import { html } from '@arrow-js/core'
-   import { useMeta } from '../framework/index.js'
+   import { useMeta } from '@go4cas/quiver'
    export const meta = { layout: 'menu', title: 'Page Title' }
    function FeaturePage() {
      useMeta({ title: 'Page Title' })

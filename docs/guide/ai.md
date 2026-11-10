@@ -65,7 +65,7 @@ Creates `src/layouts/SidebarLayout.js`, registers it under key `'sidebar'`, and 
 ```
 /add-composable useTheme
 ```
-Creates `src/composables/useTheme.js` with reactive accessors and actions, plus a unit test in `tests/composables/useTheme.test.js`.
+Creates `src/composables/useTheme.js` with reactive accessors and actions, plus a unit test in `tests/unit/useTheme.test.js`.
 
 ```
 /add-theme ocean — cool blues, soft shadows
@@ -80,7 +80,7 @@ Presents a plan (pages, state, components, nav link, tests) and waits for your c
 ```
 /add-test src/composables/useForm.js
 ```
-Detects the file type, writes Vitest unit tests in `tests/composables/useForm.test.js`, runs them, and fixes any failures.
+Detects the file type, writes Vitest unit tests in `tests/unit/useForm.test.js`, runs them, and fixes any failures.
 
 ---
 

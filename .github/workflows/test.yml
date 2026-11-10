@@ -59,7 +59,7 @@ jobs:
         if: ${{ failure() }}
         with:
           name: visual-diffs
-          path: test-results/
+          path: starter/test-results/
           retention-days: 7
 
   # Manual run with update-screenshots: the only job that gets a write token.
@@ -84,7 +84,7 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/visual/__screenshots__
+          git add starter/tests/visual/__screenshots__
           if git diff --cached --quiet; then echo "Baseline unchanged"; exit 0; fi
           git commit -m "test(visual): re-capture screenshot baseline on CI (${GITHUB_SHA::7})"
           git push origin "HEAD:$GITHUB_REF_NAME"

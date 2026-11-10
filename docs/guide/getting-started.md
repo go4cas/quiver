@@ -25,15 +25,19 @@ Quiver's router is built on the [Navigation API](https://developer.mozilla.org/e
 
 ## Installation
 
-Scaffold a fresh project without Quiver's git history:
+Scaffold the starter app without Quiver's git history:
 
 ```bash
-bunx degit go4cas/quiver my-app
+bunx degit go4cas/quiver/starter my-app
 cd my-app
 bun install
 ```
 
-Or clone the repository directly (keeps the full history), or click **Use this template** on [GitHub](https://github.com/go4cas/quiver):
+::: warning Quiver 3 is not on npm yet
+The starter depends on `@go4cas/quiver` `^3.0.0`, so `bun install` in a fresh copy works once 3.0.0 is published. Until then, clone the repository (below), or scaffold the 2.x template with `bunx degit go4cas/quiver#v2.1.0 my-app`.
+:::
+
+Or clone the repository (keeps the full history). It is a Bun workspace: the core package is in `packages/quiver/` and the starter app in `starter/`, and the root scripts run the starter:
 
 ```bash
 git clone https://github.com/go4cas/quiver
@@ -57,9 +61,9 @@ Open [http://localhost:5173](http://localhost:5173). The app hot-reloads on ever
 | `bun run build` | Production build to `dist/` |
 | `bun run preview` | Preview the production build locally |
 | `bun run test` | Run unit tests once (Vitest) |
-| `bun run test:watch` | Run unit tests in watch mode |
+| `bun run test:watch` | Run unit tests in watch mode (inside the starter) |
 | `bun run test:e2e` | Run end-to-end tests (Playwright) |
-| `bun run test:visual` | Run the screenshot-parity suite (CI image only, see `tests/visual/README.md`) |
+| `bun run test:visual` | Run the screenshot-parity suite (CI image only, see `starter/tests/visual/README.md`) |
 | `bun run typecheck` | Type-check `src/` via JSDoc annotations (tsc `checkJs`, no build step) |
 | `bun run docs:dev` | Start the documentation site locally |
 | `bun run docs:build` | Build the documentation site |
@@ -72,8 +76,8 @@ public/              # Served at root URL as-is — favicon, OG images, robots.t
 
 src/
 ├── assets/          # Images, SVGs, fonts — imported in components, hashed on build
-├── framework/       # Router, DI, store, app bootstrap — framework internals
 ├── pages/           # File-based routes
+├── routes.js        # Turns pages/ into the route manifest for initRouter()
 ├── layouts/         # Page wrapper components
 ├── components/      # Reusable UI components
 ├── state/           # Global reactive state modules
@@ -85,15 +89,12 @@ src/
 └── main.js          # App entry point
 
 tests/
-├── framework/       # Unit tests for framework utilities (Vitest)
-├── composables/     # Unit tests for composables (Vitest)
-├── repo/            # Repo-wide checks (Vitest)
+├── unit/            # Unit tests for composables, state and utilities (Vitest)
 ├── e2e/             # End-to-end tests (Playwright)
 └── visual/          # Screenshot parity, 5 themes × 2 modes (Playwright)
-
-docs/
-└── guide/           # Developer guides
 ```
+
+That is the starter app (`starter/` in the repository). The router, `provide`/`inject`, `useMeta`, `useRoute` and `useRouter` come from the `@go4cas/quiver` package (`packages/quiver/` in the repository).
 
 ## Static assets
 
@@ -130,17 +131,16 @@ These directories are yours — add, edit, and delete files here freely.
 | `src/composables/` | Reusable logic functions |
 | `src/utils/` | Pure helper functions |
 | `tests/e2e/` | End-to-end tests for your features |
-| `tests/framework/` | Unit tests for any pure utilities you write |
-| `tests/composables/` | Unit tests for composables you write |
+| `tests/unit/` | Unit tests for composables, state and utilities you write |
 
 ## What to leave as-is
 
-These are framework internals — no need to touch them for normal development.
+No need to touch these for normal development.
 
 | File / Directory | Why |
 |---|---|
-| `src/framework/` | Router, DI context, store wrapper, and app bootstrap. Modify only if extending the framework itself. |
-| `src/main.js` | Entry point. Only change it to add a top-level `provide()` call or a plugin. |
+| `src/main.js` | Entry point. Only change it to add a top-level `provide()` call, a guard, or a layout. |
+| `src/routes.js` | Builds the route manifest from `src/pages/`. |
 | `vitest.config.js` | Leave unless changing which test directories are scanned. |
 | `playwright.config.js` | Leave unless changing test directories or the dev server port. |
 | `vite.config.js` | Leave unless adding Vite plugins. |
@@ -150,12 +150,21 @@ These are framework internals — no need to touch them for normal development.
 `src/main.js` registers DI values, starts the router, then mounts the app:
 
 ```js
+import { provide, initRouter, createApp } from '@go4cas/quiver'
+import { routes, notFound } from './routes.js'
+
 provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
-await initRouter()               // from './framework/router.js'
-createApp()                     // from './framework/index.js'
+await initRouter({ routes, notFound })
+createApp({
+  target: '#app',
+  layouts,                     // from './layouts/index.js'
+  defaultLayout: 'basic',
+  loading: LoadingCard,
+  error: ({ message }) => ErrorCard(message),
+})
 ```
 
-`createApp()` renders the current route (inside its layout) into the `#app` element from `index.html`, and throws if it is missing. Await `initRouter()` first, and run any other setup code (analytics, error reporting) before calling it.
+`createApp()` renders the current route (inside its layout) into the `target` element, and throws if it is missing. Await `initRouter()` first, and run any other setup code (analytics, error reporting) before calling it.
 
 Ready to build something? See the [feature workflow](./workflow) guide.
 
@@ -163,7 +172,7 @@ Ready to build something? See the [feature workflow](./workflow) guide.
 
 ## One runtime dependency
 
-Quiver's only runtime dependency is `@arrow-js/core`: `reactive()`, `html`, `component()`, `watch()`, `onCleanup()`, `nextTick()`. `src/framework/app.js` mounts the root template by calling it with the `#app` element — no separate render package.
+Quiver's only runtime dependency is `@arrow-js/core`: `reactive()`, `html`, `component()`, `watch()`, `onCleanup()`, `nextTick()`. `createApp()` mounts the root template by calling it with the target element — no separate render package.
 
 ---
 

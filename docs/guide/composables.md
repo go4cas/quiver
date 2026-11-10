@@ -1,6 +1,6 @@
 # Composables
 
-Composables are plain functions that encapsulate reusable logic. They live in `src/composables/` and are called inside page or component functions.
+Composables are plain functions that encapsulate reusable logic. Your own live in `src/composables/`; `useRoute` and `useRouter` come from `@go4cas/quiver`. Call them inside page or component functions.
 
 ---
 
@@ -9,7 +9,7 @@ Composables are plain functions that encapsulate reusable logic. They live in `s
 Returns reactive accessors for the current route state.
 
 ```js
-import { useRoute } from '../composables/useRoute.js'
+import { useRoute } from '@go4cas/quiver'
 
 function MyPage() {
   const route = useRoute()
@@ -37,7 +37,7 @@ Each accessor is a function — always call it inside a `${}` slot so Arrow.js c
 Returns navigation methods.
 
 ```js
-import { useRouter } from '../composables/useRouter.js'
+import { useRouter } from '@go4cas/quiver'
 
 function MyPage() {
   const router = useRouter()
@@ -218,7 +218,7 @@ App-level dependency injection for passing configuration or services down to any
 **Provide in `src/main.js`:**
 
 ```js
-import { provide } from './framework/index.js'
+import { provide } from '@go4cas/quiver'
 
 provide('app', { name: 'My App', tagline: 'Built with Quiver' })
 ```
@@ -226,7 +226,7 @@ provide('app', { name: 'My App', tagline: 'Built with Quiver' })
 **Inject inside a layout or component function:**
 
 ```js
-import { inject } from '../framework/index.js'
+import { inject } from '@go4cas/quiver'
 
 export function MenuLayout(content) {
   const app = inject('app', { name: 'Quiver', tagline: '' })

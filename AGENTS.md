@@ -8,40 +8,52 @@ Quiver is an Arrow.js starter template with file-based routing, layouts, reactiv
 
 ## Folder structure
 
-```
-src/
-├── framework/       # Router, DI, store, app bootstrap — edit with care
-├── pages/           # File-based routes — add your pages here
-├── layouts/         # Page wrapper layouts — add layouts here
-├── components/      # Reusable UI components — add components here
-├── state/           # Global reactive state modules — add stores here
-├── composables/     # Reusable logic functions — add composables here
-├── utils/           # Pure helper functions (hmrState)
-├── styles/          # Theme: tokens.css (contract), base.css (reset), effects.css, fonts/
-├── app.css          # Starter page styles (plus Counter.css, UserCard.css beside their components)
-├── style.css        # CSS entry: layer order + @imports — add each new stylesheet here
-└── main.js          # App entry point — provide() global DI keys here
+The repo is a Bun workspace (planning/v3/TECH-SPEC.md §6). The core package and the starter app are separate workspaces; the starter imports core as `@go4cas/quiver`, never by a relative path.
 
-tests/
-├── framework/       # Unit tests for framework utilities (Vitest)
-├── composables/     # Unit tests for composables (Vitest)
-├── repo/            # Repo-wide checks (Vitest)
-├── e2e/             # End-to-end tests (Playwright)
-└── visual/          # Screenshot parity, every page × 5 themes × 2 modes (Playwright)
 ```
+packages/quiver/     # @go4cas/quiver — the core package, edit with care
+├── src/             # index.js (public entry), router.js, app.js, context.js, meta.js,
+│                    # state.js (private router state), route.js (useRoute/useRouter)
+└── tests/           # Unit tests for core (Vitest, jsdom)
+
+starter/             # The starter app (degit target: go4cas/quiver/starter)
+├── src/
+│   ├── pages/       # File-based routes — add your pages here
+│   ├── routes.js    # Turns pages/ into the route manifest for initRouter() (until P4's Vite plugin)
+│   ├── layouts/     # Page wrapper layouts — add layouts here, register in layouts/index.js
+│   ├── components/  # Reusable UI components — add components here
+│   ├── state/       # Global reactive state modules — add stores here
+│   ├── composables/ # Reusable logic functions (useFetch, useForm, useToast) — add composables here
+│   ├── utils/       # Pure helper functions (hmrState)
+│   ├── styles/      # Theme: tokens.css (contract), base.css (reset), effects.css, fonts/
+│   ├── app.css      # Starter page styles (plus Counter.css, UserCard.css beside their components)
+│   ├── style.css    # CSS entry: layer order + @imports — add each new stylesheet here
+│   └── main.js      # App entry: provide() DI keys, initRouter(), createApp()
+└── tests/
+    ├── unit/        # Unit tests for composables and state (Vitest)
+    ├── e2e/         # End-to-end tests (Playwright)
+    └── visual/      # Screenshot parity, every page × 5 themes × 2 modes (Playwright)
+
+docs/                # VitePress docs site (workspace quiver-docs)
+tests/repo/          # Repo-wide checks (Vitest): R7 grep, package boundaries, starter deps, core config
+```
+
+The `/add-*` slash commands in `.claude/commands/` write to the starter; their `src/` and `tests/` paths are relative to `starter/`.
 
 ---
 
 ## Commands
 
+Run these from the repo root. They fan out to the workspaces with `bun run --filter` (TECH-SPEC W-2):
+
 ```
-bun run dev           # Start Vite dev server
-bun run test              # Run unit tests once
-bun run test:watch    # Run unit tests in watch mode
-bun run test:e2e      # Run E2E tests (Playwright)
-bun run test:visual   # Screenshot parity — only matches inside the pinned Playwright image (tests/visual/README.md)
-bun run typecheck     # Type-check src/ via JSDoc (tsc --noEmit, checkJs)
-bun run build         # Production build
+bun run dev           # Start the starter's Vite dev server
+bun run test          # Repo checks (tests/repo), then every workspace's unit tests
+bun run test:watch    # Starter unit tests in watch mode
+bun run test:e2e      # E2E tests (Playwright) in every workspace that has them
+bun run test:visual   # Screenshot parity — only matches inside the pinned Playwright image (starter/tests/visual/README.md)
+bun run typecheck     # Type-check every workspace via JSDoc (tsc --noEmit, checkJs)
+bun run build         # Production build of the starter
 bun run docs:dev      # Start docs site locally
 bun run docs:build    # Build docs site
 ```
@@ -50,7 +62,7 @@ Always run `bun run typecheck && bun run test && bun run test:e2e` before comple
 
 ## Types
 
-The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict` (see `jsconfig.json`). CI enforces a clean `bun run typecheck`. When adding code:
+The codebase is plain JavaScript typed via JSDoc, checked by `tsc` under `checkJs` + `strict`. Each workspace has its own `jsconfig.json`: core's extends `jsconfig.base.json` and has `"types": []`, so `import.meta.glob`/`.hot`/`.env` fail its typecheck (SPEC R1); the starter's is self-contained (a degit copy has no repo root) and keeps `vite/client` types. CI enforces a clean `bun run typecheck`. When adding code:
 
 - Annotate exported functions with `@param`/`@returns`; use `@typedef` for shared shapes and `@template` for generics
 - Reuse existing typedefs via import syntax: `/** @typedef {import('../state/userState.js').User} User */`
@@ -84,7 +96,7 @@ File `src/pages/path.js` → route `/path`. Structure:
 
 ```js
 import { html } from '@arrow-js/core'
-import { useMeta } from '../framework/index.js'
+import { useMeta } from '@go4cas/quiver'
 
 export const meta = { layout: 'menu', title: 'Page Title' }
 
@@ -102,17 +114,17 @@ export default MyPage
 
 ### Navigation guards
 
-`beforeEach(fn)` from `src/framework/router.js` registers a guard and returns an unregister function. The guard receives `{ from, to }`; return `false` to cancel, a path string to redirect, anything else to proceed. Guards also run on the initial page load with `from: null` — on first load, `false` redirects to `/` (there is no previous page to stay on).
+`beforeEach(fn)` from `@go4cas/quiver` registers a guard and returns an unregister function. The guard receives `{ from, to }`; return `false` to cancel, a path string to redirect, anything else to proceed. Guards also run on the initial page load with `from: null` — on first load, `false` redirects to `/` (there is no previous page to stay on).
 
 ```js
-import { beforeEach } from './framework/router.js'
+import { beforeEach } from '@go4cas/quiver'
 
 beforeEach(({ from, to }) => {
   if (to.startsWith('/admin') && !authState.loggedIn) return '/login'
 })
 ```
 
-Register guards in `main.js` before `initRouter()`.
+Register guards in `starter/src/main.js` before `await initRouter({ routes, notFound })`.
 
 ### State modules
 
@@ -167,7 +179,7 @@ For local component state that should survive Vite hot reloads in dev, use `hmrS
 
 ### Composables
 
-Call these inside a page or component function, never at module scope:
+Call these inside a page or component function, never at module scope. `useRoute` and `useRouter` come from `@go4cas/quiver`; the others are in `starter/src/composables/`:
 
 - `useRoute()` → `{ path(), params(), status(), meta() }` — reactive route accessors
 - `useRouter()` → `{ go(path), back(), forward() }` — navigation
@@ -181,7 +193,7 @@ Call these inside a page or component function, never at module scope:
 
 ### Layouts
 
-`meta.layout: 'menu'` (sidebar + header) or `'basic'` (centred card). Register new layouts in `src/layouts/index.js`.
+`meta.layout: 'menu'` (sidebar + header) or `'basic'` (centred card). Register new layouts in `src/layouts/index.js`; `main.js` passes that object to `createApp({ layouts, defaultLayout: 'basic' })`, so pages without `meta.layout` get `'basic'`.
 
 ### Theming
 
@@ -195,7 +207,7 @@ To add a theme: token blocks (light + dark) in `src/styles/tokens.css`, optional
 
 ### Dependency injection
 
-`provide(key, value)` in `main.js` before `createApp()`; `inject(key, fallback)` anywhere. The context is app-global — last `provide` for a key wins. Built-in keys:
+`provide(key, value)` (from `@go4cas/quiver`) in `main.js` before `initRouter()` and `createApp()`; `inject(key, fallback)` anywhere. The context is app-global — last `provide` for a key wins. Built-in keys:
 - `'app'` — `{ name, tagline }` — used by `MenuLayout` sidebar
 - `'currentUser'` — `{ name, email, avatar }` — used by `MenuLayout` header
 
@@ -203,10 +215,10 @@ To add a theme: token blocks (light + dark) in `src/styles/tokens.css`, optional
 
 ## Testing
 
-- Unit: Vitest in `tests/framework/` and `tests/composables/` — test pure functions with `describe`/`it`
-- E2E: Playwright in `tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`
-- Repo checks: Vitest in `tests/repo/` (SPEC R7: the old utility framework is gone from the repo)
-- Visual: Playwright in `tests/visual/` compares every page state in 5 themes × 2 modes with the baseline in `tests/visual/__screenshots__/` (tolerance `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`; never loosen it). The baseline only matches inside `mcr.microsoft.com/playwright:v<version>-noble`, so CI's `screenshots` job runs it there; re-capture an intended visual change by running the `Tests` workflow by hand with `update-screenshots` on your branch (see `tests/visual/README.md`)
+- Unit: Vitest in `packages/quiver/tests/` (core) and `starter/tests/unit/` (starter) — test pure functions with `describe`/`it`
+- E2E: Playwright in `starter/tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`
+- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter), W-11 (no `workspace:` ranges in `starter/package.json`), and core's config (no ambient types, version `3.0.0`)
+- Visual: Playwright in `starter/tests/visual/` compares every page state in 5 themes × 2 modes with the baseline in `starter/tests/visual/__screenshots__/` (tolerance `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`; never loosen it). The baseline only matches inside `mcr.microsoft.com/playwright:v<version>-noble`, so CI's `screenshots` job runs it there; re-capture an intended visual change by running the `Tests` workflow by hand with `update-screenshots` on your branch (see `starter/tests/visual/README.md`)
 - Unit and E2E must pass before a task is complete; the `screenshots` CI job must pass before merge
 
 ---

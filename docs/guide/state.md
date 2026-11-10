@@ -76,16 +76,13 @@ uiState.mode  = 'dark'    // switch to dark mode
 
 The `watch()` in `uiState.js` handles all DOM sync and localStorage persistence automatically — no manual DOM manipulation needed.
 
-### `routerState` — `src/state/routerState.js`
+### Router state
 
-Managed by the router — treat as read-only in pages and components.
+The router's state lives inside `@go4cas/quiver` and is read-only for the app. Read it through `useRoute()`:
 
-| Property | Description |
+| Accessor | Description |
 |---|---|
-| `routerState.path` | Current URL path |
-| `routerState.params` | Dynamic route params object |
-| `routerState.status` | `'idle'` · `'loading'` · `'ready'` · `'not-found'` · `'error'` |
-| `routerState.error` | Error message string when `status === 'error'`; empty string otherwise |
-| `routerState.meta` | The `meta` object exported by the current page |
-| `routerState.layout` | Active layout name |
-| `routerState.page` | Current page function |
+| `useRoute().path()` | Current URL path |
+| `useRoute().params()` | Dynamic route params object |
+| `useRoute().status()` | `'idle'` · `'loading'` · `'ready'` · `'not-found'` · `'error'` |
+| `useRoute().meta()` | The `meta` object exported by the current page |

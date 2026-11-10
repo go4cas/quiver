@@ -1,5 +1,7 @@
 Create a new Quiver composable named: $ARGUMENTS
 
+In the Quiver repository the app lives in `starter/`: the `src/` and `tests/` paths below are relative to it.
+
 The argument is a composable name in any form (e.g. `useTheme`, `theme`, `pagination`). Normalise to camelCase with a `use` prefix (e.g. `useTheme`, `usePagination`).
 
 Follow these steps exactly:
@@ -7,8 +9,8 @@ Follow these steps exactly:
 1. Create `src/composables/<name>.js`:
 
 ```js
-import { routerState } from '../state/routerState.js'  // only if route access needed
-// import other state/framework dependencies as needed
+import { useRoute } from '@go4cas/quiver'  // only if route access needed
+// import other state modules or @go4cas/quiver APIs as needed
 
 export function <name>() {
   // encapsulate logic here
@@ -31,7 +33,7 @@ export function <name>() {
    - Apply Arrow.js rules: no `<!-- -->` comments inside any template literals used internally
    - Annotate the exported function with JSDoc `@param`/`@returns` — strict `checkJs` is enforced and untyped params fail `bun run typecheck`
 
-2. Create a unit test at `tests/composables/<name>.test.js`:
+2. Create a unit test at `tests/unit/<name>.test.js`:
 
 ```js
 import { describe, it, expect, beforeEach } from 'vitest'

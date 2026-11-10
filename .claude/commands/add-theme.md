@@ -1,5 +1,7 @@
 Add a new visual theme to this Quiver app: $ARGUMENTS
 
+In the Quiver repository the app lives in `starter/`: the `src/` and `tests/` paths below are relative to it.
+
 The argument is a theme identifier and optional description (e.g. `ocean — cool blues, soft shadows`, `terminal — green-on-black hacker aesthetic`).
 
 Follow this process:

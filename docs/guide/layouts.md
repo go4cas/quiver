@@ -19,7 +19,7 @@ export function MyLayout(content) {
 }
 ```
 
-The router reads `meta.layout` from the page module and looks up the matching layout in `src/layouts/index.js`. If no layout is specified, `'basic'` is used.
+The router reads `meta.layout` from the page module and looks up the matching layout in the `layouts` that `src/main.js` passes to `createApp()` (from `src/layouts/index.js`). If no layout is specified, the `defaultLayout` option is used; the starter sets it to `'basic'`.
 
 ---
 
@@ -75,7 +75,7 @@ provide('currentUser', {
   email: session.email,
   avatar: session.avatarUrl || '',
 })
-createApp()
+createApp({ target: '#app', layouts, defaultLayout: 'basic' /* , loading, error */ })
 ```
 
 ---
