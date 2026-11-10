@@ -77,7 +77,6 @@ public/              # Served at root URL as-is — favicon, OG images, robots.t
 src/
 ├── assets/          # Images, SVGs, fonts — imported in components, hashed on build
 ├── pages/           # File-based routes
-├── routes.js        # Turns pages/ into the route manifest for initRouter()
 ├── layouts/         # Page wrapper components
 ├── components/      # Reusable UI components
 ├── state/           # Global reactive state modules
@@ -140,10 +139,9 @@ No need to touch these for normal development.
 | File / Directory | Why |
 |---|---|
 | `src/main.js` | Entry point. Only change it to add a top-level `provide()` call, a guard, or a layout. |
-| `src/routes.js` | Builds the route manifest from `src/pages/`. |
 | `vitest.config.js` | Leave unless changing which test directories are scanned. |
 | `playwright.config.js` | Leave unless changing test directories or the dev server port. |
-| `vite.config.js` | Leave unless adding Vite plugins. |
+| `vite.config.js` | Adds the `quiver()` plugin that builds the route manifest from `src/pages/`. Leave unless adding Vite plugins. |
 
 ## App bootstrap
 
@@ -151,7 +149,7 @@ No need to touch these for normal development.
 
 ```js
 import { provide, initRouter, createApp } from '@go4cas/quiver'
-import { routes, notFound } from './routes.js'
+import routes, { notFound } from 'quiver:routes'   // built from src/pages/ by the quiver() Vite plugin
 
 provide('app', { name: 'Quiver', tagline: 'The Demo Hub' })
 await initRouter({ routes, notFound })

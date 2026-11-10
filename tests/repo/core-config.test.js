@@ -1,6 +1,6 @@
 // SPEC P2 Done-when / D33 / TECH-SPEC W-5, X-12: core typechecks without
 // vite/client (or any ambient) types, so import.meta.glob/.hot/.env fail its
-// typecheck, and its version is exactly 3.0.0 so the starter's ^3.0.0 links to it.
+// typecheck (src/node/ and bin/ get Node types from jsconfig.node.json), and its version is exactly 3.0.0 so the starter's ^3.0.0 links to it.
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -14,6 +14,21 @@ describe('core package config', () => {
     const config = json('jsconfig.json')
     expect(config.compilerOptions.types).toEqual([])
     expect(config.include).toEqual(['src'])
+    expect(config.exclude).toEqual(['src/node'])
+  })
+
+  it('typechecks src/node/ and bin/ separately, with only Node types (W-5, T12)', () => {
+    const config = json('jsconfig.node.json')
+    expect(config.compilerOptions.types).toEqual(['node'])
+    expect(config.include).toEqual(['src/node', 'bin'])
+    expect(json('package.json').scripts.typecheck).toBe('tsc -p jsconfig.json && tsc -p jsconfig.node.json')
+  })
+
+  it('ships the quiver:routes types as a types-only ./client entry (N74)', () => {
+    const pkg = json('package.json')
+    expect(pkg.exports['./client']).toEqual({ types: './client.d.ts' })
+    expect(pkg.files).toContain('client.d.ts')
+    expect(readFileSync(join(CORE, 'client.d.ts'), 'utf8')).toMatch(/declare module 'quiver:routes'/)
   })
 
   it('is version 3.0.0, not a prerelease', () => {

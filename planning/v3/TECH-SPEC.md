@@ -164,7 +164,7 @@ export function destroy()
   | `'ready'` | the page inside its layout (C-47) |
 
   Bare defaults render no `class` (R2): `` html`<p>Loading…</p>` `` and `` html`<p role="alert">${message}</p>` ``. *Check:* unit test per row.
-- **C-46** `message` is `error instanceof Error ? error.message : String(error)`. `error` is the original thrown value. `retry()` calls `navigation.reload()` and resolves when it finishes, so it re-runs guards, load and render for the current URL with `from === to`. *Check:* unit test: a loader that fails once then succeeds renders the page after `retry()`.
+- **C-46** `message` is `error instanceof Error ? error.message : String(error)`. `error` is the original thrown value. `retry()` calls `navigation.reload({ info: { retry: true } })` and resolves when it finishes, so it re-runs guards, load and render for the current URL with `from === to`. *Check:* unit test: a loader that fails once then succeeds renders the page after `retry()`.
 - **C-47** Layout selection: `name = meta.layout ?? defaultLayout`. If `layouts[name]` exists, render `layouts[name](Page())`. Otherwise render `Page()` bare, and `console.warn('[quiver] unknown layout "<name>"')` when the name came from `meta.layout` or from an explicitly passed `defaultLayout`. The implicit `'default'` with no such layout is silent (D28). The rendered result is keyed by the base-relative path. *Check:* unit tests for each branch, including the silent case.
 - **C-48** Render errors (D24 `phase: 'render'`): the outlet wraps the synchronous `Page()` and `Layout()` calls in `try/catch`. On a throw it records the error (status `'error'`), renders the error view, and the pipeline reports it (§2 step 7). Errors thrown later by nested components or reactive updates are not covered; the docs say so. *Check:* unit test with a throwing page: error view shown, one `onError` with `phase: 'render'`, `afterEach` gets `status: 'error'`.
 - **C-49** `destroy()` does, in order (D25):
@@ -235,6 +235,7 @@ One pipeline handles in-app navigations, the initial load (C-15) and `retry()` (
    - `event.hashChange`
    - `event.downloadRequest !== null`
    - `event.formData !== null` (a form POST is left to the browser, N22)
+   - `event.navigationType === 'reload'` without `event.info?.retry` (a script reload such as `location.reload()` or Vite's dev full reload is a real document reload, N73)
    - `event.info?.rollback` (guard-cancel rollback, 2.x). This one calls `event.intercept()` with no handler before returning, so the URL changes in place without a document load or a pipeline run (N72)
    - `stripBase(new URL(event.destination.url).pathname) === null` (outside the base, R3)
    
@@ -363,7 +364,7 @@ export default function quiver(options)
 - **S-10** Resolves the id `quiver:routes` to `\0quiver:routes` and loads `generateManifest(scan, f => toPosix(path.join(absDir, f)))` (absolute paths).
 - **S-11** In dev, adding or removing a `.js` file under `dir` invalidates the virtual module and triggers a full reload. Editing a page uses Vite's normal HMR.
 - **S-12** Scan errors fail `vite build` and show the Vite error overlay in dev.
-- **S-13** The return type is a local structural typedef (`{ name, resolveId, load, configureServer }`), not `import('vite').Plugin`, so the published `.d.ts` needs no `vite` types and `vite` is not a peer (§9 rule 5).
+- **S-13** The return type is a local structural typedef (`{ name, configResolved, resolveId, load, configureServer }`; `configResolved` resolves `dir` against Vite's root, N75), not `import('vite').Plugin`, so the published `.d.ts` needs no `vite` types and `vite` is not a peer (§9 rule 5).
 
 ### 4.4 Bun plugin (`@go4cas/quiver/bun`)
 
@@ -407,7 +408,7 @@ Common rules for both published packages (D20):
 - **X-1** `"type": "module"`, `"license": "MIT"`, a `LICENSE` file, `"sideEffects": false`, an `exports` map with `"types"` first and `"default"` second in each condition object, `"./package.json"` exported. No `main`, `module` or `browser` field.
 - **X-2** `peerDependencies` is exactly `{ "@arrow-js/core": "^1.0.6" }`. `dependencies` is absent. `@arrow-js/core` is also in `devDependencies` for tests.
 - **X-3** Published runtime files are the untouched source. `prepack` only adds generated files (`types/`, and for core `recipes/`); `postpack` removes them. Both paths are in `.gitignore`.
-- **X-4** Every `exports` target and every `files` entry exists after `prepack`. *Check:* a test (P8) runs `npm pack --dry-run --json` per package and asserts the file list: runtime files, `.d.ts` per runtime file, `LICENSE`, `README.md`, and for core `AGENTS.md`, `llms.txt`, `recipes/**`, `bin/quiver.js`.
+- **X-4** Every `exports` target and every `files` entry exists after `prepack`. *Check:* a test (P8) runs `npm pack --dry-run --json` per package and asserts the file list: runtime files, `.d.ts` per runtime file, `LICENSE`, `README.md`, and for core `AGENTS.md`, `llms.txt`, `recipes/**`, `bin/quiver.js`, `client.d.ts`.
 
 ### 5.1 `@go4cas/quiver` (`packages/quiver/package.json`)
 
@@ -422,10 +423,11 @@ Common rules for both published packages (D20):
     ".":      { "types": "./types/index.d.ts",     "default": "./src/index.js" },
     "./vite": { "types": "./types/node/vite.d.ts", "default": "./src/node/vite.js" },
     "./bun":  { "types": "./types/node/bun.d.ts",  "default": "./src/node/bun.js" },
+    "./client": { "types": "./client.d.ts" },
     "./package.json": "./package.json"
   },
   "bin": { "quiver": "./bin/quiver.js" },
-  "files": ["src", "types", "bin", "recipes", "AGENTS.md", "llms.txt", "README.md", "LICENSE"],
+  "files": ["src", "types", "bin", "client.d.ts", "recipes", "AGENTS.md", "llms.txt", "README.md", "LICENSE"],
   "peerDependencies": { "@arrow-js/core": "^1.0.6" },
   "engines": { "node": ">=22.12" },
   "scripts": {
@@ -439,6 +441,7 @@ Common rules for both published packages (D20):
 
 - **X-10** `recipes/` lives at the repo root (D19) and is copied into `packages/quiver/recipes/` by `prepack`, because npm's `files` can't reach outside the package folder (N24). The copy excludes each recipe's tests and the recipes workspace's `package.json`/`jsconfig.json`. Recipes are not in `exports` (D32).
 - **X-11** `prepack` emits `.d.ts` into `types/` with `tsc -p jsconfig.types.json` (`declaration`, `emitDeclarationOnly`, `outDir: types`, includes `src`). TS 7.0.2 emits declarations from the 2.x JSDoc cleanly (N26).
+- **X-13** `./client` is a types-only entry: the hand-written `client.d.ts` declares the virtual module `quiver:routes` (default `RouteManifest`, `notFound: RouteLoader | undefined`). Apps add `"@go4cas/quiver/client"` to `compilerOptions.types` (N74, agreed with P4).
 - **X-12** The version is `3.0.0` from P2 on, not a prerelease. Bun links the starter's `^3.0.0` to the workspace only when the workspace version satisfies the range; `3.0.0-alpha.0` makes `bun install` go to npm and fail (N18).
 
 ### 5.2 `arrow-use` (`packages/arrow-use/package.json`)
@@ -651,5 +654,5 @@ Accept or change these in the review of this PR. Each is the smallest rule that 
 
 ## 11. Open questions for Cas
 
-- **Q-A (new dev dependency).** The scanner, both plugins and the CLI import `node:fs/promises` and `node:path`. Under `checkJs` + `strict`, `tsc` fails with TS2591 ("Cannot find name 'node:fs/promises'… install type definitions for node") without `@types/node` (N19). Recommendation: add `@types/node` (22.x) as a **dev** dependency of `packages/quiver` only, used by `jsconfig.node.json`. The alternative is leaving `src/node/` and `bin/` out of typecheck, which weakens CI. This needs your OK under §9 rule 8.
+- **Q-A (new dev dependency).** *Answered: yes (Cas, 2026-11-10); P4 adds it (N80).* The scanner, both plugins and the CLI import `node:fs/promises` and `node:path`. Under `checkJs` + `strict`, `tsc` fails with TS2591 ("Cannot find name 'node:fs/promises'… install type definitions for node") without `@types/node` (N19). Recommendation: add `@types/node` (22.x) as a **dev** dependency of `packages/quiver` only, used by `jsconfig.node.json`. The alternative is leaving `src/node/` and `bin/` out of typecheck, which weakens CI. This needs your OK under §9 rule 8.
 - **Q-B (plugin location).** P7 must pick where the Claude Code plugin lives (`plugins/quiver/` vs a root `.claude-plugin/`). It doesn't affect any API here, so it's left to P7 unless you have a preference.

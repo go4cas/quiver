@@ -14,7 +14,7 @@ Unit tests cover pure utility functions and composables. They run in a jsdom env
 
 ```
 tests/unit/
-├── routes.test.js    # fileToRoutePath and the route manifest
+├── routes.test.js    # the route manifest from the quiver() Vite plugin
 ├── useFetch.test.js  # fetching, errors, transform, abort, reset
 ├── useForm.test.js   # validation, field accessors, submission lifecycle
 └── useToast.test.js  # toast lifecycle and configuration

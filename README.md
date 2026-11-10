@@ -73,7 +73,6 @@ Inside `starter/`:
 ```
 src/
 ├── pages/           # File-based routes — add your pages here
-├── routes.js        # Turns pages/ into the route manifest for initRouter()
 ├── layouts/         # Page wrapper components — add your layouts here
 ├── components/      # Reusable UI components — add your components here
 ├── state/           # Global reactive state modules — add your stores here

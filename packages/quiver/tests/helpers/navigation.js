@@ -76,7 +76,7 @@ export function installNavigation() {
     }),
     navigate: vi.fn((/** @type {string} */ href, /** @type {NavigateOptions} */ options = {}) =>
       dispatch(href, { info: options.info, type: options.history === 'replace' ? 'replace' : 'push' })),
-    reload: vi.fn(() => dispatch(window.location.href, { type: 'reload' })),
+    reload: vi.fn((/** @type {NavigationReloadOptions} */ options = {}) => dispatch(window.location.href, { info: options.info, type: 'reload' })),
     back: vi.fn(() => ({ committed: Promise.resolve(), finished: Promise.resolve() })),
     forward: vi.fn(() => ({ committed: Promise.resolve(), finished: Promise.resolve() })),
     /** Fire a raw navigate event, e.g. a form POST, without the push. */

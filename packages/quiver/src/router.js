@@ -14,7 +14,7 @@ import { compareRoutes, matchPath, normalizePath, validateManifest } from './mat
 /** @typedef {import('./types.js').ErrorPhase} ErrorPhase */
 /** @typedef {import('./types.js').FinalStatus} FinalStatus */
 /** @typedef {{ error: unknown, phase: ErrorPhase }} PipelineError */
-/** @typedef {{ redirects?: number, first?: string, rollback?: boolean }} NavInfo */
+/** @typedef {{ redirects?: number, first?: string, rollback?: boolean, retry?: boolean }} NavInfo */
 
 const MAX_REDIRECTS = 10
 const NO_NAVIGATION_API =
@@ -155,7 +155,7 @@ export function go(path) {
 /** @returns {Promise<void>} re-runs the pipeline for the current URL (C-46) */
 export function retry() {
   assertRouter()
-  return settle(navigation.reload())
+  return settle(navigation.reload({ info: { retry: true } }))
 }
 
 // ---------------------------------------------------------------- pipeline (§2)
@@ -329,6 +329,9 @@ function handleNavigate(event) {
   if (event.downloadRequest != null) return
   if (event.formData != null) return // a form POST is left to the browser
   const info = /** @type {NavInfo | undefined} */ (event.info)
+  // A reload that isn't retry() (location.reload(), Vite's full reload) is a real
+  // document reload, as it is without Quiver (N73).
+  if (event.navigationType === 'reload' && !info?.retry) return
   // Guard-cancel rollback: a URL-only correction, the page never changed.
   // Intercept with no handler, so the URL changes without a document load and
   // without running the pipeline (N72).
