@@ -46,9 +46,21 @@ describe('U-8: one file per composable', () => {
     expect(files.filter((f) => /\bexport\s+default\b/.test(source(f)))).toEqual([])
   })
 
-  it('index.js holds only re-exports', () => {
+  it('index.js holds only re-exports, plus type-only @typedef re-exports', () => {
     const lines = source('index.js').split('\n').filter(Boolean)
-    expect(lines.every((l) => /^export \{ use\w+ \} from '\.\/use\w+\.js'$/.test(l))).toBe(true)
+    const ok = (/** @type {string} */ l) =>
+      /^export \{ use\w+ \} from '\.\/use\w+\.js'$/.test(l) ||
+      /^\/\*\* (@template \w+ )?@typedef \{import\('\.\/use\w+\.js'\)\.\w+(<\w+>)?\} \w+ \*\/$/.test(l) ||
+      l.startsWith('// ')
+    expect(lines.filter((l) => !ok(l))).toEqual([])
+  })
+
+  it('index.js re-exports every typedef of the composables (N97)', () => {
+    const declared = files
+      .filter((f) => f.startsWith('use'))
+      .flatMap((f) => [...source(f).matchAll(/@typedef \{[^]*?\} (\w+)|@typedef \{object\} (\w+)/g)].map((m) => m[1] ?? m[2]))
+    const reexported = [...source('index.js').matchAll(/\} (\w+) \*\/$/gm)].map((m) => m[1])
+    expect(reexported.sort()).toEqual([...new Set(declared)].sort())
   })
 })
 

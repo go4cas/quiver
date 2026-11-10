@@ -38,6 +38,8 @@ const Posts = component(() => {
 - **`useMediaQuery`** tracks a CSS media query, such as `'(min-width: 40rem)'`.
 - **`useEventListener`** adds a listener and removes it on `stop()` or unmount. `target` is an element, `window`, any `EventTarget`, or a function returning one. A function is called once, at call time, so `() => window` is safe outside a browser.
 
+Types: each composable's options and return shapes are exported as types too, e.g. `/** @type {import('arrow-use').UseFetchReturn} */`.
+
 ## Conventions
 
 Every composable here follows the same rules, and so should one you add:
@@ -48,7 +50,7 @@ Every composable here follows the same rules, and so should one you add:
 4. **Inside or outside a component.** Called inside `component()`, cleanup runs when the component unmounts. Called anywhere else (module scope, a plain function, a test), nothing throws, and you call `stop()` yourself.
 5. **Nothing at import.** Importing the package runs no code. Browser APIs are checked when the composable is called, so the package can be imported on a server or in tests.
 6. **Options last.** `useX(required…, options = {})`, every option optional with a default.
-7. **One file per composable.** `src/useX.js` exports `useX`; `src/index.js` re-exports them.
+7. **One file per composable.** `src/useX.js` exports `useX`; `src/index.js` re-exports them, plus their typedefs.
 8. **Plain ESM and JSDoc.** No build step. The published files are the source, and `.d.ts` files are generated from the JSDoc when the package is packed.
 
 ### Cleanup and nested components

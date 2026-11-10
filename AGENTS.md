@@ -218,7 +218,7 @@ Call these inside a page or component function, never at module scope. `useRoute
 Rules for every composable in the package (TECH-SPEC U-1…U-11); `tests/conventions.test.js` and `tests/repo/boundaries.test.js` check most of them:
 
 - Imports are relative or exactly `@arrow-js/core` (peer only). Never `@go4cas/quiver`, never `@arrow-js/core/internal`
-- One file `src/useX.js` per composable with a named export; `src/index.js` only re-exports; no default exports
+- One file `src/useX.js` per composable with a named export; `src/index.js` only re-exports, plus a `/** @typedef {import('./useX.js').T} T */` line for each typedef; no default exports
 - Signature `useX(required…, options = {})`; return a plain object of zero-argument getters plus an idempotent `stop()`. Keep values raw and drive reactivity with a `reactive({ version })` counter, so getters never return reactive proxies
 - Nothing runs at import; check browser APIs (`fetch`, `matchMedia`, storage, `window`) at call time and return the no-browser defaults (TECH-SPEC §8.1 table)
 - Register cleanup with `try { onCleanup(stop) } catch {}` (Arrow's `onCleanup` throws outside a component). Test both: outside → `stop()` releases; inside a mounted `component()` (`tests/helpers/mount.js`) → unmount releases. Cleanup only runs for a component that is itself the slot value (NOTES N64)
