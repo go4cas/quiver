@@ -27,7 +27,7 @@ The context covers:
 
 ## Claude Code slash commands
 
-When working in Claude Code, eight slash commands are available. Type `/` in the chat input to see them.
+When working in Claude Code, eight slash commands are available. Type `/` in the chat input to see them. They ship as the Quiver Claude Code plugin (`plugins/quiver/` in the repository): install it with `/plugin marketplace add go4cas/quiver` and `/plugin install quiver@quiver`. Inside the Quiver repository, `.claude/settings.json` offers it when you trust the folder. `/add-component`, `/add-layout`, `/add-theme` and `/add-composable` install recipes (toasts, layouts, theme switcher, views, `useForm`, …) from `node_modules/@go4cas/quiver/recipes/` when the name matches one, e.g. `/add-component toast`.
 
 | Command | What it does |
 |---|---|

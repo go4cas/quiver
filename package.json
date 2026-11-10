@@ -4,8 +4,9 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "examples/*",
+    "recipes",
     "starter",
+    "examples/*",
     "docs"
   ],
   "engines": {
@@ -21,6 +22,7 @@
     "test:watch": "bun run --filter quiver-starter test:watch",
     "test:e2e": "bun run --filter '*' test:e2e",
     "test:visual": "bun run --filter quiver-starter test:visual",
+    "recipes:sync": "node scripts/sync-recipes.js",
     "docs:dev": "bun run --filter quiver-docs dev",
     "docs:build": "bun run --filter quiver-docs build",
     "docs:preview": "bun run --filter quiver-docs preview"

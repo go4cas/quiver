@@ -504,7 +504,7 @@ starter/                private "quiver-starter": the degit target
 examples/vite/  examples/bun/  examples/no-build/   private, each with tests/e2e/
 docs/                   private "quiver-docs": VitePress, builds to docs/.vitepress/dist
 planning/               not a workspace
-.claude-plugin/ or plugins/quiver/   Claude Code plugin with the /add-* commands (P7 picks the path)
+plugins/quiver/         Claude Code plugin with the /add-* commands (P7, N101); .claude-plugin/marketplace.json at the root lists it
 ```
 
 - **W-1** Root `package.json`: `"private": true`, `"workspaces": ["packages/*", "recipes", "starter", "examples/*", "docs"]`, `engines.bun: ">=1.4.4"` (D34).
@@ -523,6 +523,7 @@ planning/               not a workspace
 - **W-4** Workspace dependencies use real ranges, never `workspace:` in the starter (D19, D34). Examples and recipes use `"@go4cas/quiver": "^3.0.0"` and `"arrow-use": "^0.1.0"` too, so copied examples install.
 - **W-5** Each workspace has its own `jsconfig.json`. The published packages' configs extend `../../jsconfig.base.json`; core's browser config has `"types": []`, so `import.meta.glob`/`.hot` fail typecheck (D33, R1). The starter's config is self-contained (the base's compiler options copied in, plus `"types": ["vite/client"]`), because a degit copy of `starter/` has no parent config to extend (N56; accepted with P2).
 - **W-6** Starter `main.js` passes `base: import.meta.env.BASE_URL` to `initRouter`, and `vite.config.js` sets `base: process.env.QUIVER_BASE ?? '/'`. This is how the sub-path e2e runs without changing app code.
+- **W-7** Recipes (P7, N105): `recipes/index.json` is the registry (per recipe: `files` copied into apps, `css` load order, `requires`, `packages`, `aliases`), checked by `recipes/tests/registry.test.js`. Apps install a recipe by copying its `files` to `src/quiver/<name>/`; the starter holds exact copies (`bun run recipes:sync`, `tests/repo/recipes-sync.test.js`).
 
 Repo-wide checks (D34), all plain Vitest tests reading files, in `tests/repo/`:
 
@@ -547,7 +548,7 @@ Repo-wide checks (D34), all plain Vitest tests reading files, in `tests/repo/`:
 
 `.github/workflows/docs.yml` doesn't change (W-2 keeps its command and output path).
 
-- **CI-1** Playwright configs live per workspace; each `webServer` uses a fixed port with `--strictPort` so `--filter` runs can't collide: starter `5173`, starter sub-path `5174`, `examples/vite` `5180`, `examples/bun` `5181`, `examples/no-build` `5182`, and each example's base-path project 10 higher (`5190`, `5191`, `5192`; N81). The `arrow-use` example (U-11) uses `5183` and has no base-path project, as it has no router (N93).
+- **CI-1** Playwright configs live per workspace; each `webServer` uses a fixed port with `--strictPort` so `--filter` runs can't collide: starter `5173`, starter sub-path `5174`, `examples/vite` `5180`, `examples/bun` `5181`, `examples/no-build` `5182`, and each example's base-path project 10 higher (`5190`, `5191`, `5192`; N81). The `arrow-use` example (U-11) uses `5183` and has no base-path project, as it has no router (N93). The recipes' plain Arrow app (`recipes/e2e/`, P7) uses `5184`, also without a base-path project (N112).
 - **CI-2** The starter's Playwright config has two projects: `root` (`baseURL: http://localhost:5173/`) and `subpath` (`baseURL: http://localhost:5174/sub/app/`, server started with `QUIVER_BASE=/sub/app/`). The whole starter suite runs in both (P3 Done-when).
 - **CI-3** E2E tests navigate with relative URLs (`page.goto('users/1')`, `page.goto('./')`), never a leading `/`, because Playwright resolves `/…` against the origin and would drop `/sub/app/`. *Check:* a repo test greps `starter/tests/e2e` and `examples/*/tests` for `goto('/`; zero matches.
 - **CI-4** The sub-path project also has (P3): a deep link (`goto('users/1')` renders the user), back/forward, a link outside the base (the test sets `window.__quiverMarker = 1`, clicks a link to `/outside`, waits for load, and asserts the marker is gone, which proves a full document load), and Cmd/Ctrl-click (`click({ modifiers: ['ControlOrMeta'] })` opens a new page via `context.waitForEvent('page')` and the original URL doesn't change).
@@ -655,4 +656,4 @@ Accept or change these in the review of this PR. Each is the smallest rule that 
 ## 11. Open questions for Cas
 
 - **Q-A (new dev dependency).** *Answered: yes (Cas, 2026-11-10); P4 adds it (N80).* The scanner, both plugins and the CLI import `node:fs/promises` and `node:path`. Under `checkJs` + `strict`, `tsc` fails with TS2591 ("Cannot find name 'node:fs/promises'… install type definitions for node") without `@types/node` (N19). Recommendation: add `@types/node` (22.x) as a **dev** dependency of `packages/quiver` only, used by `jsconfig.node.json`. The alternative is leaving `src/node/` and `bin/` out of typecheck, which weakens CI. This needs your OK under §9 rule 8.
-- **Q-B (plugin location).** P7 must pick where the Claude Code plugin lives (`plugins/quiver/` vs a root `.claude-plugin/`). It doesn't affect any API here, so it's left to P7 unless you have a preference.
+- **Q-B (plugin location).** *Answered by P7: `plugins/quiver/`, with a root `.claude-plugin/marketplace.json` (N101).* P7 must pick where the Claude Code plugin lives (`plugins/quiver/` vs a root `.claude-plugin/`). It doesn't affect any API here, so it's left to P7 unless you have a preference.

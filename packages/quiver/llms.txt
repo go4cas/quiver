@@ -1,0 +1,39 @@
+# Quiver
+
+> Quiver is a small router, context and meta layer for Arrow.js apps: file-based routing on the Navigation API, layouts, guards and hooks, provide/inject and useMeta, in plain JavaScript with JSDoc types. Composables live in the separate `arrow-use` package; UI pieces (theme tokens, toasts, theme switcher, layouts, loading and error views, Link, useForm, hmrState) are copy-in recipes shipped in this package under `recipes/`.
+
+This file ships inside `@go4cas/quiver`. Paths below are relative to the package folder (`node_modules/@go4cas/quiver/`).
+
+Key facts:
+
+- Startup order: `provide()` → `beforeEach()`/`afterEach()`/`onError()` → `await initRouter({ routes, notFound, base })` → `createApp({ target, layouts, defaultLayout, loading, error })`.
+- Routes come from `src/pages/` through `@go4cas/quiver/vite` (`import routes, { notFound } from 'quiver:routes'`), `@go4cas/quiver/bun`, or the `quiver routes` CLI.
+- All app-facing paths are base-relative; only `url(path)` adds the base.
+- Arrow.js: values that change go in `() =>` slots; no HTML comments inside `html` templates; `.key(id)` in loops; `aria-disabled`, never `.disabled`.
+- Recipes are copied to `src/quiver/<name>/` and then owned by the app; their CSS is plain CSS on `--q-*` tokens in `@layer quiver.*`.
+
+## Docs
+
+- [Agent guide](AGENTS.md): conventions, the 13 exports, Arrow.js pitfalls, recipes, CSS rules and testing, in one file
+- [Package README](README.md): install and a minimal example
+- [Recipes](recipes/README.md): what each recipe is and how to install one
+- [Recipe registry](recipes/index.json): every recipe with its files, CSS, dependencies and aliases
+- [Route manifest types](client.d.ts): the `quiver:routes` virtual module
+
+## Recipes
+
+- [theme](recipes/theme/README.md): `--q-*` token contract, reset, optional per-theme effects
+- [toasts](recipes/toasts/README.md): `useToast()`, `toastState`, `ToastContainer`
+- [theme-switcher](recipes/theme-switcher/README.md): persisted theme and light/dark mode
+- [layouts](recipes/layouts/README.md): `BasicLayout`, `MenuLayout`
+- [views](recipes/views/README.md): `LoadingView`, `ErrorView` with retry
+- [link](recipes/link/README.md): `Link` with `aria-current`
+- [useForm](recipes/useForm/README.md): form state, validation and submit
+- [hmrState](recipes/hmrState/README.md): state kept across Vite hot reloads
+
+## Optional
+
+- [Documentation site](https://go4cas.github.io/quiver/): guides for routing, layouts, state, theming and testing
+- [Source and starter app](https://github.com/go4cas/quiver): `bunx degit go4cas/quiver/starter my-app`
+- [arrow-use](https://github.com/go4cas/quiver/tree/main/packages/arrow-use): `useFetch`, `useStorage`, `useMediaQuery`, `useEventListener`
+- [Arrow.js](https://arrow-js.com): the reactive template library Quiver builds on

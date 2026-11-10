@@ -18,7 +18,7 @@
     "./package.json": "./package.json"
   },
   "bin": { "quiver": "./bin/quiver.js" },
-  "files": ["src", "types", "bin", "client.d.ts", "README.md", "LICENSE"],
+  "files": ["src", "types", "bin", "client.d.ts", "recipes", "AGENTS.md", "llms.txt", "README.md", "LICENSE"],
   "peerDependencies": {
     "@arrow-js/core": "^1.0.6"
   },
@@ -32,6 +32,8 @@
   "scripts": {
     "typecheck": "tsc -p jsconfig.json && tsc -p jsconfig.node.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepack": "node scripts/prepack.js",
+    "postpack": "node scripts/postpack.js"
   }
 }

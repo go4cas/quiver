@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" data-theme="default" data-mode="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plain Arrow app</title>
+    <!-- A plain Arrow app: no Quiver router, no bundler. The toasts recipe and
+         the theme recipe's CSS are loaded as an app that copied them to quiver/ would. -->
+    <script type="importmap">
+      { "imports": { "@arrow-js/core": "./vendor/@arrow-js/core/dist/index.mjs" } }
+    </script>
+    <link rel="stylesheet" href="./quiver/theme/tokens.css" />
+    <link rel="stylesheet" href="./quiver/theme/base.css" />
+    <link rel="stylesheet" href="./quiver/toasts/toasts.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

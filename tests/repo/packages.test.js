@@ -55,6 +55,28 @@ describe('engines (D20, §5.1, §5.2)', () => {
   })
 })
 
+describe('core ships the recipes and the agent docs (SPEC P7, D32, X-10)', () => {
+  const pkg = pkgOf('packages/quiver')
+
+  it('lists recipes/, AGENTS.md and llms.txt in files, and both docs exist', () => {
+    expect(pkg.files).toEqual(expect.arrayContaining(['recipes', 'AGENTS.md', 'llms.txt']))
+    for (const f of ['AGENTS.md', 'llms.txt']) expect(existsSync(join(ROOT, 'packages/quiver', f)), f).toBe(true)
+  })
+
+  it('copies recipes/ in at prepack and removes it at postpack, outside git (X-3)', () => {
+    expect(pkg.scripts.prepack).toBe('node scripts/prepack.js')
+    expect(pkg.scripts.postpack).toBe('node scripts/postpack.js')
+    expect(readFileSync(join(ROOT, '.gitignore'), 'utf8').split('\n')).toContain('packages/quiver/recipes/')
+    expect(pkg.exports).not.toHaveProperty('./recipes')
+  })
+
+  it('the starter CLAUDE.md imports both from the installed package', () => {
+    const md = readFileSync(join(ROOT, 'starter/CLAUDE.md'), 'utf8')
+    expect(md).toContain('@node_modules/@go4cas/quiver/AGENTS.md')
+    expect(md).toContain('@node_modules/@go4cas/quiver/llms.txt')
+  })
+})
+
 describe('arrow-use (§5.2, D15)', () => {
   const pkg = pkgOf('packages/arrow-use')
 
