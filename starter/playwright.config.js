@@ -1,14 +1,20 @@
 import { defineConfig } from '@playwright/test'
 
 // Projects:
-//   e2e             — behaviour tests (`bun run test:e2e`)
-//   visual-desktop  — screenshot parity at 1280×800 (`bun run test:visual`)
-//   visual-mobile   — screenshot parity at 390×844
-// The visual projects only match inside the pinned Playwright image; see
-// tests/visual/README.md.
+//   root            behaviour tests at / (`bun run test:e2e`)
+//   subpath         the same tests with the app served under /sub/app/ (TECH-SPEC CI-2)
+//   visual-desktop  screenshot parity at 1280×800 (`bun run test:visual`)
+//   visual-mobile   screenshot parity at 390×844
+// E2E tests navigate with relative URLs (`goto('users')`, `goto('./')`), never a
+// leading '/', which Playwright resolves against the origin and so would drop the
+// base (CI-3). The visual projects only match inside the pinned Playwright image;
+// see tests/visual/README.md.
+const ROOT = 'http://localhost:5173/'
+const SUBPATH = 'http://localhost:5174/sub/app/'
+
 export default defineConfig({
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: ROOT,
   },
   expect: {
     toHaveScreenshot: {
@@ -22,8 +28,14 @@ export default defineConfig({
   snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{arg}{ext}',
   projects: [
     {
-      name: 'e2e',
+      name: 'root',
       testDir: './tests/e2e',
+      use: { baseURL: ROOT },
+    },
+    {
+      name: 'subpath',
+      testDir: './tests/e2e',
+      use: { baseURL: SUBPATH },
     },
     {
       name: 'visual-desktop',
@@ -36,9 +48,18 @@ export default defineConfig({
       use: { viewport: { width: 390, height: 844 } },
     },
   ],
-  webServer: {
-    command: 'bun run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-  },
+  // Fixed ports with --strictPort, so workspace runs can't collide (CI-1).
+  webServer: [
+    {
+      command: 'vite --port 5173 --strictPort',
+      url: ROOT,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: 'vite --port 5174 --strictPort',
+      env: { QUIVER_BASE: '/sub/app/' },
+      url: SUBPATH,
+      reuseExistingServer: !process.env.CI,
+    },
+  ],
 })

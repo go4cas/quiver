@@ -1,5 +1,5 @@
 import { html } from '@arrow-js/core'
-import { inject, go, useRoute } from '@go4cas/quiver'
+import { inject, go, url, useRoute } from '@go4cas/quiver'
 import { ThemeSelector }  from '../components/ThemeSelector.js'
 import { ThemeToggle }    from '../components/ThemeToggle.js'
 import { ToastContainer } from '../components/ToastContainer.js'
@@ -18,7 +18,7 @@ export function MenuLayout(content) {
     <div class="q-menu">
       <aside class="q-menu__sidebar q-sidebar">
         <div class="q-menu__brand">
-          <img src="/logo.svg" alt="${app.name}" class="q-menu__logo" />
+          <img src="${url('/logo.svg')}" alt="${app.name}" class="q-menu__logo" />
           <div class="q-menu__tagline">${app.tagline}</div>
         </div>
 
