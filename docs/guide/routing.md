@@ -1,6 +1,6 @@
 # Routing
 
-Routes are generated automatically from files in `src/pages/`. You never register routes manually.
+Routes are generated automatically from files in `src/pages/`. You never register routes manually: `src/routes.js` turns the folder into a route manifest (pattern → loader) and `src/main.js` passes it to `initRouter({ routes, notFound })` from `@go4cas/quiver`.
 
 ---
 
@@ -43,10 +43,10 @@ The router sets `document.title` from `meta.title` after each navigation — no 
 
 ### Reactive titles with `useMeta`
 
-When the title or description must change with route params or state, call `useMeta({ title, description })` from `src/framework/index.js` at the top of the page function (see `src/pages/users/[id].js`):
+When the title or description must change with route params or state, call `useMeta({ title, description })` from `@go4cas/quiver` at the top of the page function (see `src/pages/users/[id].js`):
 
 ```js
-import { useMeta } from '../framework/index.js'
+import { useMeta, useRoute } from '@go4cas/quiver'
 
 function UserDetailPage() {
   const route = useRoute()
@@ -72,7 +72,7 @@ The router stops `useMeta` watchers on every navigation, so a reactive title nev
 Use `useRoute()` inside your page function to access the current params reactively.
 
 ```js
-import { useRoute } from '../composables/useRoute.js'
+import { useRoute } from '@go4cas/quiver'
 
 function UserDetailPage() {
   const route = useRoute()
@@ -90,7 +90,7 @@ function UserDetailPage() {
 ## Navigating programmatically
 
 ```js
-import { useRouter } from '../composables/useRouter.js'
+import { useRouter } from '@go4cas/quiver'
 
 function MyPage() {
   const router = useRouter()
@@ -118,7 +118,7 @@ ${Link({ to: '/users', children: 'Users' })}
 Register a guard in `src/main.js` (or anywhere before navigation occurs) using `beforeEach`. The guard receives `{ from, to }` and can cancel or redirect.
 
 ```js
-import { beforeEach } from './framework/router.js'
+import { beforeEach } from '@go4cas/quiver'
 
 beforeEach(({ to }) => {
   if (to.startsWith('/admin') && !isAuthenticated()) {
@@ -137,25 +137,23 @@ Guards also run on the initial page load with `from: null`. On first load, retur
 Guards control client-side navigation UX only — a user can bypass them with DevTools. Always enforce authorization on the server for anything sensitive.
 :::
 
-::: tip Import path
-`beforeEach`, `go`, `destroyRouter`, and the route utilities are exported from `src/framework/router.js` **only** — they are not re-exported from `src/framework/index.js`. Always import them directly from `router.js`.
+::: tip Register guards before `initRouter()`
+Register guards in `src/main.js` before `await initRouter(...)`, so they also run for the initial page load.
 :::
 
 ---
 
 ## Router API
 
-Exported from `src/framework/router.js`. Pages and components normally only need `useRoute()` / `useRouter()`.
+Exported from `@go4cas/quiver`. Pages and components normally only need `useRoute()` / `useRouter()`.
 
 | Export | Returns | Description |
 |---|---|---|
-| `initRouter()` | `Promise<void>` | Attaches the Navigation API listener, runs guards, and resolves the initial route. Await it before `createApp()` |
-| `destroyRouter()` | `void` | Removes the navigate listener (tests, teardown) |
+| `initRouter({ routes, notFound })` | `Promise<void>` | Takes the route manifest (pattern → loader) and the not-found page loader, attaches the Navigation API listener, runs guards, and resolves the initial route. Await it before `createApp()` |
 | `go(path)` | `Promise<void>` | Navigates to `path` (trailing slash and query string normalised); resolves when navigation completes. Prefer `useRouter().go()` in pages |
 | `beforeEach(guard)` | `() => void` | Registers `({ from, to }) => string \| false \| void`; returns the unregister function |
-| `resolveRoute(path?)` | `Promise<void>` | Resolves `path` (default `window.location.pathname`) and updates `routerState`. Used internally |
 
-Path utilities, exported for tests and custom routing logic:
+The router's path helpers live in `packages/quiver/src/router.js` and are internal (not exported from the package). They behave like this:
 
 ```js
 normalizePath('/users/?foo=bar')          // '/users' — strips query, hash, trailing slash
@@ -166,8 +164,8 @@ matchPath('/users', '/users')             // {}
 scoreRoute('/')                           // 0  — specificity; static beats dynamic
 scoreRoute('/users')                      // 10
 scoreRoute('/users/:id')                  // 11
-fileToRoutePath('../pages/users/[id].js') // '/users/:id'
-fileToRoutePath('../pages/index.js')      // '/'
+fileToRoutePath('./pages/users/[id].js')  // '/users/:id' — in the starter's src/routes.js
+fileToRoutePath('./pages/index.js')       // '/'
 ```
 
 ---

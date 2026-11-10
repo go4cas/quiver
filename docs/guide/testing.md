@@ -8,28 +8,26 @@ The project has two test suites that serve different purposes and run independen
 
 **Tool:** Vitest  
 **Command:** `bun run test` (one-shot) · `bun run test:watch` (watch mode)  
-**Location:** `tests/framework/` and `tests/composables/`
+**Location:** `tests/unit/`
 
 Unit tests cover pure utility functions and composables. They run in a jsdom environment and complete in under a second.
 
 ```
-tests/framework/
-├── router.test.js    # fileToRoutePath, scoreRoute, normalizePath, matchPath
-└── context.test.js   # provide / inject
-
-tests/composables/
+tests/unit/
+├── routes.test.js    # fileToRoutePath and the route manifest
 ├── useFetch.test.js  # fetching, errors, transform, abort, reset
 ├── useForm.test.js   # validation, field accessors, submission lifecycle
-├── useRoute.test.js  # path, params, status, meta accessors
 └── useToast.test.js  # toast lifecycle and configuration
 ```
 
+The router, context and meta tests live with the core package in the repository (`packages/quiver/tests/`).
+
 ### Adding unit tests
 
-Add a file under `tests/framework/` or `tests/composables/` for any pure function or composable you write.
+Add a file under `tests/unit/` for any pure function or composable you write.
 
 ```js
-// tests/composables/useMyThing.test.js
+// tests/unit/useMyThing.test.js
 import { describe, it, expect } from 'vitest'
 import { useMyThing } from '../../src/composables/useMyThing.js'
 

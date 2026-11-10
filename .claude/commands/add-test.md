@@ -1,6 +1,8 @@
 Write tests for: $ARGUMENTS
 
-The argument is a file path (e.g. `src/pages/users/index.js`, `src/composables/useForm.js`, `src/framework/router.js`).
+In the Quiver repository the app lives in `starter/`: the `src/` and `tests/` paths below are relative to it.
+
+The argument is a file path (e.g. `src/pages/users/index.js`, `src/composables/useForm.js`, `packages/quiver/src/router.js`).
 
 Follow this process:
 
@@ -8,11 +10,11 @@ Follow this process:
 
 | Source location | Test type | Output location |
 |---|---|---|
-| `src/framework/*.js` | Unit (Vitest) | `tests/framework/<name>.test.js` |
-| `src/composables/*.js` | Unit (Vitest) | `tests/composables/<name>.test.js` |
+| `packages/quiver/src/*.js` (core, repo only) | Unit (Vitest) | `packages/quiver/tests/<name>.test.js` |
+| `src/composables/*.js` | Unit (Vitest) | `tests/unit/<name>.test.js` |
 | `src/pages/**/*.js` | E2E (Playwright) | `tests/e2e/<name>.test.js` |
 | `src/components/*.js` | E2E (Playwright) | `tests/e2e/<name>.test.js` |
-| `src/state/*.js` | Unit (Vitest) | `tests/composables/<name>.test.js` |
+| `src/state/*.js` | Unit (Vitest) | `tests/unit/<name>.test.js` |
 
 If an existing test file for this source already exists, extend it rather than creating a new one.
 

@@ -1,5 +1,7 @@
 Create a new Quiver page for the route path: $ARGUMENTS
 
+In the Quiver repository the app lives in `starter/`: the `src/` and `tests/` paths below are relative to it.
+
 Follow these steps exactly:
 
 1. Convert the route path to a file path under `src/pages/`:
@@ -11,7 +13,7 @@ Follow these steps exactly:
 2. Create the page file using this exact structure:
 ```js
 import { html } from '@arrow-js/core'
-import { useMeta } from '../framework/index.js'
+import { useMeta } from '@go4cas/quiver'
 
 export const meta = { layout: 'menu', title: '<Derived from path>' }
 
@@ -31,11 +33,10 @@ export default <PageName>Page
    - Use `layout: 'menu'` by default unless the page is a standalone screen (use `'basic'` for login, error, etc.)
    - If the path contains a dynamic segment like `[id]`, add `useRoute` import and show how to read the param:
      ```js
-     import { useRoute } from '../composables/useRoute.js'
+     import { useRoute } from '@go4cas/quiver'
      // inside the function:
      const route = useRoute()
      ```
-   - Adjust the relative import path for `useMeta` based on nesting depth (e.g. `../../framework/index.js` for two levels deep)
 
 3. Apply all Arrow.js rules:
    - Wrap reactive values in `() =>`

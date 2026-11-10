@@ -1,5 +1,7 @@
 Create a new Quiver layout named: $ARGUMENTS
 
+In the Quiver repository the app lives in `starter/`: the `src/` and `tests/` paths below are relative to it.
+
 The argument is a layout name in any case (e.g. `sidebar`, `BlankLayout`, `full-width`). Normalise to PascalCase with a `Layout` suffix — `<Name>` below means this full suffixed name (e.g. `SidebarLayout`). The registration key is the lowercase base name without the suffix (e.g. `sidebar`).
 
 Follow these steps exactly:
@@ -20,9 +22,9 @@ export function <Name>(content) {
 
    - The layout receives the rendered page as its `content` argument — render it as `${content}` (no `() =>` needed; content is already an Arrow template, not a reactive value)
    - Style it in a sibling `src/layouts/<Name>.css`, imported from `src/style.css` (before `effects.css`), in `@layer quiver.components` with `:where()` selectors and `--q-*` tokens only. Add `q-sidebar` / `q-header` / `q-panel` hook classes where the layout has a sidebar, sticky header or panels. Match the look of existing layouts in `src/layouts/`
-   - If the layout needs global DI data (e.g. app name, current user), inject it using `inject` from `../framework/index.js`:
+   - If the layout needs global DI data (e.g. app name, current user), inject it using `inject` from `@go4cas/quiver`:
      ```js
-     import { inject } from '../framework/index.js'
+     import { inject } from '@go4cas/quiver'
      const app = inject('app', { name: 'Quiver', tagline: '' })
      ```
    - Apply Arrow.js rules: wrap reactive values in `() =>`, no `<!-- -->` HTML comments inside template literals

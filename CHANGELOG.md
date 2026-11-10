@@ -20,9 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Self-hosted fonts (Audiowide, Orbitron, Space Grotesk, VT323; latin woff2 with their OFL licences) instead of the Google Fonts request
 - A visual-parity suite (`bun run test:visual`): every page state in 5 themes × 2 modes, desktop and mobile, 190 screenshots, run by a new `screenshots` CI job in the pinned Playwright image
 - A repo test that fails if Tailwind reappears outside the changelog and the theming guide's layer-order note
+- Repo tests that fail if core imports from the starter, if `starter/package.json` uses a `workspace:` range, or if core's typecheck config gains ambient types
 
 ### Changed
 
+- **Breaking:** the repository is a Bun workspace. The router, `provide`/`inject`, `useMeta`, `useRoute`, `useRouter` and `createApp` moved from `src/framework/`, `src/state/routerState.js` and `src/composables/useRoute.js`/`useRouter.js` into the package `@go4cas/quiver` (`packages/quiver/`, version 3.0.0, not published yet). The demo app moved to `starter/` and imports them from `@go4cas/quiver`. New projects scaffold with `bunx degit go4cas/quiver/starter my-app` once 3.0.0 is on npm; the 2.x template stays at `go4cas/quiver#v2.1.0`
+- **Breaking:** `initRouter({ routes, notFound })` takes a route manifest (pattern → loader) instead of globbing `src/pages/` itself; the starter builds it in `src/routes.js`. `createApp({ target, layouts, defaultLayout, loading, error })` takes the mount element and the layouts and loading/error views instead of importing them from the app. Behaviour is unchanged for the starter
+- `routerState` is no longer importable; `Link` and `MenuLayout` read the route through `useRoute()`
+- Root scripts (`dev`, `build`, `test`, `test:e2e`, `typecheck`, `docs:*`) run across the workspaces with `bun run --filter`; each workspace has its own `jsconfig.json`, and core's has no `vite/client` types
 - `ThemeSelector`'s `THEMES` entries are `{ id, label, swatch, swatchDark? }` (hex colours) instead of Tailwind `bg-[…]` class strings
 - `bun run test:e2e` runs only the e2e project; `bun run test:visual` runs the screenshot projects
 

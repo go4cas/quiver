@@ -1,5 +1,7 @@
 Create a new Quiver state module for: $ARGUMENTS
 
+In the Quiver repository the app lives in `starter/`: the `src/` and `tests/` paths below are relative to it.
+
 The argument is either a module name (e.g. `postState`, `cartState`) or a plain noun (e.g. `post`, `cart`). Normalise to camelCase with a `State` suffix (e.g. `postState`).
 
 Follow these steps exactly:

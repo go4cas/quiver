@@ -13,13 +13,17 @@ An [Arrow.js](https://arrow-js.com) starter template with file-based routing, la
 **Prerequisites:** [Bun](https://bun.com) 1.4+ (or Node.js 22.12+ with npm, without a lockfile)
 
 ```bash
-bunx degit go4cas/quiver my-app
+bunx degit go4cas/quiver/starter my-app
 cd my-app
 bun install
 bun run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). You can also click **Use this template** on GitHub, or clone the repository directly.
+Open [http://localhost:5173](http://localhost:5173).
+
+> **Quiver 3 is not on npm yet.** The starter depends on `@go4cas/quiver` `^3.0.0`, so a fresh copy installs once 3.0.0 is published. Until then, clone this repository and run `bun install && bun run dev` at its root, or use the 2.x template: `bunx degit go4cas/quiver#v2.1.0 my-app`.
+
+This repository is a Bun workspace: the core package `@go4cas/quiver` is in [`packages/quiver/`](packages/quiver), the starter app in [`starter/`](starter), and the docs site in [`docs/`](docs). The root scripts below run across all of them.
 
 **Browser support:** the router is built on the [Navigation API](https://developer.mozilla.org/en-US/docs/Web/API/Navigation_API) — Chrome/Edge 102+, Safari 26.2+, Firefox 147+.
 
@@ -44,11 +48,11 @@ See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 | `bun run dev`          | Start the Vite dev server            |
 | `bun run build`        | Production build to `dist/`          |
 | `bun run preview`      | Preview the production build locally |
-| `bun run test`             | Run unit tests once (Vitest)         |
+| `bun run test`         | Run unit tests once (Vitest)         |
 | `bun run test:watch`   | Run unit tests in watch mode         |
 | `bun run test:e2e`     | Run end-to-end tests (Playwright)    |
 | `bun run test:visual`  | Screenshot parity (CI image only)    |
-| `bun run typecheck`    | Type-check `src/` via JSDoc (tsc)    |
+| `bun run typecheck`    | Type-check every workspace via JSDoc (tsc) |
 | `bun run docs:dev`     | Start the documentation site locally |
 | `bun run docs:build`   | Build the documentation site         |
 | `bun run docs:preview` | Preview the built documentation site |
@@ -58,9 +62,18 @@ See the [AI Tooling guide](docs/guide/ai.md) for usage examples.
 ## Folder structure
 
 ```
+packages/quiver/     # @go4cas/quiver: router, provide/inject, useMeta, useRoute, useRouter, createApp
+starter/             # The starter app (the degit target), laid out as below
+docs/                # The documentation site (VitePress)
+tests/repo/          # Repo-wide checks (Vitest)
+```
+
+Inside `starter/`:
+
+```
 src/
-├── framework/       # Router, DI, store, app bootstrap — framework internals
 ├── pages/           # File-based routes — add your pages here
+├── routes.js        # Turns pages/ into the route manifest for initRouter()
 ├── layouts/         # Page wrapper components — add your layouts here
 ├── components/      # Reusable UI components — add your components here
 ├── state/           # Global reactive state modules — add your stores here
@@ -72,9 +85,7 @@ src/
 └── main.js          # App entry point
 
 tests/
-├── framework/       # Unit tests for framework utilities (Vitest)
-├── composables/     # Unit tests for composables (Vitest)
-├── repo/            # Repo-wide checks (Vitest)
+├── unit/            # Unit tests for composables, state and utilities (Vitest)
 ├── e2e/             # End-to-end tests (Playwright)
 └── visual/          # Screenshot parity, 5 themes × 2 modes (Playwright)
 ```

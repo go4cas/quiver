@@ -8,7 +8,7 @@ Thanks for your interest in contributing. Quiver is a small, focused starter kit
 
 Quiver is a **starter template**, not a general-purpose framework. Good contributions:
 
-- Fix bugs in the framework internals (`src/framework/`)
+- Fix bugs in the core package (`packages/quiver/`)
 - Improve test coverage or fix flaky tests
 - Correct or expand documentation
 - Fix tooling (Vite config, Vitest, Playwright, VitePress)
@@ -91,7 +91,7 @@ All three must pass before opening a PR — CI runs them on every push.
 | `bun run test` | Run unit tests once (Vitest) |
 | `bun run test:watch` | Run unit tests in watch mode |
 | `bun run test:e2e` | Run end-to-end tests (Playwright) |
-| `bun run typecheck` | Type-check `src/` via JSDoc (tsc, checkJs) |
+| `bun run typecheck` | Type-check every workspace via JSDoc (tsc, checkJs) |
 | `bun run docs:dev` | Start the documentation site locally |
 
 ---
