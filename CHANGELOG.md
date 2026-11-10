@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-10
+
 ### Removed
 
 - **Breaking:** Tailwind CSS. `tailwindcss`, `@tailwindcss/vite` and the Vite plugin are gone, and no markup uses utility classes. Apps built on the 2.x template that added their own Tailwind classes need Tailwind added back themselves, or the classes rewritten as plain CSS
@@ -203,6 +205,7 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[3.0.0]: https://github.com/go4cas/quiver/releases/tag/v3.0.0
 [2.1.0]: https://github.com/go4cas/quiver/releases/tag/v2.1.0
 [2.0.1]: https://github.com/go4cas/quiver/releases/tag/v2.0.1
 [2.0.0]: https://github.com/go4cas/quiver/releases/tag/v2.0.0
