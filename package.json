@@ -27,7 +27,8 @@
     "docs:build": "bun run --filter quiver-docs build",
     "docs:preview": "bun run --filter quiver-docs preview",
     "pack:check": "vitest run --config tests/pack/vitest.config.js",
-    "pack:try": "node scripts/try-packed.js"
+    "pack:try": "node scripts/try-packed.js",
+    "pack:types": "node scripts/check-packed-types.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

@@ -44,6 +44,8 @@ jobs:
 
   # TECH-SPEC X-4 (SPEC P8): the tarballs hold the right files, and the examples
   # and the starter, copied out of the repo, pass typecheck and e2e against them.
+  # pack:types type-checks the packed .d.ts on TypeScript 5.x and the repo's
+  # TypeScript with skipLibCheck off (N124).
   pack:
     runs-on: ubuntu-latest
     steps:
@@ -56,6 +58,7 @@ jobs:
           node-version: 22
       - run: bun install --frozen-lockfile
       - run: bun run pack:check
+      - run: bun run pack:types
       - run: bunx playwright install --with-deps chromium
       - run: bun run pack:try
 
