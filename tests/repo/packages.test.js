@@ -1,5 +1,6 @@
-// TECH-SPEC W-13: the published packages follow X-1 and X-2 (D20), and arrow-use
-// is the 0.1.0 package of §5.2 (D15, U-1).
+// TECH-SPEC W-13: the published packages follow X-1, X-2 and the engines rules
+// (D20: only core, which ships the CLI, sets engines.node), and arrow-use is the
+// 0.1.0 package of §5.2 (D15, U-1).
 import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -41,6 +42,16 @@ describe.each(PACKAGES)('%s (X-1, X-2)', (dir) => {
       .filter((f) => existsSync(f))
       .flatMap((f) => readFileSync(f, 'utf8').split('\n'))
     expect(ignored.some((line) => ['types/', `${dir}/types/`, 'packages/*/types/'].includes(line.trim()))).toBe(true)
+  })
+})
+
+describe('engines (D20, §5.1, §5.2)', () => {
+  it('core requires Node >=22.12 for the quiver CLI, and nothing else', () => {
+    expect(pkgOf('packages/quiver').engines).toEqual({ node: '>=22.12' })
+  })
+
+  it('arrow-use sets no engines: it is browser code with no CLI', () => {
+    expect(pkgOf('packages/arrow-use')).not.toHaveProperty('engines')
   })
 })
 
