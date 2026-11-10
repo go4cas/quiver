@@ -1,245 +1,443 @@
 import { nextTick } from '@arrow-js/core'
 import { routerState } from './state.js'
 import { clearMeta } from './meta.js'
+import { resolveBase, setBase, stripBase, url } from './base.js'
+import { compareRoutes, matchPath, normalizePath, validateManifest } from './match.js'
 
-/**
- * @typedef {{ from: string | null, to: string }} GuardContext
- * @typedef {(ctx: GuardContext) => false | string | void | Promise<false | string | void>} NavigationGuard
- * @typedef {{ default?: any, meta?: Record<string, any> }} PageModule
- * @typedef {() => PageModule | Promise<PageModule>} RouteLoader
- * @typedef {Record<string, RouteLoader>} RouteManifest
- * @typedef {{ routes?: RouteManifest, notFound?: RouteLoader }} InitRouterOptions
- * @typedef {{ pattern: string, loader: RouteLoader }} RouteRecord
- */
+/** @typedef {import('./types.js').RouteLoader} RouteLoader */
+/** @typedef {import('./types.js').RouteManifest} RouteManifest */
+/** @typedef {import('./types.js').PageModule} PageModule */
+/** @typedef {import('./types.js').InitRouterOptions} InitRouterOptions */
+/** @typedef {import('./types.js').NavigationGuard} NavigationGuard */
+/** @typedef {import('./types.js').AfterEachHook} AfterEachHook */
+/** @typedef {import('./types.js').ErrorHook} ErrorHook */
+/** @typedef {import('./types.js').ErrorPhase} ErrorPhase */
+/** @typedef {import('./types.js').FinalStatus} FinalStatus */
+/** @typedef {{ error: unknown, phase: ErrorPhase }} PipelineError */
+/** @typedef {{ redirects?: number, first?: string, rollback?: boolean }} NavInfo */
 
-// Set by initRouter() from the app's route manifest (pattern → loader),
-// most specific pattern first.
-/** @type {RouteRecord[]} */
-let routeRecords = []
+const MAX_REDIRECTS = 10
+const NO_NAVIGATION_API =
+  'Quiver needs the Navigation API (Chrome/Edge 102+, Safari 26.2+, Firefox 147+). See https://go4cas.github.io/quiver/guide/routing#browser-support'
+const NOT_INITIALISED = 'Quiver router is not initialised. Call initRouter() first.'
+
+/** @type {{ pattern: string, loader: RouteLoader }[]} most specific first (M-6) */
+let records = []
 /** @type {RouteLoader | undefined} */
 let notFoundLoader
 
-/** @type {NavigationGuard[]} */
+/** @type {{ fn: NavigationGuard }[]} */
 const guards = []
+/** @type {{ fn: AfterEachHook }[]} */
+const afterHooks = []
+/** @type {{ fn: ErrorHook }[]} */
+const errorHooks = []
+
+/** 'off' before initRouter() and after destroy(); 'starting' while the initial navigation runs. */
+let phase = /** @type {'off' | 'starting' | 'ready'} */ ('off')
+// Bumped by destroy(), so an initRouter() still awaiting its first load knows it was torn down.
+let generation = 0
+// Supersession token (§2 step 2): only the newest navigation may write state or fire hooks.
+let navEpoch = 0
+/** @type {unknown[]} render errors reported by the outlet during the current navigation */
+let renderErrors = []
+/** @type {{ to: string, errors: PipelineError[] } | null} hooks owed for the initial navigation (C-44) */
+let initialReport = null
+
+// ---------------------------------------------------------------- registration
 
 /**
- * @param {string} path
- * @returns {number}
+ * @template F
+ * @param {{ fn: F }[]} list
+ * @param {F} fn
+ * @returns {() => void} idempotent unregister
  */
-export function scoreRoute(path) {
-  return path
-    .split('/')
-    .filter(Boolean)
-    .reduce((score, part) => score + (part.startsWith(':') ? 1 : 10), 0)
-}
-
-/**
- * @param {string} [path]
- * @returns {string}
- */
-export function normalizePath(path = '/') {
-  const clean = path.split('?')[0].split('#')[0] || '/'
-  if (clean.length > 1 && clean.endsWith('/')) return clean.slice(0, -1)
-  return clean
-}
-
-/**
- * @param {string} routePath
- * @param {string} urlPath
- * @returns {Record<string, string> | null} matched params, or null if no match
- */
-export function matchPath(routePath, urlPath) {
-  const normalizedRoute = normalizePath(routePath)
-  const normalizedUrl = normalizePath(urlPath)
-
-  const routeParts = normalizedRoute.split('/').filter(Boolean)
-  const urlParts = normalizedUrl.split('/').filter(Boolean)
-
-  if (routeParts.length !== urlParts.length) return null
-
-  /** @type {Record<string, string>} */
-  const params = {}
-
-  for (let i = 0; i < routeParts.length; i++) {
-    const routePart = routeParts[i]
-    const urlPart = urlParts[i]
-
-    if (routePart.startsWith(':')) {
-      try {
-        params[routePart.slice(1)] = decodeURIComponent(urlPart)
-      } catch {
-        // Malformed percent-escape (e.g. '%zz') — use the raw segment
-        // rather than turning the whole route into an error page.
-        params[routePart.slice(1)] = urlPart
-      }
-      continue
-    }
-
-    if (routePart !== urlPart) return null
-  }
-
-  return params
-}
-
-// Supersession token: rapid navigations run resolveRoute concurrently (the
-// Navigation API aborts the *navigation*, not already-running JS). Only the
-// most recent call may write routerState after an await.
-let resolveEpoch = 0
-
-/**
- * @param {string} [path]
- * @returns {Promise<void>}
- */
-export async function resolveRoute(path = window.location.pathname) {
-  const epoch = ++resolveEpoch
-  const cleanPath = normalizePath(path)
-
-  // The router owns the meta lifecycle: stop the previous page's useMeta
-  // watchers so reactive titles don't keep firing after navigation.
-  clearMeta()
-
-  Object.assign(routerState, { status: 'loading', path: cleanPath, error: '', page: null, params: {}, meta: {} })
-
-  try {
-    /** @type {Record<string, string> | null} */
-    let params = null
-    const route = routeRecords.find((r) => (params = matchPath(r.pattern, cleanPath)))
-    const module = /** @type {PageModule | undefined} */ (await (route ? route.loader() : notFoundLoader?.()))
-    if (epoch !== resolveEpoch) return // superseded by a newer navigation
-
-    if (route && typeof module?.default !== 'function') {
-      throw new Error(`Route "${route.pattern}" must default export a page function.`)
-    }
-
-    const meta = module?.meta || {}
-
-    Object.assign(routerState, {
-      params: params || {},
-      page: module?.default ?? null,
-      layout: meta.layout || '',
-      meta,
-      status: route ? 'ready' : 'not-found',
-    })
-    if (meta.title) document.title = meta.title
-  } catch (error) {
-    if (epoch !== resolveEpoch) return // superseded by a newer navigation
-    Object.assign(routerState, {
-      page: null,
-      layout: '',
-      meta: {},
-      error: error instanceof Error ? error.message : String(error),
-      status: 'error',
-    })
+function register(list, fn) {
+  const entry = { fn }
+  list.push(entry)
+  return () => {
+    const i = list.indexOf(entry)
+    if (i !== -1) list.splice(i, 1)
   }
 }
 
-// go() is now a thin wrapper — the navigate event handler owns everything.
-// AbortError is expected whenever a navigation is preempted by a newer one
-// or cancelled by a guard — swallow it so call sites don't leak rejections.
-/** @param {string} path */
-export function go(path) {
-  return window.navigation.navigate(normalizePath(path)).finished?.catch((err) => {
-    if (err.name !== 'AbortError') throw err
-  })
-}
-
-// beforeEach(fn) registers a navigation guard.
-// Guard receives { from, to }. Return false to cancel, a path string to redirect.
-// Returns an unregister function.
 /**
+ * Register a navigation guard. It receives base-relative `{ from, to }`; return
+ * `false` to cancel, a path string to redirect, anything else to proceed.
  * @param {NavigationGuard} fn
- * @returns {() => void} unregister function
+ * @returns {() => void} unregister
  */
 export function beforeEach(fn) {
-  guards.push(fn)
-  return () => {
-    const idx = guards.indexOf(fn)
-    if (idx !== -1) guards.splice(idx, 1)
+  return register(guards, fn)
+}
+
+/**
+ * Run `fn({ from, to, status })` after every navigation that commits.
+ * @param {AfterEachHook} fn
+ * @returns {() => void} unregister
+ */
+export function afterEach(fn) {
+  return register(afterHooks, fn)
+}
+
+/**
+ * Run `fn({ error, from, to, phase })` after a guard, load or render error has
+ * reached the error view.
+ * @param {ErrorHook} fn
+ * @returns {() => void} unregister
+ */
+export function onError(fn) {
+  return register(errorHooks, fn)
+}
+
+/**
+ * Call each handler with `ctx`, in registration order, over a copy (C-33).
+ * A throwing handler is logged and the rest still run (C-34).
+ * @template C
+ * @param {{ fn: (ctx: C) => void }[]} list
+ * @param {C} ctx
+ * @param {string} name
+ */
+function callEach(list, ctx, name) {
+  for (const { fn } of [...list]) {
+    try {
+      fn(ctx)
+    } catch (err) {
+      console.error(`[quiver] ${name} handler threw`, err)
+    }
   }
 }
 
-// Runs the guard chain. Returns true to proceed, false to cancel,
-// or a path string to redirect.
+/**
+ * @param {string | null} from
+ * @param {string} to
+ * @param {PipelineError[]} errors
+ */
+export function fireHooks(from, to, errors) {
+  for (const { error, phase } of errors) callEach(errorHooks, { error, from, to, phase }, 'onError')
+  const status = /** @type {FinalStatus} */ (routerState.status)
+  callEach(afterHooks, { from, to, status }, 'afterEach')
+}
+
+// ---------------------------------------------------------------- navigation helpers
+
+/**
+ * Settle on a Navigation API result: resolve when it finishes, swallow
+ * AbortError (a newer navigation or a guard won), rethrow anything else.
+ * @param {NavigationResult | undefined} result
+ * @returns {Promise<void>}
+ */
+export function settle(result) {
+  result?.committed?.catch(() => {})
+  return Promise.resolve(result?.finished).then(
+    () => {},
+    (err) => {
+      if (err?.name !== 'AbortError') throw err
+    },
+  )
+}
+
+/** Throws unless initRouter() has been called (and destroy() hasn't since). */
+export function assertRouter() {
+  if (phase === 'off') throw new Error(NOT_INITIALISED)
+}
+
+/**
+ * Navigate to a base-relative path (query and hash kept) or an absolute URL.
+ * @param {string} path
+ * @returns {Promise<void>} settles when the navigation and its afterEach handlers finish
+ */
+export function go(path) {
+  assertRouter()
+  return settle(navigation.navigate(url(path)))
+}
+
+/** @returns {Promise<void>} re-runs the pipeline for the current URL (C-46) */
+export function retry() {
+  assertRouter()
+  return settle(navigation.reload())
+}
+
+// ---------------------------------------------------------------- pipeline (§2)
+
 /**
  * @param {string | null} from
  * @param {string} to
  * @returns {Promise<true | false | string>}
  */
 async function runGuards(from, to) {
-  for (const guard of guards) {
-    const result = await guard({ from, to })
+  for (const { fn } of [...guards]) {
+    const result = await fn({ from, to })
     if (result === false || typeof result === 'string') return result
   }
   return true
 }
 
-/** @param {NavigateEvent} event */
-function handleNavigate(event) {
-  // Skip cross-origin navigations, downloads, etc.
-  if (!event.canIntercept) return
-  // Let hash-only changes pass through without a route update.
-  if (event.hashChange) return
-  // Guard-cancel rollback: URL-only correction, the page never changed —
-  // don't re-run guards or resolveRoute (which would remount the page).
-  if (/** @type {{ rollback?: boolean } | undefined} */ (event.info)?.rollback) return
-
-  const to = normalizePath(new URL(event.destination.url).pathname)
-  const from = routerState.path
-
-  event.intercept({
-    handler: async () => {
-      const result = await runGuards(from, to)
-      if (result === false) {
-        navigation.navigate(from, { history: 'replace', info: { rollback: true } })
-        return
-      }
-      if (typeof result === 'string') {
-        navigation.navigate(normalizePath(result), { history: 'replace' })
-        return
-      }
-
-      await resolveRoute(to)
-      await nextTick()
-    },
-  })
+/**
+ * Step 6: record an error and return it for the hooks.
+ * @param {unknown} error
+ * @param {ErrorPhase} phase
+ * @param {string} to
+ * @returns {PipelineError[]}
+ */
+function commitError(error, phase, to) {
+  Object.assign(routerState, { status: 'error', error: () => error, path: to, params: {}, page: null, layout: '', meta: {} })
+  return [{ error, phase }]
 }
 
 /**
- * Start the router with the app's route manifest.
- * @param {InitRouterOptions} [options]
- *   routes: pattern → loader, e.g. { '/users/:id': loadUserPage };
- *   notFound: loader for paths no route matches
- * @returns {Promise<void>}
+ * Steps 4–6: load the route for `to` and commit it.
+ * @param {number} epoch
+ * @param {string} to
+ * @returns {Promise<PipelineError[] | null>} errors to report, or null when superseded
  */
-export async function initRouter({ routes = {}, notFound } = {}) {
-  if (!window.navigation) {
-    throw new Error('Navigation API is not supported in this browser.')
+async function load(epoch, to) {
+  clearMeta()
+  Object.assign(routerState, { status: 'loading', path: to, params: {}, meta: {}, page: null, layout: '', error: null })
+
+  /** @type {Record<string, string> | null} */
+  let params = null
+  const route = records.find((r) => (params = matchPath(r.pattern, to)))
+  const loader = route ? route.loader : notFoundLoader
+
+  if (!loader) {
+    routerState.status = 'not-found'
+    return []
   }
 
-  routeRecords = Object.entries(routes)
+  /** @type {PageModule} */
+  let module
+  try {
+    module = await loader()
+    if (typeof module?.default !== 'function') {
+      throw new Error(route
+        ? `Route "${route.pattern}" must default export a page function.`
+        : 'The notFound page must default export a page function.')
+    }
+  } catch (error) {
+    if (epoch !== navEpoch) return null
+    return commitError(error, 'load', to)
+  }
+  if (epoch !== navEpoch) return null
+
+  const meta = module.meta || {}
+  Object.assign(routerState, {
+    params: params || {},
+    page: module.default,
+    layout: typeof meta.layout === 'string' ? meta.layout : '',
+    meta,
+    status: route ? 'ready' : 'not-found',
+  })
+  if (typeof meta.title === 'string' && meta.title) document.title = meta.title
+  return []
+}
+
+/** Start a navigation: bump the epoch and drop anything owed to an older one. */
+function begin() {
+  renderErrors = []
+  initialReport = null
+  return ++navEpoch
+}
+
+/**
+ * Steps 7–8 for an in-app navigation: let Arrow render, collect render errors,
+ * make sure the error view is in the DOM, then fire hooks.
+ * @param {number} epoch
+ * @param {string | null} from
+ * @param {string} to
+ * @param {PipelineError[]} errors
+ */
+async function renderAndReport(epoch, from, to, errors) {
+  await nextTick()
+  if (epoch !== navEpoch) return
+  if (renderErrors.length) {
+    for (const error of renderErrors) errors.push({ error, phase: 'render' })
+    await nextTick() // the outlet re-renders into the error view (C-26)
+    if (epoch !== navEpoch) return
+  }
+  fireHooks(from, to, errors)
+}
+
+/**
+ * The outlet reports a synchronous Page()/Layout() throw here (C-48).
+ * @param {unknown} error
+ */
+export function reportRenderError(error) {
+  renderErrors.push(error)
+  Object.assign(routerState, { status: 'error', error: () => error, page: null, layout: '', meta: {} })
+}
+
+/** @returns {unknown[]} render errors collected since the current navigation began */
+export function takeRenderErrors() {
+  const errors = renderErrors
+  renderErrors = []
+  return errors
+}
+
+/**
+ * @param {string | null} from
+ * @param {string} to
+ * @param {NavInfo | undefined} info
+ */
+async function pipeline(from, to, info) {
+  const epoch = begin()
+  const redirects = info?.redirects ?? 0
+  const first = info?.first ?? to
+
+  /** @type {PipelineError[] | null} */
+  let errors = null
+  /** @type {true | false | string} */
+  let result = true
+  try {
+    result = await runGuards(from, to)
+  } catch (error) {
+    if (epoch !== navEpoch) return
+    errors = commitError(error, 'guard', to)
+  }
+  if (epoch !== navEpoch) return
+
+  if (!errors && result === false) {
+    // Cancel: put the previous URL back without re-running anything (2.x).
+    settle(navigation.navigate(url(from ?? '/'), { history: 'replace', info: { rollback: true } }))
+    return
+  }
+  if (!errors && typeof result === 'string') {
+    if (redirects >= MAX_REDIRECTS) {
+      errors = commitError(new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`), 'guard', to)
+    } else {
+      // The redirect target runs its own pipeline and fires the hooks.
+      settle(navigation.navigate(url(result), { history: 'replace', info: { redirects: redirects + 1, first } }))
+      return
+    }
+  }
+
+  if (!errors) {
+    errors = await load(epoch, to)
+    if (!errors) return
+  }
+  await renderAndReport(epoch, from, to, errors)
+}
+
+/** @param {NavigateEvent} event */
+function handleNavigate(event) {
+  if (!event.canIntercept) return
+  if (event.hashChange) return
+  if (event.downloadRequest != null) return
+  if (event.formData != null) return // a form POST is left to the browser
+  const info = /** @type {NavInfo | undefined} */ (event.info)
+  // Guard-cancel rollback: a URL-only correction, the page never changed.
+  if (info?.rollback) return
+
+  const relative = stripBase(new URL(event.destination.url).pathname)
+  if (relative === null) return // outside the base: a normal document load (R3)
+
+  const to = normalizePath(relative)
+  const from = routerState.path || null
+  event.intercept({ handler: () => pipeline(from, to, info) })
+}
+
+// ---------------------------------------------------------------- lifecycle
+
+/**
+ * Start the router: validate the manifest, resolve the base, listen for
+ * navigations and load the current URL. Resolves once the route has loaded;
+ * guard, load and not-found outcomes are reported when createApp() mounts.
+ * @param {InitRouterOptions} options
+ * @returns {Promise<void>}
+ */
+export async function initRouter(options) {
+  if (typeof window === 'undefined' || !window.navigation) throw new Error(NO_NAVIGATION_API)
+  if (phase !== 'off') throw new Error('initRouter() was already called. Call destroy() first.')
+
+  const { routes, notFound, base } = options ?? /** @type {Partial<InitRouterOptions>} */ ({})
+  validateManifest(routes, notFound)
+  const resolvedBase = resolveBase(base)
+
+  const relative = stripBase(window.location.pathname, resolvedBase)
+  if (relative === null) {
+    throw new Error(`Current URL "${window.location.pathname}" is outside base "${resolvedBase}".`)
+  }
+
+  setBase(resolvedBase)
+  records = Object.entries(/** @type {RouteManifest} */ (routes))
     .map(([pattern, loader]) => ({ pattern, loader }))
-    .sort((a, b) => scoreRoute(b.pattern) - scoreRoute(a.pattern))
+    .sort((a, b) => compareRoutes(a.pattern, b.pattern))
   notFoundLoader = notFound
+  phase = 'starting'
+  const gen = generation
 
   navigation.addEventListener('navigate', handleNavigate)
 
-  // The navigate event does not fire for the initial page load, so run the
-  // guard chain here too. There is no previous page to stay on, so a guard
-  // returning false redirects to '/' instead of cancelling. Redirects re-run
-  // the guards for the new destination, capped to avoid an infinite loop.
-  let to = normalizePath(window.location.pathname)
-  for (let i = 0; i < 10; i++) {
-    const result = await runGuards(null, to)
-    if (result === true) break
-    const next = normalizePath(typeof result === 'string' ? result : '/')
-    if (next === to) break
-    history.replaceState(null, '', next)
+  // The navigate event doesn't fire for the initial load, so run the guards
+  // here. There is no previous page to stay on: false redirects to '/'.
+  const epoch = begin()
+  let to = normalizePath(relative)
+  const first = to
+  /** @type {PipelineError[] | null} */
+  let errors = null
+
+  for (let hops = 0; ; hops++) {
+    /** @type {true | false | string} */
+    let result
+    try {
+      result = await runGuards(null, to)
+    } catch (error) {
+      if (epoch !== navEpoch) break
+      errors = commitError(error, 'guard', to)
+      break
+    }
+    if (epoch !== navEpoch || result === true) break
+    const target = result === false ? '/' : result
+    const next = normalizePath(target)
+    if (next === to) break // 2.x: a redirect to the current path proceeds
+    if (hops === MAX_REDIRECTS) {
+      errors = commitError(new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`), 'guard', to)
+      break
+    }
+    history.replaceState(history.state, '', url(target))
     to = next
   }
 
-  return resolveRoute(to)
+  if (epoch === navEpoch && !errors) errors = await load(epoch, to)
+  if (gen !== generation) return // destroy() ran while loading
+
+  if (epoch === navEpoch && errors) initialReport = { to, errors }
+  phase = 'ready'
 }
 
-export function destroyRouter() {
-  navigation.removeEventListener('navigate', handleNavigate)
+/** @returns {boolean} true once initRouter() has resolved */
+export function isRouterReady() {
+  return phase === 'ready'
+}
+
+/** @returns {{ to: string, errors: PipelineError[] } | null} the initial navigation's report, once */
+export function takeInitialReport() {
+  const report = initialReport
+  initialReport = null
+  return report
+}
+
+/** Step 1 of destroy(): drop in-flight loads and hooks. */
+export function bumpEpoch() {
+  navEpoch++
+  generation++
+}
+
+/** Steps 2–3 of destroy(): stop listening, clear guards and hooks. */
+export function stopRouter() {
+  if (phase !== 'off' && typeof navigation !== 'undefined') {
+    navigation.removeEventListener('navigate', handleNavigate)
+  }
+  guards.length = 0
+  afterHooks.length = 0
+  errorHooks.length = 0
+}
+
+/** Step 8 of destroy(): forget the manifest and mark the router as not initialised. */
+export function resetRouter() {
+  records = []
+  notFoundLoader = undefined
+  renderErrors = []
+  initialReport = null
+  phase = 'off'
 }

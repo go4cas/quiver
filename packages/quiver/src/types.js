@@ -1,0 +1,49 @@
+// Shared typedefs for @go4cas/quiver (TECH-SPEC §9). JSDoc only, no runtime code.
+// Apps import them as `/** @typedef {import('@go4cas/quiver').RouteManifest} RouteManifest */`.
+
+/** @typedef {import('@arrow-js/core').ArrowRenderable} Renderable */
+
+/** @typedef {{ default: Page, meta?: PageMeta }} PageModule */
+/** @typedef {() => PageModule | Promise<PageModule>} RouteLoader */
+/** @typedef {Record<string, RouteLoader>} RouteManifest */
+/** @typedef {() => Renderable} Page */
+/** @typedef {{ layout?: string, title?: string, [key: string]: unknown }} PageMeta */
+/** @typedef {(content: Renderable) => Renderable} Layout */
+/** @typedef {() => Renderable} LoadingView */
+/** @typedef {{ message: string, error: unknown, retry: () => Promise<void> }} ErrorViewProps */
+/** @typedef {(props: ErrorViewProps) => Renderable} ErrorView */
+
+/**
+ * @typedef {Object} InitRouterOptions
+ * @property {RouteManifest} routes   pattern → loader
+ * @property {RouteLoader} [notFound] loader for unmatched paths
+ * @property {string} [base]          absolute pathname, e.g. '/api/custom/app/'
+ */
+
+/**
+ * @typedef {Object} CreateAppOptions
+ * @property {Element | string} target          element, or a selector for document.querySelector
+ * @property {Record<string, Layout>} [layouts]  default {}
+ * @property {string} [defaultLayout]            default 'default'
+ * @property {LoadingView} [loading]             default `<p>Loading…</p>`
+ * @property {ErrorView} [error]                 default `<p role="alert">message</p>`
+ */
+
+/** @typedef {{ destroy: () => void }} App */
+
+/** @typedef {{ from: string | null, to: string }} GuardContext */
+/** @typedef {false | string | void | undefined | null | true} GuardResult */
+/** @typedef {(ctx: GuardContext) => GuardResult | Promise<GuardResult>} NavigationGuard */
+
+/** @typedef {'ready' | 'not-found' | 'error'} FinalStatus */
+/** @typedef {{ from: string | null, to: string, status: FinalStatus }} AfterEachContext */
+/** @typedef {(ctx: AfterEachContext) => void} AfterEachHook */
+
+/** @typedef {'guard' | 'load' | 'render'} ErrorPhase */
+/** @typedef {{ error: unknown, from: string | null, to: string, phase: ErrorPhase }} ErrorContext */
+/** @typedef {(ctx: ErrorContext) => void} ErrorHook */
+
+/** @typedef {'idle' | 'loading' | 'ready' | 'not-found' | 'error'} RouteStatus */
+/** @typedef {string | (() => string)} MetaValue */
+
+export {}

@@ -32,3 +32,12 @@ describe('provide / inject', () => {
     expect(inject('ctx:b')).toBe('second')
   })
 })
+
+describe('clearContext (C-63, used by destroy())', () => {
+  it('empties the context', async () => {
+    const { clearContext } = await import('../src/context.js')
+    provide('ctx:c', 1)
+    clearContext()
+    expect(inject('ctx:c')).toBeUndefined()
+  })
+})

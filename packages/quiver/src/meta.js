@@ -5,7 +5,7 @@ import { watch } from '@arrow-js/core'
 /** @type {Array<() => void>} */
 let activeStops = []
 
-/** @typedef {string | (() => string)} MetaValue */
+/** @typedef {import('./types.js').MetaValue} MetaValue */
 
 // Stops any watchers registered by the previous page's useMeta() call.
 // The router calls this on every navigation, so reactive titles never
@@ -17,7 +17,10 @@ export function clearMeta() {
 
 // useMeta({ title, description }) — call at the top of any page function.
 // Pass static strings for one-shot assignment, or arrow functions for reactive updates.
-/** @param {{ title?: MetaValue, description?: MetaValue }} [config] */
+/**
+ * @param {{ title?: MetaValue, description?: MetaValue }} [config]
+ * @returns {void}
+ */
 export function useMeta({ title, description } = {}) {
   clearMeta()
 
