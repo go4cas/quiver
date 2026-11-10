@@ -25,7 +25,7 @@ createApp({ target: '#app', layouts, defaultLayout: 'basic', loading, error })  
 
 `createApp()` before `initRouter()` resolves throws, as does a second `initRouter()` or `createApp()` before `destroy()`. `destroy()` (or `app.destroy()`) tears everything down so the sequence can run again.
 
-The manifest comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the Bun plugin (`@go4cas/quiver/bun`, for `Bun.build`), or the `quiver routes [--dir src/pages] [--out src/routes.gen.js] [--watch]` CLI for apps without a bundler. Never hand-edit a generated manifest. For types of `quiver:routes`, add `"@go4cas/quiver/client"` to `compilerOptions.types`.
+The manifest comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the Bun plugin (`@go4cas/quiver/bun`, for `Bun.build`), or the `quiver routes [--dir src/pages] [--out src/routes.gen.js] [--watch]` CLI for apps without a bundler (keep `--out` outside `--dir`, or name it `_routes.gen.js`). Never hand-edit a generated manifest. For types of `quiver:routes`, add `"@go4cas/quiver/client"` to `compilerOptions.types`.
 
 ## The 13 exports
 
@@ -136,3 +136,5 @@ Recipe JS never imports CSS. The app's CSS entry imports, in order:
 ## Limits
 
 Quiver needs the Navigation API (Chrome/Edge 102+, Safari 26.2+, Firefox 147+); recipe CSS uses native nesting (Chrome/Edge 112+). There is no SSR, no plugin system, and one Quiver app per page.
+
+Full docs, with an API reference for every export and the 2.x migration guide: <https://go4cas.github.io/quiver/>.

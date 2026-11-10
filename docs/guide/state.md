@@ -1,88 +1,99 @@
 # State
 
-Global state is a plain Arrow.js `reactive()` object, created once at module scope. State modules live in `src/state/` and are imported directly wherever they are needed.
+Global state is an Arrow.js `reactive()` object created once, at module scope, and imported wherever it's needed. Quiver adds no store library. In the starter, stores live in `src/state/`.
 
----
-
-## Creating a store
+## A store
 
 ```js
 // src/state/ticketState.js
 import { reactive } from '@arrow-js/core'
 
+/** @typedef {{ id: string, title: string, done: boolean }} Ticket */
+
 export const ticketState = reactive({
+  /** @type {Ticket[]} */
   tickets: [],
+
+  /** @param {{ title: string }} ticket */
   addTicket(ticket) {
-    this.tickets.push({ id: crypto.randomUUID(), ...ticket })
+    this.tickets.push({ ...ticket, done: false, id: crypto.randomUUID() })
   },
+
+  /** @param {string} id */
   removeTicket(id) {
     this.tickets = this.tickets.filter((t) => t.id !== id)
   },
 })
 ```
 
-Use `crypto.randomUUID()` for IDs — it produces collision-safe values unlike `Date.now()`.
+- Mutate through methods, so changes stay easy to find.
+- Use `crypto.randomUUID()` for ids.
+- `/add-state ticket` scaffolds this file.
 
----
+## Reading it
 
-## Using a store in a page or component
-
-Import the store and read its properties inside reactive `${}` slots:
+Read store properties inside `() =>` slots, and the template follows every change:
 
 ```js
 import { ticketState } from '../state/ticketState.js'
 
-function TicketsPage() {
-  return html`
-    <p>Total tickets: ${() => ticketState.tickets.length}</p>
-    <button @click="${() => ticketState.addTicket({ title: 'New' })}">Add</button>
-  `
-}
+html`
+  <p>${() => ticketState.tickets.length} open</p>
+  <button @click="${() => ticketState.addTicket({ title: 'New' })}">Add</button>
+`
 ```
 
-The `() =>` wrapper is mandatory. Arrow.js tracks reactive dependencies **lazily** — it only knows a `${}` slot depends on a piece of state if it watches the slot being evaluated. A bare value like `${ticketState.tickets.length}` is read once at render time and never updates. Wrapping it as `${() => ticketState.tickets.length}` tells Arrow.js to re-evaluate this slot whenever the accessed state changes.
+Arrow tracks dependencies lazily: it knows a slot depends on `ticketState.tickets` only because it watched the slot's function read it. A bare `${ticketState.tickets.length}` is read once.
 
----
-
-## Built-in state modules
-
-### `userState` — `src/state/userState.js`
-
-Seed data for the Users demo. Demonstrates a `reactive()` store with methods.
-
-| Property / Method | Description |
-|---|---|
-| `userState.users` | Reactive array of user objects |
-| `userState.addUser(user)` | Appends a user; caller-supplied fields are used as-is, except `id` which is always auto-generated via `crypto.randomUUID()` |
-| `userState.removeUser(id)` | Removes a user by ID |
-
-### `uiState` — `src/state/uiState.js`
-
-UI state for the theming system. Both fields are persisted to `localStorage` and restored on the next visit.
-
-| Property | Values | Description |
-|---|---|---|
-| `uiState.theme` | `'default'` · `'mono'` · `'glass'` · `'retro'` · `'brutalist'` | Active visual theme; synced to `document.documentElement.dataset.theme` |
-| `uiState.mode`  | `'light'` · `'dark'` | Active brightness mode; initialised from `prefers-color-scheme` and synced to `document.documentElement.dataset.mode` |
-
-Mutate either field directly to change the active theme or mode:
+Outside templates, `watch()` reacts the same way:
 
 ```js
-import { uiState } from '../state/uiState.js'
+import { watch } from '@arrow-js/core'
 
-uiState.theme = 'glass'   // switch to Liquid Glass theme
-uiState.mode  = 'dark'    // switch to dark mode
+watch(() => {
+  document.title = `${ticketState.tickets.length} tickets`
+})
 ```
 
-The `watch()` in `uiState.js` handles all DOM sync and localStorage persistence automatically — no manual DOM manipulation needed.
+## Persisted state
 
-### Router state
+For a value that should survive reloads and follow other tabs, use [`useStorage`](/arrow-use/useStorage) from `arrow-use` in the store module, as a singleton:
 
-The router's state lives inside `@go4cas/quiver` and is read-only for the app. Read it through `useRoute()`:
+```js
+// src/state/prefs.js
+import { useStorage } from 'arrow-use'
 
-| Accessor | Description |
-|---|---|
-| `useRoute().path()` | Current URL path |
-| `useRoute().params()` | Dynamic route params object |
-| `useRoute().status()` | `'idle'` · `'loading'` · `'ready'` · `'not-found'` · `'error'` |
-| `useRoute().meta()` | The `meta` object exported by the current page |
+export const density = useStorage('density', 'comfortable')
+// density.value(), density.set('compact')
+```
+
+Keep **one** `useStorage` per key for the whole app. Two instances of one key in the same tab don't see each other's writes, because the browser's `storage` event only fires in other tabs. The [theme switcher](/recipes/theme-switcher)'s `themeState` is built this way.
+
+## Route state
+
+The router's state is private to `@go4cas/quiver` and read-only for the app. Read it with [`useRoute()`](./routing#reading-the-route) anywhere: components, guards or other stores.
+
+```js
+import { useRoute } from '@go4cas/quiver'
+
+const route = useRoute()
+watch(() => console.log(route.path(), route.status()))
+```
+
+## Shared services: `provide` / `inject`
+
+For values that main.js decides and components read (config, the current user, an API client), use the app-wide context instead of a store:
+
+```js
+// main.js, before initRouter()
+provide('api', createApiClient(import.meta.env.VITE_API_URL))
+
+// any component or page
+const api = inject('api')
+```
+
+`inject(key, fallback)` returns `fallback` when the key is missing. Call it inside functions, not at module scope. The last `provide()` for a key wins, and `destroy()` clears them all. See the [API reference](/api/core#provide).
+
+## Local state
+
+For state that belongs to one component instance, create it inside `component()` (with [`hmrState`](/recipes/hmrState) if it should survive hot reloads). See [Components](./components#local-state-and-cleanup).

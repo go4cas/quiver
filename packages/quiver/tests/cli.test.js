@@ -77,6 +77,19 @@ describe('quiver routes', () => {
     expect(stderr).toContain('Usage: quiver routes')
   })
 
+  it('S-32: --out inside --dir is a usage error, unless its name starts with _ (N114)', () => {
+    const cwd = project()
+    const inside = runCli(['routes', '--out', 'src/pages/routes.gen.js'], cwd)
+    expect(inside.status).toBe(2)
+    expect(inside.stderr).toContain('--out src/pages/routes.gen.js is inside --dir src/pages')
+    expect(() => statSync(join(cwd, 'src', 'pages', 'routes.gen.js'))).toThrow()
+
+    expect(runCli(['routes', '--out', 'src/pages/_routes.gen.js'], cwd).status).toBe(0)
+    const again = runCli(['routes', '--out', 'src/pages/_routes.gen.js'], cwd)
+    expect(again.stdout).toContain('Unchanged')
+    expect(readFileSync(join(cwd, 'src', 'pages', '_routes.gen.js'), 'utf8')).not.toContain('_routes.gen')
+  })
+
   it.each([[['--help']], [['routes', '--help']]])('S-32: %j prints usage and exits 0', (args) => {
     const { status, stdout } = runCli(args)
     expect(status).toBe(0)
@@ -94,8 +107,8 @@ describe('quiver routes', () => {
     child.stdout.on('data', (d) => { stdout += d })
     child.stderr.on('data', (d) => { stderr += d })
     try {
-      // The CLI writes the manifest before it calls fs.watch(). Wait for the
-      // watcher, or a page added in between is never seen (N88).
+      // The CLI prints `Watching` after its first write; the watcher itself
+      // starts before that write (N88, N114).
       await until(() => stdout.includes('Watching'))
       expect(read()).toContain("'/about'")
 

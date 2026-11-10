@@ -1,29 +1,31 @@
 # Components
 
-A component is a reusable piece of UI defined with `component()` from Arrow.js. Components live in `src/components/` and are imported wherever they are needed.
+Components are plain Arrow.js. Quiver adds nothing to them: a component is a function that returns an `html` template, or a `component()` when it needs local state or cleanup. In the starter they live in `src/components/`, one file each, imported directly (there is no barrel file).
 
----
+## Plain function or `component()`
 
-## What is a component?
+```js
+import { component, html } from '@arrow-js/core'
 
-`component()` wraps your factory function and gives each call site its own stable DOM node. Arrow.js can reuse that node across re-renders and run lifecycle hooks when it unmounts.
+// A plain function: re-runs and patches in place. Fine for static markup.
+export function Badge({ label }) {
+  return html`<span class="badge">${label}</span>`
+}
 
-A plain function that returns an `html` template literal also works for purely static markup, but it re-runs and patches in place on every render — no lifecycle, no stable identity. As soon as you need local state or cleanup, use `component()`.
-
-```
-plain function          component()
-────────────────        ────────────────────────────
-returns template        returns a factory
-patches in place        stable DOM node per call site
-no lifecycle            onCleanup() runs on unmount
-no local state          can hold reactive state
+// component(): a stable instance per call site, local state, onCleanup().
+export const Counter = component((props) => { /* … */ })
 ```
 
----
+| Plain function | `component()` |
+|---|---|
+| returns a template | returns a factory; calling it gives an instance |
+| patches in place | keeps its DOM node across re-renders |
+| no lifecycle | `onCleanup()` runs on unmount |
+| no local state | can hold `reactive()` state |
 
-## Anatomy of a component
+## Anatomy
 
-`src/components/UserCard.js` is a stateless component that reads props, calls global state, and navigates — the full pattern in one file:
+The starter's `UserCard` reads props, writes to a global store and navigates:
 
 ```js
 // src/components/UserCard.js
@@ -31,202 +33,65 @@ import { component, html } from '@arrow-js/core'
 import { go } from '@go4cas/quiver'
 import { userState } from '../state/userState.js'
 
-const STATUS_CLASSES = {
-  online: 'bg-success-tint text-success',
-  away:   'bg-warning-tint text-warning',
-}
-const statusClass = (s) => STATUS_CLASSES[s] ?? 'bg-surface-inset text-fg-soft'
-
 export const UserCard = component((user) => html`
-  <article class="rounded-panel border border-line bg-surface-raised p-5 shadow-panel">
-    <div class="flex items-start justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <img src="${user.avatar}" alt="" class="h-10 w-10 rounded-full object-cover" />
-        <div>
-          <h3 class="font-semibold text-fg">${() => user.name}</h3>
-          <p class="text-sm text-fg-soft">${() => user.role}</p>
-        </div>
-      </div>
-      <span class="${() => `rounded-full px-2 py-1 text-xs font-semibold ${statusClass(user.status)}`}">
-        ${() => user.status}
-      </span>
-    </div>
-
-    <div class="mt-3 flex gap-2">
-      <button @click="${() => go(`/users/${user.id}`)}">View profile</button>
-      <button @click="${() => userState.removeUser(user.id)}">Remove</button>
-    </div>
+  <article class="card user-card q-panel">
+    <img src="${user.avatar}" alt="" class="user-card__avatar" />
+    <h3 class="user-card__name">${() => user.name}</h3>
+    <span class="user-card__status" data-status="${() => user.status}">${() => user.status}</span>
+    <button type="button" @click="${() => go(`/users/${user.id}`)}">View profile</button>
+    <button type="button" @click="${() => userState.removeUser(user.id)}">Remove</button>
   </article>
 `)
 ```
 
-**`component((props) => ...)`** — the factory receives props as its argument. Props are plain values — no reactive wrapper needed to read them. Call `component()` once at module scope and export the result; calling it returns an instance.
+- **Props** are the factory's argument, a plain value. A prop that can change must be read inside a `() =>` slot; read bare, it is captured once.
+- **`${() => user.name}`**: every slot that shows changing state is a function, or it renders once and never updates.
+- **`data-status`**: state goes in attributes, and the CSS selects on them. No modifier classes.
+- **`@click`**: handlers are functions on `@event` attributes. Write lower-case event names; Arrow 1.0.6 never fires camelCase ones.
+- **`go()`** navigates from code. For a link, use `<a href="${url(path)}">` instead, so modifier clicks open a new tab.
 
-**`${() => user.name}`** — any slot that references a value that might change must be wrapped in `() =>`. Arrow.js tracks dependencies lazily by watching the slot be evaluated. A bare `${user.name}` is read once at render time and never updates.
-
-**Derived values in slots** — `${() => statusClass(user.status)}` computes inline inside the reactive wrapper. The derivation re-runs whenever `user.status` changes.
-
-**`@click="${() => userState.removeUser(user.id)}"`** — event handlers are arrow functions assigned to the `@eventName` attribute. Components can read from and write to any global state module directly; there is no prop-drilling or event-emission system.
-
-**`go('/users/' + user.id)`** — imperative navigation via the router helper. Components don't need `useRouter()` for simple navigation; the `go` function imported from `@go4cas/quiver` is sufficient.
-
----
-
-## Local reactive state
-
-`src/components/Counter.js` holds state that is private to each instance, runs a side-effect watcher, and cleans up when it unmounts:
+## Local state and cleanup
 
 ```js
 // src/components/Counter.js
 import { component, html, onCleanup, watch } from '@arrow-js/core'
-import { hmrState } from '../utils/hmrState.js'
+import { hmrState } from '../quiver/hmrState/hmrState.js'
 
 export const Counter = component((props) => {
   const state = hmrState(`counter-${props.label}`, { count: 0 })
 
   const [, stopWatch] = watch(() => {
-    if (state.count > 0 && state.count % 10 === 0) {
-      console.log(`[Counter] "${props.label}" milestone: ${state.count}`)
-    }
+    if (state.count > 0 && state.count % 10 === 0) console.log(`milestone: ${state.count}`)
   })
-
   onCleanup(stopWatch)
 
   return html`
-    <article class="rounded-panel border border-line bg-surface-raised p-5 shadow-panel">
-      <p class="text-sm font-medium text-fg-soft">${() => props.label}</p>
-      <p class="mt-3 text-4xl font-bold text-fg">${() => state.count}</p>
-      <div class="mt-5 flex gap-2">
-        <button @click="${() => state.count++}">Increment</button>
-        <button @click="${() => (state.count = 0)}">Reset</button>
-      </div>
+    <article class="card counter q-panel">
+      <p class="counter__value">${() => state.count}</p>
+      <button type="button" class="btn" data-variant="primary" @click="${() => state.count++}">Increment</button>
     </article>
   `
 })
 ```
 
-**`hmrState(key, initialValue)`** — creates a `reactive()` object scoped to this component instance. The key is used only to survive Vite hot-module replacement in dev; it has no meaning at runtime. State resets to zero when the component unmounts (e.g. navigating away from the page).
+- [`hmrState(key, initial)`](/recipes/hmrState) is `reactive(initial)` that survives Vite hot reloads in dev. The key must be unique per instance on the page.
+- `watch(fn)` runs `fn` and re-runs it when what it read changes; it returns `[value, stop]`.
+- `onCleanup(stop)` runs when the component unmounts. Within a layout it may not ([why](./troubleshooting#cleanup-never-runs)).
 
-**Instance isolation** — two `Counter` components on the same page each call `hmrState()` independently and hold separate counts. There is no shared state between instances.
-
-**`watch(() => { ... })`** — runs the callback immediately, then re-runs it whenever any reactive value accessed inside it changes. Returns `[data, stopFn]`. Destructure to get the stop function.
-
-**`onCleanup(stopWatch)`** — registers `stopWatch` to be called when the component unmounts. Without this, the watcher would continue running after the component is removed from the DOM.
-
----
-
-## Importing a component
-
-Import components directly from their source files — one file per component, no barrel:
+## Lists
 
 ```js
-import { UserCard } from '../components/UserCard.js'
-import { Link } from '../components/Link.js'
+html`${() => userState.users.map((user) => UserCard(user).key(user.id))}`
 ```
 
-Direct imports keep the dependency graph explicit and avoid import cycles through an index file.
-
----
-
-## Built-in components
-
-| Component | Props | Notes |
-|---|---|---|
-| `Link` | `{ to, children, class? }` | A plain `<a href>` (through `url()`, so it carries the base path) that the Navigation API turns into an in-app navigation; Cmd/Ctrl/middle-click open a new tab. Sets `aria-current="page"` when the path equals `to` or is nested under it (`/users/42` for `to: '/users'`; never for `'/'`); omitted otherwise |
-| `Counter` | `{ label }` | Local-state demo: `component()`, `watch()`, `onCleanup()`, `hmrState` (see above) |
-| `UserCard` | a `userState.users` entry: `{ id, name, role, team, status, avatar }` | `status` `'online'` / `'away'` get coloured badges. Render with `.key(user.id)` |
-| `ThemeToggle` | none | `<button aria-label="Toggle light/dark mode">` that flips `uiState.mode` |
-| `ThemeSelector` | none | `role="group"` of five swatch buttons (`aria-label`, `aria-pressed`) that set `uiState.theme` — see [Theming](./theming). Independent of `ThemeToggle` |
-| `ErrorCard` | `message = 'Something went wrong.'` | Full-screen panel the router renders when a page fails to load |
-| `LoadingCard` | none | Full-screen panel the router renders while status is `'idle'` or `'loading'` |
-
-Style the active `Link` through its `aria-current` attribute:
-
-```js
-${Link({ to: '/users', children: 'Users', class: 'nav-link' })}
-```
-
-```css
-@layer quiver.components {
-  :where(.nav-link) {
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--q-radius-control);
-    &[aria-current="page"] { background-color: var(--q-color-brand-tint); color: var(--q-color-brand); }
-  }
-}
-```
-
----
-
-## Using a component in a page
-
-```js
-// src/pages/users/index.js
-import { html, nextTick } from '@arrow-js/core'
-import { UserCard } from '../../components/UserCard.js'
-import { userState } from '../../state/userState.js'
-
-export const meta = { layout: 'menu', title: 'Team' }
-
-function UsersPage() {
-  return html`
-    <div>
-      <button @click="${async () => {
-        userState.addUser({ name: 'New Member', role: 'Analyst', team: 'Insights' })
-        await nextTick()
-      }}">Add member</button>
-
-      <div class="grid" data-cols="md2-3">
-        ${() => userState.users.map((user) => UserCard(user).key(user.id))}
-      </div>
-    </div>
-  `
-}
-
-export default UsersPage
-```
-
-**`UserCard(user)`** — calling the component factory returns an instance. Pass props as the argument; there is no JSX or special syntax.
-
-**`${() => userState.users.map(...)}`** — the outer `() =>` makes the entire list reactive. When `userState.users` changes, Arrow.js re-evaluates the slot and diffs the result.
-
-**`.key(user.id)`** — attaches a stable identity to the component instance. Arrow.js uses it to match old instances to new ones during a re-render, reusing existing DOM nodes instead of destroying and recreating them. Always call `.key()` with a unique, stable value when rendering `component()` instances in a loop. Without it, every state change tears down and recreates all instances, losing local state.
-
-**`await nextTick()`** — waits for Arrow.js to flush pending DOM updates. Use it when you need to interact with the DOM immediately after a state mutation.
-
----
-
-## Passing props
-
-Props are the argument to the factory function — a plain object, string, number, or anything you pass at the call site. There is no prop declaration system.
-
-```js
-// Receiving props
-export const Badge = component((props) => html`
-  <span class="badge">${() => props.label}</span>
-`)
-
-// Passing props
-${Badge({ label: 'Online' })}
-```
-
-Arrow.js does not diff props between renders. If a prop value can change you must read it inside a reactive `${() => ...}` slot. A prop read bare (outside `() =>`) is captured once when the factory runs and never updates:
-
-```js
-// Correct — updates when props.label changes
-html`<span>${() => props.label}</span>`
-
-// Wrong — captured once, never updates
-html`<span>${props.label}</span>`
-```
-
----
+The outer `() =>` makes the list reactive; `.key()` lets Arrow keep each instance's DOM and state across changes. Use a stable id, never the index. In a keyed item, a slot that is sometimes a template must always be one: write ``` ${() => (cond ? html`<b>done</b>` : html``)} ```, not `: ''` ([why](./troubleshooting#a-list-stops-rendering-after-an-item-is-removed)).
 
 ## Styling a component
 
-Give the component its own CSS file next to it (`src/components/Badge.css`) and import it from `src/style.css`. Write plain CSS against the `--q-*` tokens, never hard-coded colours, so the component works in all five themes, light and dark:
+Each component has a CSS file beside it, imported from `src/style.css` (before `effects.css`). JS never imports CSS, so the same code runs with or without a bundler.
 
 ```css
+/* src/components/Badge.css */
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
 
 @layer quiver.components {
@@ -234,7 +99,6 @@ Give the component its own CSS file next to it (`src/components/Badge.css`) and 
     padding: 0.25rem 0.5rem;
     border-radius: var(--q-radius-control);
     background-color: var(--q-color-surface-inset);
-    font-size: 0.75rem;
     color: var(--q-color-fg-soft);
 
     &[data-tone="error"] {
@@ -242,40 +106,33 @@ Give the component its own CSS file next to it (`src/components/Badge.css`) and 
       background-color: var(--q-color-error-tint);
       color: var(--q-color-error);
     }
+    @media (hover: hover) { &:hover { color: var(--q-color-fg); } }
   }
 }
 ```
 
-- Wrap selectors in `:where()` so one app class can override them.
-- Put variants and state in attributes (`data-tone`, `aria-current`, `aria-pressed`), not modifier classes.
-- Wrap hover in `@media (hover: hover) { &:hover { … } }`.
-- Spacing and sizes are `rem` literals; colours, radii, shadows and fonts are tokens.
-
----
-
-## Theming in components
-
-Colour tokens already switch with the theme and mode, so most components need nothing else. For the rest:
-
-**Hook classes** — add `q-panel` to cards and panels, `q-accent` to brand-coloured text, and the theme effects (glass blur, retro neon, brutalist borders) apply automatically:
-
-```js
-html`<article class="badge-card q-panel">…</article>`
-```
-
-**Dark-mode differences that aren't colours** — nest `:where([data-mode="dark"]) &`, like the knob position in `ThemeToggle.css`:
-
 ```css
-:where(.q-mode-toggle__thumb) {
-  translate: 0.125rem 0;
-  :where([data-mode="dark"]) & { translate: 1.25rem 0; }
-}
+/* src/style.css */
+@import "./components/Badge.css";
+@import "./quiver/theme/effects.css";
 ```
 
-**One theme, one component** — a `[data-theme="…"]` rule in the component's CSS:
+- Every selector inside `:where()` (zero specificity), so one app class can override it.
+- Variants and state as attributes (`data-tone`, `aria-current`, `aria-pressed`), not modifier classes.
+- Colours, radii, shadows and fonts from `--q-*` tokens; spacing and sizes as `rem` literals; `translate` and `scale` properties instead of `transform`.
+- No `transition` on `button`, `a` or `input`: the theme's `base.css` owns those.
+- Add hook classes so theme effects reach your markup: `q-panel` on cards, `q-accent` on brand-coloured text.
 
-```css
-[data-theme="brutalist"] :where(.badge) { border-width: 2px; }
-```
+The full token list and the theme rules are in [Theming](./theming).
 
-For the full token reference, the layer order and how to add a new theme, see the [Theming guide](./theming).
+## Arrow.js rules
+
+These break silently, so they are worth knowing before you write a component:
+
+1. Slots that show changing state are functions: `${() => user.name}`.
+2. No HTML comments inside `html` templates; Arrow uses comments as slot markers (`Invalid HTML position`).
+3. `.disabled="${…}"` sets an attribute literally named `.disabled`. Use `aria-disabled="${() => String(busy)}"` and style `[aria-disabled="true"]`.
+4. `.key(id)` on components in a list.
+5. A slot that is sometimes a template is always a template (``` html`` ```, not `''`).
+
+[Troubleshooting](./troubleshooting) shows each failure and its fix.

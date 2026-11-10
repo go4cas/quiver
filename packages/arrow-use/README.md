@@ -1,6 +1,6 @@
 # arrow-use
 
-Composables for [Arrow.js](https://arrow-js.com): small functions that wrap a browser API in reactive getters and clean up after themselves. They need only `@arrow-js/core`, so they work in any Arrow app, with or without [Quiver](https://github.com/go4cas/quiver). This package is not on npm yet.
+Composables for [Arrow.js](https://arrow-js.com): small functions that wrap a browser API in reactive getters and clean up after themselves. They need only `@arrow-js/core`, so they work in any Arrow app, with or without [Quiver](https://github.com/go4cas/quiver). Docs: <https://go4cas.github.io/quiver/arrow-use/>.
 
 ```js
 import { html, component } from '@arrow-js/core'
@@ -46,7 +46,7 @@ Every composable here follows the same rules, and so should one you add:
 
 1. **Arrow only.** `@arrow-js/core` is the only peer dependency, and only its public exports are used. No Quiver imports: anything that needs a router belongs in the app or in Quiver.
 2. **Getters, not values.** The return value is a plain object of functions. State is read with getters (`data()`, `value()`), so `${() => posts.data()}` stays reactive. No `reactive()` object is exposed, and getters return plain values, not reactive proxies.
-3. **Always `stop()`.** Every composable returns `stop()`, which releases its listeners and requests. Calling it twice is fine, and the getters keep their last values afterwards.
+3. **Always `stop()`.** Every composable returns `stop()`, which releases its listeners and requests. Calling it twice is fine, and the getters keep their last values afterwards (a request in flight is aborted, so `useFetch().loading()` becomes `false`).
 4. **Inside or outside a component.** Called inside `component()`, cleanup runs when the component unmounts. Called anywhere else (module scope, a plain function, a test), nothing throws, and you call `stop()` yourself.
 5. **Nothing at import.** Importing the package runs no code. Browser APIs are checked when the composable is called, so the package can be imported on a server or in tests.
 6. **Options last.** `useX(required…, options = {})`, every option optional with a default.

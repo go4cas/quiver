@@ -1,32 +1,34 @@
 # Why Quiver?
 
-Quiver is a **starter template, not a framework**. You don't install it from npm — you scaffold it, read it, and own every line from day one. The entire framework layer (router, stores, DI, composables) is around 350 lines of plain JavaScript in the `@go4cas/quiver` package (`packages/quiver/` in the repository), with exactly one runtime dependency: `@arrow-js/core`.
+[Arrow.js](https://arrow-js.com) gives you reactive objects and tagged-template rendering in a few kilobytes, and nothing else. Quiver adds the application layer an SPA needs, in pieces you can take or leave:
 
-That trade — a codebase you can read in an afternoon instead of an ecosystem you depend on — is the whole point. This page is an honest look at when that trade is right for you, and when it isn't.
+- **A router you install, not a template you fork.** `@go4cas/quiver` is a package with 13 exports and one peer dependency: routing on the Navigation API, layouts, guards, `afterEach`/`onError`, `provide`/`inject`, `useMeta`. It renders no CSS and no wrapper markup, so it drops into an existing Arrow app.
+- **Any build, or none.** The same `src/pages/` folder becomes routes through a Vite plugin, a `Bun.build` plugin, or a CLI that writes a plain module for an import-map app.
+- **Composables for every Arrow app.** `arrow-use` has no Quiver dependency at all.
+- **UI you own.** Toasts, layouts, a theme switcher and the `--q-*` token contract are recipes: copied into your app, then yours to change, never a package you have to style around.
+- **Built for AI assistants.** An agent guide and `llms.txt` ship inside the package, and the `/add-*` commands for Claude Code install recipes and scaffold pages, components and tests.
 
 ## Choose Quiver when…
 
-- **You want a tiny reactive core.** Arrow.js is under 5 KB, uses tagged template literals instead of JSX or a compiler, and its reactivity is plain proxied objects. No virtual DOM, no build-time magic.
-- **You want SPA conventions without assembling them.** File-based routing, layouts, global stores, form/fetch/toast composables, and a working Vitest + Playwright setup are pre-wired and tested.
-- **You want to own your stack.** There is no framework version to upgrade past you, no plugin API to be deprecated. If the router doesn't do what you need, it's one readable file — change it.
-- **You build with AI assistants.** Quiver ships `AGENTS.md` (read by Claude Code, Codex, and Copilot) and Claude Code slash commands, so an AI agent knows the conventions of this codebase from the first prompt.
+- **You want a tiny reactive core.** No virtual DOM, no compiler, no JSX: Arrow's templates are tagged template literals and its state is proxied objects.
+- **You want SPA conventions without assembling them.** File-based routes, layouts, guards, loading and error views, base paths, and a working Vitest and Playwright setup in the starter.
+- **You want to read your dependencies.** Core is a few hundred lines of plain JavaScript with JSDoc types. The recipes are your own files.
+- **You serve the app from a sub-path** (an admin panel under `/admin/`, a tool inside a larger site): every path is base-relative, and one `base` option moves the app.
 
 ## How it compares
 
 | | What it is | How Quiver differs |
 |---|---|---|
-| **Raw Arrow.js** | Reactive primitives + templates, ~5 KB | Arrow.js gives you reactivity and rendering — nothing else. Quiver adds the application layer: routing, layouts, state, composables, testing, and conventions. |
-| **Alpine.js / petite-vue** | Sprinkle interactivity onto server-rendered HTML, no build step | Those shine when a server renders your pages. Quiver builds client-side SPAs with Vite: bundling, code-split routes, HMR, and a test harness. |
-| **Vue / React starters** | Full ecosystems: component libraries, devtools, SSR, huge communities | The ecosystems are unbeatable — and enormous. Quiver trades all of that for two dependencies and a framework layer you can hold in your head. |
-| **Lit** | Web Components for reusable, framework-agnostic design systems | Lit targets component libraries that outlive any one app. Quiver targets the app itself. |
+| **Raw Arrow.js** | Reactive state and templates, ~5 KB | Quiver adds routing, layouts, context and meta on top, without wrapping Arrow's API. |
+| **Alpine.js, petite-vue** | Interactivity sprinkled onto server-rendered HTML | Quiver builds client-side SPAs: code-split routes, client navigation, a test harness. |
+| **Vue, React** | Full ecosystems: component libraries, devtools, SSR, large communities | Unbeatable ecosystems, and much more to learn and ship. Quiver trades them for a small core you can hold in your head. |
+| **Lit** | Web Components for design systems that outlive one app | Lit targets reusable components; Quiver targets the app around them. |
 
 ## Choose something else when…
 
-- **You need SSR or static generation.** Quiver is client-side only. If SEO on content pages is critical, use a framework with a server story (Nuxt, Next, Astro).
-- **You need older browsers.** The router is built on the Navigation API — Chrome/Edge 102+, Safari 26.2+, Firefox 147+. There is no fallback.
-- **You want TypeScript-first.** Quiver is plain JavaScript by design.
-- **You're staffing a large team.** Ecosystem, hiring pool, and battle-tested component libraries matter at scale — that's what the big frameworks are for.
+- **You need SSR or static generation.** Quiver is client-side only. For SEO-critical content pages, use a framework with a server story (Nuxt, Next, Astro).
+- **You need older browsers.** The router needs the Navigation API (Chrome/Edge 102+, Safari 26.2+, Firefox 147+) and has no fallback.
+- **You want TypeScript source.** Quiver is plain JavaScript with JSDoc. TypeScript apps still get the generated `.d.ts` files.
+- **You need a large component library** or a big hiring pool. That's what the big frameworks are for.
 
-If those constraints don't apply, you get something rare: an app where the "framework" is small enough to be your own code.
-
-Ready to try it? Head to [Getting Started](./getting-started) or [open it in StackBlitz](https://stackblitz.com/github/go4cas/quiver).
+Ready? Head to [Getting Started](./getting-started), or browse the [examples](/examples).

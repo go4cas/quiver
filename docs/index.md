@@ -2,32 +2,35 @@
 layout: home
 
 hero:
-  tagline: Arrow.js · Vite starter template with routing, layouts, state, composables, plain-CSS themes, and testing.
+  tagline: A drop-in router, context and meta layer for Arrow.js. Composables in arrow-use, UI as copy-in recipes, and a starter app that puts it all together.
   actions:
     - theme: brand
       text: Get Started
       link: /guide/getting-started
     - theme: alt
-      text: Composables
-      link: /guide/composables
+      text: API reference
+      link: /api/
+    - theme: alt
+      text: Examples
+      link: /examples
 
 features:
-  - title: File-based Routing
-    details: Drop a file into src/pages/ and it becomes a route. Dynamic segments, navigation guards, and automatic document.title updates included.
+  - title: Drop-in router
+    details: "@go4cas/quiver adds routing on the Navigation API, layouts, guards, afterEach/onError hooks, provide/inject and useMeta to any Arrow.js app. Thirteen exports, one peer dependency, no CSS."
+    link: /api/core
+  - title: File-based routes, any build
+    details: A file in src/pages/ is a route. The Vite plugin, the Bun plugin and the quiver routes CLI share one scanner, so the same pages work with Vite, Bun.build or no bundler at all.
     link: /guide/routing
-  - title: Layouts
-    details: Wrap pages in reusable layout shells. Ships with BasicLayout and MenuLayout. Add your own in three steps.
-    link: /guide/layouts
-  - title: Reactive State
-    details: Global stores are plain Arrow.js reactive() objects with methods, so mutations stay explicit.
-    link: /guide/state
-  - title: Composables
-    details: useRoute, useRouter, useForm, useFetch, and useToast — the common patterns extracted so you write less boilerplate.
-    link: /guide/composables
-  - title: Dependency Injection
-    details: provide() and inject() for passing config or services to any layout or component without prop-drilling.
-    link: /guide/composables#provide-key-value-inject-key-fallback
-  - title: Testing
-    details: Unit tests with Vitest and end-to-end tests with Playwright. Both configured and ready to run.
-    link: /guide/testing
+  - title: Base paths
+    details: Serve the app under a sub-path. Every path your code sees is base-relative, url() adds the base for hrefs, and links outside the base load normally.
+    link: /guide/routing#base-path
+  - title: arrow-use composables
+    details: useFetch, useStorage, useMediaQuery and useEventListener for any Arrow app, with or without Quiver. Getters plus stop(), cleaned up on unmount.
+    link: /arrow-use/
+  - title: Copy-in recipes
+    details: Theme tokens, toasts, a theme switcher, layouts, loading and error views, Link, useForm and hmrState. You copy them into src/quiver/ and own them; /add-* commands do it for you.
+    link: /recipes/
+  - title: Starter app
+    details: A full app with five themes in plain CSS on a --q-* token contract, unit, e2e and screenshot tests, and AGENTS.md for AI assistants. bunx degit go4cas/quiver/starter my-app.
+    link: /guide/getting-started#start-from-the-starter
 ---

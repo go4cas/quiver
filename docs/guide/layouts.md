@@ -1,118 +1,110 @@
 # Layouts
 
-A layout is a function that wraps a page's content in a consistent shell — navigation, headers, footers, and so on.
-
----
-
-## How layouts work
-
-A layout function receives the rendered page content as its argument and returns an Arrow.js template.
+A layout is a function that takes the rendered page and returns the shell around it: navigation, header, footer.
 
 ```js
-export function MyLayout(content) {
+import { html } from '@arrow-js/core'
+
+/** @type {import('@go4cas/quiver').Layout} */
+export function MainLayout(content) {
   return html`
-    <div class="wrapper">
-      <header>...</header>
-      <main>${content}</main>
-    </div>
+    <header>…</header>
+    <main>${content}</main>
   `
 }
 ```
 
-The router reads `meta.layout` from the page module and looks up the matching layout in the `layouts` that `src/main.js` passes to `createApp()` (from `src/layouts/index.js`). If no layout is specified, the `defaultLayout` option is used; the starter sets it to `'basic'`.
+## Choosing a layout
 
----
-
-## Built-in layouts
-
-### `BasicLayout`
-
-A centred card layout. Used for standalone pages like login or error screens.
-
-Select it with:
-```js
-export const meta = { layout: 'basic' }
-```
-
-### `MenuLayout`
-
-A two-column layout with a sidebar (navigation links, app name) and a content area with a header bar.
-
-Select it with:
-```js
-export const meta = { layout: 'menu' }
-```
-
-The sidebar app name and tagline come from the `'app'` DI key provided in `src/main.js`:
+`createApp()` takes a map of layouts and a default:
 
 ```js
-provide('app', { name: 'My App', tagline: 'Tagline here' })
-```
-
-The header user menu reads the `'currentUser'` DI key. Provide it in `src/main.js` with the shape below; the layout falls back to a generic guest entry if the key is absent:
-
-```js
-provide('currentUser', {
-  name: 'Alice Nkosi',
-  email: 'alice@example.com',
-  avatar: aliceAvatarUrl,   // import from src/assets/ or use a URL string
+createApp({
+  target: '#app',
+  layouts: { main: MainLayout, blank: BlankLayout },
+  defaultLayout: 'main',
 })
 ```
 
-| Field | Type | Description |
+A page picks one by name with `meta.layout`; a page without it gets `defaultLayout`:
+
+```js
+export const meta = { layout: 'blank' }
+```
+
+- A name that isn't in `layouts` renders the page bare and logs `[quiver] unknown layout "<name>"`.
+- With no `layouts` at all, pages render bare (the implicit default `'default'` doesn't warn).
+- The not-found page gets its layout the same way. Loading and error views are rendered without one.
+- The rendered page is keyed by path, so navigating between two pages with the same layout replaces the page, and the layout function runs again.
+
+Core renders the layout's output straight into `target`: no wrapper element, no classes.
+
+## The layouts recipe
+
+The [`layouts` recipe](/recipes/layouts) gives you the starter's two layouts:
+
+- **`BasicLayout`** (`'basic'`): a centred card, for login or standalone pages.
+- **`MenuLayout`** (`'menu'`): a sidebar with brand and nav links, a header with the current path, the theme controls and a user menu, and the toast container.
+
+Install it with `/add-layout menu` (which also brings `theme`, `link`, `toasts` and `theme-switcher`), then pass its map to `createApp()`:
+
+```js
+import { layouts } from './quiver/layouts/layouts.js'
+
+createApp({ target: '#app', layouts, defaultLayout: 'basic' })
+```
+
+`MenuLayout` reads what it shows from [`provide()`](/api/core#provide) keys, so you configure it in `main.js` instead of editing it:
+
+```js
+provide('app', { name: 'Acme', tagline: 'Internal tools', logo: '/logo.svg', footer: 'v1.2' })
+provide('nav', [
+  { to: '/', label: 'Dashboard' },
+  { to: '/users', label: 'Team' },
+])
+provide('currentUser', {
+  name: 'Ada Lovelace',
+  email: 'ada@example.com',
+  avatar: '/ada.svg',
+  signOut: () => auth.signOut(),   // default: go('/login')
+})
+```
+
+| Key | Shape | Without it |
 |---|---|---|
-| `name` | `string` | Displayed in the dropdown card |
-| `email` | `string` | Displayed in the header pill and dropdown card |
-| `avatar` | `string` | URL for the avatar `<img>` — import from `src/assets/` or leave `''` |
+| `'app'` | `{ name, tagline?, logo?, footer? }`; `logo` is a base-relative path | `Quiver` as text, no footer |
+| `'nav'` | `[{ to, label }]` | no links |
+| `'currentUser'` | `{ name, email, avatar, signOut? }` | a guest entry |
 
-To connect real authentication, replace the `provide('currentUser', ...)` call in `src/main.js` with data from your auth API before calling `createApp()`:
+To connect real authentication, fetch the user before `createApp()` and provide it. Since the recipe is a copy in `src/quiver/layouts/`, change anything else directly.
 
-```js
-// src/main.js
-const session = await fetchCurrentUser()   // your auth call
-provide('currentUser', {
-  name: session.name,
-  email: session.email,
-  avatar: session.avatarUrl || '',
-})
-createApp({ target: '#app', layouts, defaultLayout: 'basic' /* , loading, error */ })
-```
+## Adding a layout
 
----
-
-## Creating a new layout
-
-**1. Create the layout file:**
+In the starter, `src/layouts/index.js` holds the map, so new layouts go next to the recipe's:
 
 ```js
 // src/layouts/BlankLayout.js
 import { html } from '@arrow-js/core'
 
 export function BlankLayout(content) {
-  return html`
-    <div class="blank-layout">
-      ${content}
-    </div>
-  `
+  return html`<main class="blank">${content}</main>`
 }
 ```
 
-**2. Register it in `src/layouts/index.js`:**
-
 ```js
-import { BasicLayout } from './BasicLayout.js'
-import { BlankLayout }  from './BlankLayout.js'
-import { MenuLayout }  from './MenuLayout.js'
+// src/layouts/index.js
+import { layouts as recipeLayouts } from '../quiver/layouts/layouts.js'
+import { BlankLayout } from './BlankLayout.js'
 
+/** @type {Record<string, import('@go4cas/quiver').Layout>} */
 export const layouts = {
-  basic: BasicLayout,
+  ...recipeLayouts,
   blank: BlankLayout,
-  menu:  MenuLayout,
 }
 ```
 
-**3. Use it in a page:**
+Style it in `BlankLayout.css` and add an `@import` for it to `src/style.css` ([components](./components#styling-a-component)). `/add-layout <name>` does all of this.
 
-```js
-export const meta = { layout: 'blank', title: 'My Page' }
-```
+::: warning Cleanup inside layouts
+Arrow 1.0.6 runs `onCleanup` only for a component that is itself the value a slot drops. A page rendered inside a layout is part of the layout's template, so its components never get `onCleanup` when you navigate away. Stop watchers and listeners there yourself, for example with an `arrow-use` composable's `stop()`. See [troubleshooting](./troubleshooting#cleanup-never-runs).
+:::

@@ -4,7 +4,7 @@
 // Node ≥ 22.12 or Bun; no Bun-only API.
 import { watch } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateManifest, scanPages, toPosix } from '../src/node/scanner.js'
 
@@ -13,7 +13,8 @@ const USAGE = `Usage: quiver routes [--dir <pages dir>] [--out <file>] [--watch]
 Writes the route manifest for a pages directory.
 
   --dir    pages directory, relative to cwd (default src/pages)
-  --out    output file, relative to cwd (default src/routes.gen.js)
+  --out    output file, relative to cwd (default src/routes.gen.js); not a page
+           inside --dir (name it _routes.gen.js there)
   --watch  rescan when a file is added, removed or renamed under --dir
   --help   print this message
 `
@@ -86,6 +87,34 @@ async function main(argv) {
   const dir = resolve(values.dir ?? 'src/pages')
   const out = resolve(values.out ?? 'src/routes.gen.js')
 
+  // The manifest must not become a page of the directory it describes: a .js file
+  // inside --dir is scanned unless a path segment starts with `_` or `.` (S-1).
+  const inDir = relative(dir, out)
+  if (!inDir.startsWith('..') && !isAbsolute(inDir) && out.endsWith('.js')
+    && !inDir.split(/[\\/]/).some((part) => part.startsWith('_') || part.startsWith('.'))) {
+    process.stderr.write(`--out ${show(out)} is inside --dir ${show(dir)}, so it would be scanned as a page.\n`
+      + `Write it outside the pages directory, or name it with a leading _ (e.g. _routes.gen.js).\n\n${USAGE}`)
+    return 2
+  }
+
+  // S-33: rescan on add/remove/rename, debounced 50 ms; errors are printed and
+  // the watcher keeps running. It starts before the first write, so a page added
+  // while that scan runs is not missed.
+  if (values.watch) {
+    /** @type {ReturnType<typeof setTimeout> | undefined} */
+    let timer
+    watch(dir, { recursive: true }, (event) => {
+      if (event !== 'rename') return
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        writeRoutes(dir, out).then(
+          (written) => written && process.stdout.write(`Wrote ${show(out)}\n`),
+          (error) => process.stderr.write(`${/** @type {Error} */ (error).message}\n`),
+        )
+      }, 50)
+    })
+  }
+
   try {
     const written = await writeRoutes(dir, out)
     process.stdout.write(`${written ? 'Wrote' : 'Unchanged'} ${show(out)}\n`)
@@ -95,21 +124,6 @@ async function main(argv) {
   }
 
   if (!values.watch) return 0
-
-  // S-33: rescan on add/remove/rename, debounced 50 ms; errors are printed and
-  // the watcher keeps running.
-  /** @type {ReturnType<typeof setTimeout> | undefined} */
-  let timer
-  watch(dir, { recursive: true }, (event) => {
-    if (event !== 'rename') return
-    clearTimeout(timer)
-    timer = setTimeout(() => {
-      writeRoutes(dir, out).then(
-        (written) => written && process.stdout.write(`Wrote ${show(out)}\n`),
-        (error) => process.stderr.write(`${/** @type {Error} */ (error).message}\n`),
-      )
-    }, 50)
-  })
   process.stdout.write(`Watching ${show(dir)}\n`)
   return undefined
 }

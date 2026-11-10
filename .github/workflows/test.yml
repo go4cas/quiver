@@ -42,6 +42,23 @@ jobs:
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e
 
+  # TECH-SPEC X-4 (SPEC P8): the tarballs hold the right files, and the examples
+  # and the starter, copied out of the repo, pass typecheck and e2e against them.
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.x
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: bun install --frozen-lockfile
+      - run: bun run pack:check
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run pack:try
+
   # Visual parity (planning/v3/DESIGN.md §8). Runs in the official Playwright image
   # for the version in bun.lock, which pins Chromium and the fallback system fonts.
   # Bump the tag with Playwright and re-capture the baseline in the same PR.

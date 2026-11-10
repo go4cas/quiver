@@ -1,6 +1,8 @@
 // W-12 / SPEC R7: the repo is free of the old CSS framework. A case-insensitive
 // grep over the repo may match only the allowed files: the changelog, the
 // optional framework guide (P8) and the layer-order note in the theming guide (D29).
+// P8 adds the migration guide (2.x used it) and the docs sidebar entry for the
+// optional guide (N116).
 import { describe, it, expect } from 'vitest'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -18,6 +20,8 @@ const ALLOWED = new Set([
   'CHANGELOG.md',
   'docs/guide/theming.md',   // layer-order note (D29); limited to that one line below
   `docs/guide/${'tail' + 'wind'}.md`,  // optional guide, added in P8
+  'docs/guide/migration.md',  // 2.x → 3.0: what replaced it (N116)
+  'docs/.vitepress/config.js',  // the optional guide's sidebar entry; limited to that one line below
 ])
 
 /** @param {string} dir @returns {string[]} */
@@ -35,7 +39,7 @@ function walk(dir) {
 }
 
 describe('R7: old CSS framework is gone', () => {
-  it('is named only in CHANGELOG.md, its optional guide and the layer-order note', () => {
+  it('is named only in CHANGELOG.md, its optional guide, the migration guide and two one-line notes', () => {
     const matches = walk(ROOT).filter((file) => WORD.test(readFileSync(join(ROOT, file), 'utf8')))
     expect(matches.filter((file) => !ALLOWED.has(file))).toEqual([])
   })
@@ -44,5 +48,11 @@ describe('R7: old CSS framework is gone', () => {
     const lines = readFileSync(join(ROOT, 'docs/guide/theming.md'), 'utf8').split('\n').filter((line) => WORD.test(line))
     expect(lines).toHaveLength(1)
     expect(lines[0]).toContain('@layer theme, base, quiver, components, utilities;')
+  })
+
+  it('names it on one line of the docs config only: the sidebar entry of the optional guide', () => {
+    const lines = readFileSync(join(ROOT, 'docs/.vitepress/config.js'), 'utf8').split('\n').filter((line) => WORD.test(line))
+    expect(lines).toHaveLength(1)
+    expect(lines[0]).toContain("link: '/guide/" + 'tail' + "wind'")
   })
 })

@@ -1,156 +1,144 @@
 # Feature Workflow
 
-A step-by-step walkthrough for adding a new section to the app. The example builds a Tickets feature from scratch.
+A walkthrough of adding a section to an app built on the starter. The example adds **Tickets**: a list page, a store, a card component, a nav link and an e2e test. With the Claude Code plugin, `/add-feature tickets — list and add support tickets` plans the same steps for you.
 
-## 1. Create the page
+## 1. Add the page
 
-Add a file under `src/pages/`. The file path determines the route automatically — no registration needed.
+The file path is the route; nothing to register.
 
 ```js
-// src/pages/tickets/index.js
+// src/pages/tickets/index.js → /tickets
 import { html } from '@arrow-js/core'
 
-export const meta = {
-  layout: 'menu',
-  title: 'Tickets',
-}
+export const meta = { layout: 'menu', title: 'Tickets' }
 
-function TicketsPage() {
+export default function TicketsPage() {
   return html`
     <section>
       <h1>Tickets</h1>
     </section>
   `
 }
-
-export default TicketsPage
 ```
 
-`export const meta` sets the layout and the document title. The router applies both automatically on navigation.
+In dev, the new file reloads the browser with the new route. `meta.layout` picks the menu layout and `meta.title` sets `document.title`.
 
-## 2. Add state (if needed)
-
-Create a store in `src/state/` as a module-scope `reactive()` object.
+## 2. Add a store
 
 ```js
 // src/state/ticketState.js
 import { reactive } from '@arrow-js/core'
 
+/** @typedef {{ id: string, title: string, done: boolean }} Ticket */
+
 export const ticketState = reactive({
+  /** @type {Ticket[]} */
   tickets: [],
-  addTicket(ticket) {
-    this.tickets.push({ id: crypto.randomUUID(), ...ticket })
+  /** @param {string} title */
+  add(title) {
+    this.tickets.push({ id: crypto.randomUUID(), title, done: false })
   },
-  removeTicket(id) {
-    this.tickets = this.tickets.filter((t) => t.id !== id)
+  /** @param {string} id */
+  close(id) {
+    const ticket = this.tickets.find((t) => t.id === id)
+    if (ticket) ticket.done = true
   },
 })
 ```
 
-Import and use it directly in any page or component:
-
-```js
-import { ticketState } from '../state/ticketState.js'
-
-// Read
-ticketState.tickets.length
-
-// Mutate
-ticketState.addTicket({ title: 'Fix login bug' })
-```
-
-## 3. Add components (if needed)
-
-Create a component in `src/components/` and import it directly from its file — there is no barrel file.
+## 3. Add a component
 
 ```js
 // src/components/TicketCard.js
 import { component, html } from '@arrow-js/core'
+import { ticketState } from '../state/ticketState.js'
 
-export const TicketCard = component((ticket) => html`
-  <article class="ticket-card q-panel">
-    <h3 class="ticket-card__title">${() => ticket.title}</h3>
-    <p class="ticket-card__status">${() => ticket.status}</p>
+/** @typedef {import('../state/ticketState.js').Ticket} Ticket */
+
+export const TicketCard = component(/** @param {Ticket} ticket */ (ticket) => html`
+  <article class="ticket-card q-panel" data-done="${() => String(ticket.done)}">
+    <h2 class="ticket-card__title">${() => ticket.title}</h2>
+    <button type="button" aria-disabled="${() => String(ticket.done)}"
+      @click="${() => ticketState.close(ticket.id)}">Close</button>
   </article>
 `)
 ```
 
-Use it in the page — import directly from the component file:
+```css
+/* src/components/TicketCard.css, then @import it in src/style.css before effects.css */
+@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
 
-```js
-import { TicketCard } from '../components/TicketCard.js'
-
-// Inside a reactive expression, use .key() for stable list identity
-${() => ticketState.tickets.map((t) => TicketCard(t).key(t.id))}
+@layer quiver.components {
+  :where(.ticket-card) {
+    padding: 1rem;
+    border: 1px solid var(--q-color-line);
+    border-radius: var(--q-radius-panel);
+    background-color: var(--q-color-surface-raised);
+    &[data-done="true"] { color: var(--q-color-fg-faint); }
+  }
+}
 ```
 
-## 4. Add a nav link
-
-Open `src/layouts/MenuLayout.js` and add a `Link` to the sidebar nav:
+## 4. Use them in the page
 
 ```js
-${Link({ to: '/tickets', children: 'Tickets', class: navClass })}
+// src/pages/tickets/index.js
+import { html } from '@arrow-js/core'
+import { useMeta } from '@go4cas/quiver'
+import { useToast } from '../../quiver/toasts/toasts.js'
+import { TicketCard } from '../../components/TicketCard.js'
+import { ticketState } from '../../state/ticketState.js'
+
+export const meta = { layout: 'menu', title: 'Tickets' }
+
+export default function TicketsPage() {
+  const toast = useToast()
+  useMeta({ title: () => `Tickets (${ticketState.tickets.filter((t) => !t.done).length})` })
+
+  return html`
+    <section>
+      <h1>Tickets</h1>
+      <button type="button" @click="${() => {
+        ticketState.add('Fix login bug')
+        toast.success('Ticket added.')
+      }}">Add ticket</button>
+      ${() => ticketState.tickets.map((t) => TicketCard(t).key(t.id))}
+    </section>
+  `
+}
 ```
 
-The `Link` component applies `aria-current="page"` automatically when the route is active.
+## 5. Add a nav link
 
-## 5. Write an E2E test
+`MenuLayout` reads its links from the `'nav'` key, so add one in `src/main.js`:
 
-Add a test file in `tests/e2e/` to cover the new feature's golden path.
+```js
+provide('nav', [
+  { to: '/', label: 'Dashboard' },
+  { to: '/users', label: 'Team' },
+  { to: '/tickets', label: 'Tickets' },
+])
+```
+
+The active link gets `aria-current="page"`, on `/tickets` and on any path below it.
+
+## 6. Test it
 
 ```js
 // tests/e2e/tickets.test.js
 import { test, expect } from '@playwright/test'
 
-test('tickets page loads with correct title', async ({ page }) => {
-  await page.goto('/tickets')
-  await expect(page).toHaveTitle('Tickets')
-  await expect(page.getByRole('heading', { name: 'Tickets' })).toBeVisible()
-})
-
-test('adding a ticket shows it in the list', async ({ page }) => {
-  await page.goto('/tickets')
+test('adds a ticket', async ({ page }) => {
+  await page.goto('tickets')
+  await expect(page).toHaveTitle('Tickets (0)')
   await page.getByRole('button', { name: 'Add ticket' }).click()
-  await expect(page.getByText('Fix login bug')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Fix login bug' })).toBeVisible()
+  await expect(page.getByRole('alert')).toContainText('Ticket added.')
 })
 ```
 
-Run with `bun run test:e2e`.
+Use relative URLs (`'tickets'`, not `'/tickets'`): every test also runs with the app under `/sub/app/`. Then run everything:
 
----
-
-## Adding local state to a component
-
-For state that belongs to a single component instance (not shared globally), create a `reactive()` object inside the `component()` factory:
-
-```js
-import { component, html, onCleanup, watch } from '@arrow-js/core'
-import { hmrState } from '../utils/hmrState.js'
-
-export const TicketCounter = component((props) => {
-  // hmrState preserves state across Vite hot-reloads in dev.
-  // Falls back to a plain reactive() in production builds.
-  const state = hmrState(`ticket-counter-${props.label}`, { count: 0 })
-
-  // watch() runs immediately and re-runs whenever accessed state changes.
-  // The second tuple element is a stop function.
-  const [, stopWatch] = watch(() => {
-    if (state.count > 0) console.log(`count: ${state.count}`)
-  })
-
-  // onCleanup fires when the component unmounts (e.g. route navigation).
-  onCleanup(stopWatch)
-
-  return html`
-    <button @click="${() => state.count++}">
-      ${() => props.label}: ${() => state.count}
-    </button>
-  `
-})
+```bash
+bun run typecheck && bun run test && bun run test:e2e
 ```
-
-**`hmrState(key, initialState)`** — wraps `reactive()` so the state object survives Vite hot-module reloads. In production, `import.meta.hot` is `undefined` and it simply returns `reactive(initialState)`. Use a unique key per component instance (e.g. include `props.label` or a route param).
-
-**`watch(fn)`** — runs `fn` immediately, then re-runs it whenever any reactive value accessed inside `fn` changes. Returns `[currentValue, stopFn]`. Always call `stopFn` via `onCleanup` to prevent watcher leaks after the component unmounts.
-
-**`onCleanup(fn)`** — registers a teardown callback that runs when the `component()` instance is removed from the DOM.

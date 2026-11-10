@@ -1,109 +1,86 @@
 # AI Tooling
 
-Quiver ships with context files and slash commands that make it easy to use AI coding assistants — whether you are building an app on top of Quiver or contributing to the starter itself.
+Quiver is written so that an AI assistant can work in your app without guessing: the conventions are in one file, the rules that break silently are spelled out, and the common tasks are slash commands.
 
----
+## Context files
 
-## Always-on context files
+`@go4cas/quiver` ships two files for agents, inside the package:
 
-These files are automatically loaded by their respective tools whenever you open the project. You do not need to do anything to activate them.
+| File | What it is |
+|---|---|
+| `node_modules/@go4cas/quiver/AGENTS.md` | The agent guide for apps that use Quiver: startup order, the 13 exports, routing and base-path rules, Arrow.js pitfalls, recipes, CSS rules, testing |
+| `node_modules/@go4cas/quiver/llms.txt` | A short index in the [llms.txt](https://llmstxt.org) format, linking the guide, the recipes and these docs |
 
-| File | Tool | Purpose |
-|---|---|---|
-| `AGENTS.md` | Codex, GitHub Copilot (coding agent and VS Code Chat), and other AGENTS.md-aware tools | **The single source of truth** — full project context, conventions, and Arrow.js rules |
-| `CLAUDE.md` | Claude Code | Imports `AGENTS.md` — same content, zero drift |
+They update with the package, so they always describe the version you installed. Point your tools at them:
 
-To change a convention, edit `AGENTS.md` — it is the only file to edit. Copilot and Codex read it directly; Claude Code picks it up through the `@AGENTS.md` import in `CLAUDE.md`.
+- **Claude Code** reads `CLAUDE.md`. The starter's imports both files:
 
-The context covers:
-- Folder structure and what belongs where
-- Development and test commands
-- Arrow.js-specific rules that trip up AI assistants
-- Pages, navigation guards, state, components, layouts
-- All five composables (`useRoute`, `useRouter`, `useForm`, `useFetch`, `useToast`), toasts, and theming
-- What belongs in the repo vs a fork
+  ```md
+  @node_modules/@go4cas/quiver/AGENTS.md
+  @node_modules/@go4cas/quiver/llms.txt
+  ```
 
----
+- **Codex, GitHub Copilot and other AGENTS.md-aware tools** read an `AGENTS.md` at the root of your app. Write your app's own conventions there, and add a line pointing at `node_modules/@go4cas/quiver/AGENTS.md`.
 
-## Claude Code slash commands
+## The Claude Code plugin
 
-When working in Claude Code, eight slash commands are available. Type `/` in the chat input to see them. They ship as the Quiver Claude Code plugin (`plugins/quiver/` in the repository): install it with `/plugin marketplace add go4cas/quiver` and `/plugin install quiver@quiver`. Inside the Quiver repository, `.claude/settings.json` offers it when you trust the folder. `/add-component`, `/add-layout`, `/add-theme` and `/add-composable` install recipes (toasts, layouts, theme switcher, views, `useForm`, …) from `node_modules/@go4cas/quiver/recipes/` when the name matches one, e.g. `/add-component toast`.
+The `/add-*` commands ship as a Claude Code plugin from the Quiver repository. Install it once:
+
+```
+/plugin marketplace add go4cas/quiver
+/plugin install quiver@quiver
+```
+
+Plugin commands are namespaced, so they also answer to `/quiver:add-page` and so on. They work in any app with `@go4cas/quiver` installed, not just the starter, and read the recipes from `node_modules/@go4cas/quiver/recipes/`.
 
 | Command | What it does |
 |---|---|
-| `/add-page <path>` | Creates a new page at the given route path |
-| `/add-state <name>` | Creates a new reactive state module |
-| `/add-component <Name>` | Creates a new reusable component and registers it |
-| `/add-layout <name>` | Creates a new layout and registers it |
-| `/add-composable <name>` | Creates a new composable with a unit test |
-| `/add-theme <id — description>` | Adds a visual theme: CSS tokens, selector entry, E2E test |
-| `/add-feature <name — description>` | Plans and implements a complete feature end-to-end |
-| `/add-test <file path>` | Writes unit or E2E tests for an existing file |
+| `/add-page <path>` | Creates a page in `src/pages/` (`users/[id]` → `/users/:id`) |
+| `/add-component <Name>` | Installs a recipe when the name matches one (`toast`, `ThemeToggle`, `LoadingView`, `Link`), otherwise scaffolds a component and its CSS |
+| `/add-layout <name>` | Installs the layouts recipe (`menu`, `basic`), otherwise scaffolds a layout and registers it |
+| `/add-composable <name>` | Installs `useForm` or `hmrState`, points at `arrow-use` for fetch, storage, media queries and listeners, otherwise scaffolds a composable with a test |
+| `/add-theme <id — description>` | Adds a theme: token blocks, optional effects, a theme switcher entry (installs the theme recipes first if needed) |
+| `/add-state <name>` | Creates a `reactive()` store in `src/state/` |
+| `/add-feature <name — description>` | Plans a whole feature (state, components, pages, nav, e2e test) and waits for your go-ahead |
+| `/add-test <file>` | Writes unit or e2e tests for a file and runs them |
 
 ### Examples
 
 ```
+/add-component toast
+```
+Copies the `toasts` and `theme` recipes into `src/quiver/`, adds their CSS to your entry stylesheet, and mounts `ToastContainer()`. In a plain Arrow app without Quiver's router this works too: the toasts recipe imports only `@arrow-js/core`.
+
+```
 /add-page blog/[slug]
 ```
-Creates `src/pages/blog/[slug].js`, maps to `/blog/:slug`, shows how to read the param with `useRoute()`.
-
-```
-/add-state post
-```
-Creates `src/state/postState.js` as a `reactive()` store with a `posts` array, and `addPost`/`removePost`/`updatePost` actions.
-
-```
-/add-component PostCard
-```
-Creates `src/components/PostCard.js`, ready to import directly where needed.
-
-```
-/add-layout sidebar
-```
-Creates `src/layouts/SidebarLayout.js`, registers it under key `'sidebar'`, and notes any DI keys it reads.
-
-```
-/add-composable useTheme
-```
-Creates `src/composables/useTheme.js` with reactive accessors and actions, plus a unit test in `tests/unit/useTheme.test.js`.
+Creates `src/pages/blog/[slug].js` for `/blog/:slug`, reading the param with `useRoute()`.
 
 ```
 /add-theme ocean — cool blues, soft shadows
 ```
-Adds light and dark token blocks to `src/styles/tokens.css`, registers the theme in `ThemeSelector`, and extends the theme E2E test.
+Adds light and dark token blocks to `src/quiver/theme/tokens.css` and an entry in the theme switcher.
 
 ```
-/add-feature blog — list posts, read a single post, markdown rendering
+/add-feature tickets — list, add and close support tickets
 ```
-Presents a plan (pages, state, components, nav link, tests) and waits for your confirmation before writing any code.
+Presents a plan and writes nothing until you confirm.
 
-```
-/add-test src/composables/useForm.js
-```
-Detects the file type, writes Vitest unit tests in `tests/unit/useForm.test.js`, runs them, and fixes any failures.
+## Rules for any assistant
 
----
+If your tool reads neither file, paste these into its instructions. They are the mistakes that fail silently:
 
-## Key rules for any AI assistant
-
-If you are using a tool that does not read `CLAUDE.md` automatically, paste these rules into your system prompt or first message:
-
-::: warning Arrow.js rules — required context
-**1. Reactive slots must be arrow functions.**
-Use `${() => value}` for any interpolation that references state. Static values don't need `() =>`.
-
-**2. No HTML comments inside templates.**
-Never write `<!-- -->` inside `` html`...` `` — Arrow.js uses comment nodes as slot markers and this throws `Invalid HTML position`.
-
-**3. `.disabled` is not a DOM property.**
-`.disabled="${() => bool}"` sets a literal attribute named `.disabled`. Use `aria-disabled="true/false"` and style `[aria-disabled="true"]` in CSS (`opacity: 0.5; cursor: not-allowed`) instead.
-
-**4. Use `.key()` in loops.**
-`` items.map(i => Card(i).key(i.id)) `` prevents DOM re-creation on state changes.
+::: warning Arrow.js and Quiver rules
+1. **Reactive slots are functions**: `${() => user.name}`. A bare value renders once.
+2. **No HTML comments inside `html` templates**: Arrow uses comments as slot markers (`Invalid HTML position`).
+3. **No `.disabled`**: it sets an attribute literally named `.disabled`. Use `aria-disabled` and style `[aria-disabled="true"]`.
+4. **`.key(id)` on components in a list.**
+5. **A slot that is sometimes a template is always a template**: ``` html`` ```, not `''`.
+6. **Paths are base-relative**; only `url(path)` adds the base, for `href`s. Never add an `@click` that calls `go()` to a link.
+7. **Startup order**: `provide()` → `beforeEach()`/`afterEach()`/`onError()` → `await initRouter()` → `createApp()`.
+8. **Use what exists**: `useFetch` (arrow-use) for API calls, `useToast` (recipe) for notifications, `--q-*` tokens for every colour.
 :::
 
----
+## Working on Quiver itself
 
-## Contributor note
-
-Contributors working on Quiver itself get the same AI support. `AGENTS.md` explains which files are framework internals, what the testing and typing conventions are, and what scope changes should stay within. The `/add-test` command is especially useful for improving test coverage on existing framework utilities and composables.
+The repository has its own root `AGENTS.md` (imported by its `CLAUDE.md`) for contributors: the workspace layout, the specs in `planning/v3/`, and the checks to run. Inside the repository the commands work on `starter/`, and `.claude/settings.json` offers the plugin when you trust the folder (or run `claude --plugin-dir plugins/quiver`).

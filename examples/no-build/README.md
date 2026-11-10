@@ -13,7 +13,7 @@ bun run test:e2e                              # at / and under /sub/app/
 
 - **Import map.** `index.html` maps exactly `@arrow-js/core` and `@go4cas/quiver`. Quiver's own files import Arrow by its bare name, so the app and Quiver share one Arrow copy. A second copy (a CDN `+esm` bundle, or a path straight into another package's files) breaks reactivity without an error. The e2e test checks that Arrow loads from one URL.
 - **Routes.** `src/routes.js` is the route manifest, written by hand. To generate it from `src/pages/` instead, run `bunx quiver routes --watch`, which writes `src/routes.gen.js`.
-- **Base path.** `<base href>` in `index.html` sets it. `initRouter()` reads it, and every relative URL in the page resolves against it.
+- **Base path.** `<base href>` in `index.html` sets it. `initRouter()` reads it, and every relative URL in the page resolves against it. The `%BASE%` there is a placeholder that `serve.js` replaces with `QUIVER_BASE` (default `/`); on any other host, write the real base in its place (`<base href="/" />`, or `<base href="/sub/app/" />` under a sub-path).
 - **Server.** `serve.js` serves this folder plus the two packages from `node_modules` under `vendor/`, with an SPA fallback. It only exists so the example runs offline and in CI.
 
 ## From a CDN

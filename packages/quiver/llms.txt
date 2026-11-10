@@ -34,6 +34,8 @@ Key facts:
 ## Optional
 
 - [Documentation site](https://go4cas.github.io/quiver/): guides for routing, layouts, state, theming and testing
+- [API reference](https://go4cas.github.io/quiver/api/): every export of `@go4cas/quiver`, `/vite`, `/bun`, `/client`, the `quiver routes` CLI and `arrow-use`
+- [Migrating from 2.x](https://go4cas.github.io/quiver/guide/migration): what moved where, and the behaviour changes
 - [Source and starter app](https://github.com/go4cas/quiver): `bunx degit go4cas/quiver/starter my-app`
 - [arrow-use](https://github.com/go4cas/quiver/tree/main/packages/arrow-use): `useFetch`, `useStorage`, `useMediaQuery`, `useEventListener`
 - [Arrow.js](https://arrow-js.com): the reactive template library Quiver builds on
