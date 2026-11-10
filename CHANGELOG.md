@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.2] - 2026-11-10
+
+### Fixed
+
+- `@go4cas/quiver`: the published types no longer name `NavigationResult`, which TypeScript 5.x's DOM lib doesn't have, so projects on TypeScript 5.x with `skipLibCheck: false` no longer get `TS2304: Cannot find name 'NavigationResult'` from `types/router.d.ts`. No runtime change
+
+### Added
+
+- `bun run pack:types` (CI `pack` job): type-checks both packed tarballs in fresh projects on TypeScript 5.9 and the repo's TypeScript with `skipLibCheck: false`
+
 ## [3.0.1] - 2026-11-10
 
 ### Fixed
@@ -213,6 +223,7 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[3.0.2]: https://github.com/go4cas/quiver/releases/tag/v3.0.2
 [3.0.1]: https://github.com/go4cas/quiver/releases/tag/v3.0.1
 [3.0.0]: https://github.com/go4cas/quiver/releases/tag/v3.0.0
 [2.1.0]: https://github.com/go4cas/quiver/releases/tag/v2.1.0

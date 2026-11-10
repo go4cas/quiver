@@ -441,7 +441,7 @@ Common rules for both published packages (D20):
 ```
 
 - **X-10** `recipes/` lives at the repo root (D19) and is copied into `packages/quiver/recipes/` by `prepack`, because npm's `files` can't reach outside the package folder (N24). The copy excludes each recipe's tests and the recipes workspace's `package.json`/`jsconfig.json`. Recipes are not in `exports` (D32).
-- **X-11** `prepack` emits `.d.ts` into `types/` with `tsc -p jsconfig.types.json` (`declaration`, `emitDeclarationOnly`, `outDir: types`, includes `src`). TS 7.0.2 emits declarations from the 2.x JSDoc cleanly (N26).
+- **X-11** `prepack` emits `.d.ts` into `types/` with `tsc -p jsconfig.types.json` (`declaration`, `emitDeclarationOnly`, `outDir: types`, includes `src`). TS 7.0.2 emits declarations from the 2.x JSDoc cleanly (N26). The emitted `.d.ts` name no DOM type that TypeScript 5.x's lib lacks (such as `NavigationResult`), so consumers on TS 5.x or 7 with `skipLibCheck: false` check cleanly under `bundler`, `nodenext` and (main entry) `node10`. *Check:* `bun run pack:types` (N125).
 - **X-13** `./client` is a types-only entry: the hand-written `client.d.ts` declares the virtual module `quiver:routes` (default `RouteManifest`, `notFound: RouteLoader | undefined`). Apps add `"@go4cas/quiver/client"` to `compilerOptions.types` (N74, agreed with P4).
 - **X-12** The version is `3.0.0` from P2 on (`3.0.1` since the first patch), not a prerelease. Bun links the starter's `^3.0.0` to the workspace only when the workspace version satisfies the range; `3.0.0-alpha.0` makes `bun install` go to npm and fail (N18).
 
@@ -545,7 +545,7 @@ Repo-wide checks (D34), all plain Vitest tests reading files, in `tests/repo/`:
 | `e2e` | setup-bun · install · `bunx playwright install --with-deps chromium` · `bun run test:e2e` | now |
 | `screenshots` | runs in the container `mcr.microsoft.com/playwright:v<bun.lock version>-noble` (DESIGN §8.3) · apt `unzip` · setup-bun · install · `bun run test:visual`; baselines live in the repo and are only updated on CI (D35) | P1 |
 | `screenshots-update` | only on a manual `workflow_dispatch` with `update-screenshots` (added to the triggers in P1), never on `main`; same container; `test:visual --update-snapshots=changed`, then commits the PNGs to the branch. The only job with `contents: write` | P1 |
-| `pack` | setup-bun · setup-node `22` · install · `bun run pack:check` (the X-4 `npm pack --dry-run --json` test for both packages, `tests/pack/`) · `bunx playwright install --with-deps chromium` · `bun run pack:try` (the examples and the starter, copied out, typecheck and e2e against the packed tarballs, N119) | P8 |
+| `pack` | setup-bun · setup-node `22` · install · `bun run pack:check` (the X-4 `npm pack --dry-run --json` test for both packages, `tests/pack/`) · `bunx playwright install --with-deps chromium` · `bun run pack:try` (the examples and the starter, copied out, typecheck and e2e against the packed tarballs, N119) · `bun run pack:types` (the packed `.d.ts` in fresh TS 5.9 and repo-TS projects, `skipLibCheck: false`, N125) | P8 |
 
 `.github/workflows/docs.yml` doesn't change (W-2 keeps its command and output path).
 

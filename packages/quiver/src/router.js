@@ -122,9 +122,16 @@ export function fireHooks(from, to, errors) {
 // ---------------------------------------------------------------- navigation helpers
 
 /**
+ * The part of the DOM's `NavigationResult` that settle() reads, declared here
+ * because the emitted .d.ts must not name `NavigationResult`: TypeScript 5.x's
+ * DOM lib doesn't have it, so consumers without skipLibCheck got TS2304 (N124).
+ * @typedef {{ committed?: Promise<unknown>, finished?: Promise<unknown> }} SettleableResult
+ */
+
+/**
  * Settle on a Navigation API result: resolve when it finishes, swallow
  * AbortError (a newer navigation or a guard won), rethrow anything else.
- * @param {NavigationResult | undefined} result
+ * @param {SettleableResult | undefined} result
  * @returns {Promise<void>}
  */
 export function settle(result) {
