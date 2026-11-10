@@ -63,9 +63,9 @@
     },
     "packages/quiver": {
       "name": "@go4cas/quiver",
-      "version": "3.0.0",
+      "version": "3.0.1",
       "bin": {
-        "quiver": "./bin/quiver.js",
+        "quiver": "bin/quiver.js",
       },
       "devDependencies": {
         "@arrow-js/core": "^1.0.6",
