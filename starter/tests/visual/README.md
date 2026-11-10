@@ -17,5 +17,17 @@ Linux runner differ in fonts and anti-aliasing, so never commit them.
     mcr.microsoft.com/playwright:v1.63.0-noble bun run test:visual
   ```
 
+## Bumping Playwright
+
+The image tag must match `@playwright/test` in `bun.lock` exactly: a newer Playwright looks
+for a Chromium build the old image doesn't have, and every test fails with
+`Executable doesn't exist at /ms-playwright/chromium_headless_shell-…`. Dependabot ignores
+`@playwright/test` for this reason, so bump it by hand in one PR:
+
+1. Set the same version in `package.json` and `starter/package.json`, then `bun install`.
+2. Change both `image:` tags in `.github/workflows/test.yml` and the tag in this README.
+3. Run the `Tests` workflow on the branch with `update-screenshots` ticked, and review
+   the image diff.
+
 Tolerance is `threshold: 0.02`, `maxDiffPixelRatio: 0.0001` (approved in the Design PR, D35).
 Don't loosen it.

@@ -11,6 +11,12 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # The `screenshots` job runs in mcr.microsoft.com/playwright:v<version>-noble, which
+    # must match @playwright/test exactly, and a new Chromium means re-capturing the
+    # baseline. Dependabot can do neither, so bump Playwright by hand
+    # (starter/tests/visual/README.md, "Bumping Playwright").
+    ignore:
+      - dependency-name: "@playwright/test"
 
   - package-ecosystem: github-actions
     directory: /
