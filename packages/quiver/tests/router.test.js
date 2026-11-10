@@ -163,6 +163,16 @@ describe('intercept filter (§2 step 1)', () => {
     expect(g).not.toHaveBeenCalled()
   })
 
+  it('leaves a reload that is not retry() (location.reload(), Vite full reload) to the browser (N73)', async () => {
+    const nav = await start({}, '/users')
+    const g = vi.fn()
+    guard(g)
+    nav.reload()
+    await nav.idle()
+    expect(nav.documentLoads).toEqual(['http://localhost:3000/users'])
+    expect(g).not.toHaveBeenCalled()
+  })
+
   it('a rollback navigation changes the URL in place: no document load, no guard re-run (N72)', async () => {
     const nav = await start({}, '/users')
     const g = vi.fn()
