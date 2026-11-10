@@ -101,6 +101,7 @@ These are symptoms of the template model, not Audition problems. v3 turns Quiver
 | D33 | One `jsconfig.json` per workspace; root scripts fan out with `bun run --filter`. Core's config omits `vite/client` types (enforces R1) (Q7) | Agreed |
 | D34 | Boundary checks (core ↛ starter, arrow-use ↛ Quiver, no `workspace:` in starter, R7 grep) are Vitest tests, not ESLint. `engines.bun >=1.4.4` (from the 2026-11-06 spike; P4 confirms) | Agreed |
 | D35 | Screenshot tolerance (`maxDiffPixelRatio`, `threshold`) is proposed in DESIGN.md and approved by Cas in the Design PR; P1 can't loosen it. Fonts self-hosted (OFL), `document.fonts.ready`; baseline captured on CI Linux Chromium from 2.1 CSS as P1's first commit; `animations: 'disabled'` | Agreed |
+| D36 | P8 also rewrites every existing docs page and the landing page for v3, adds an API reference (core, `/vite`, `/bun`, CLI, `arrow-use`), `arrow-use` and recipe pages and an examples page, with Vitest checks for export coverage and leftover 2.x strings. P8 size M → L | Agreed |
 
 ### Questions resolved in the Decisions thread
 
@@ -189,7 +190,7 @@ Each phase is one build thread and one PR. A phase is done only when every **Don
 | P5 | Build-mode proof | S | P4 |
 | P6 | Composables package | M | P3 |
 | P7 | Recipes + AI tooling | M | P1, P6 |
-| P8 | Docs, migration guide, release | M | P5, P7 |
+| P8 | Docs, API reference, migration guide, release | L | P5, P7 |
 
 **P1 — Remove Tailwind.** First commit: self-host the four Google Fonts (OFL) and capture the screenshot baseline on the CI runner (Linux Chromium) from the untouched 2.1 CSS, waiting for `document.fonts.ready`, with `animations: 'disabled'` (D35). Then port `@theme` and the theme blocks to `tokens.css` (`--q-*`), add `base.css`, rewrite every `class` attribute (about 220 across 18 files) as plain CSS following §7, remove `tailwindcss`, `@tailwindcss/vite` and the Vite plugin, and update AGENTS.md, `/add-component`, `/add-theme`, `/add-layout` and the docs (index, theming, components, VitePress description).
 Done when:
@@ -238,9 +239,22 @@ Done when: a fresh plain-Arrow app (not the starter) gets a working toast via `/
 - the Navigation API note
 - a 2.x → 3.0 migration guide
 - the updated `degit` path
+- every existing guide page rewritten for v3 (D36): getting-started, why-quiver, routing, composables, layouts, state, components, theming, testing, ai, workflow, troubleshooting. A page whose topic moved (for example 2.x composables that became recipes or `arrow-use`) is rewritten or replaced, not left describing 2.x
+- the landing page (`docs/index.md`) and VitePress description repositioned from "starter template" to drop-in library + composables + recipes + starter
+- an API reference section: every public export of `@go4cas/quiver`, `@go4cas/quiver/vite`, `@go4cas/quiver/bun` and `arrow-use`, plus the `quiver routes` CLI, with signature, options and a short example, matching TECH-SPEC
+- an `arrow-use` page per composable and a recipes page per recipe (what it does, the `/add-*` command, the files it copies, tokens it uses)
+- an examples page linking `examples/vite`, `examples/bun`, `examples/no-build`, the `arrow-use` example and the starter, with their run commands
+- the root README rewritten to match (D19 already has it lead with the new degit path)
 
 CHANGELOG. Prepare publishing `@go4cas/quiver@3.0.0` and `arrow-use@0.1.0`: re-check that `arrow-use` is still free and the `go4cas` scope is Cas's (D4); `prepack` generates `.d.ts` (D20).
-Done when: the docs build is green, and a dry-run publish (`npm pack`) shows the right files, including `recipes/`, `.d.ts`, `LICENSE`, `AGENTS.md` and `llms.txt`. Publishing happens only after Cas's go-ahead.
+Done when:
+- the docs build is green
+- a dry-run publish (`npm pack`) shows the right files, including `recipes/`, `.d.ts`, `LICENSE`, `AGENTS.md` and `llms.txt`
+- a Vitest check imports each public entry point (`@go4cas/quiver`, `/vite`, `/bun`, `arrow-use`) and finds every exported name on the API reference pages, and finds `quiver routes` and each of its flags there (D36)
+- a Vitest check finds every recipe in `recipes/` and every `arrow-use` export with its own docs page, and every folder in `examples/` linked from the examples page (D36)
+- a Vitest check greps `docs/` and `README.md` for 2.x-only strings and finds none outside the migration guide and CHANGELOG. P8 records the list in NOTES.md during its read-first step; it includes at least `src/framework/`, `routerState`, the 2.x tagline `Arrow.js · Vite starter template` and the 2.x degit path `degit go4cas/quiver my-app` (D36)
+
+Publishing happens only after Cas's go-ahead.
 
 **Audition** can adopt Quiver after P3 merges, using a hand-written manifest. P4 adds file-based routing later.
 
