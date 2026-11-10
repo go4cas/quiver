@@ -9,10 +9,6 @@ Quiver comes in four parts. Use the ones you need:
 | [Recipes](/recipes/) | Theme tokens, toasts, theme switcher, layouts, loading and error views, `Link`, `useForm`, `hmrState`: code you copy into your app and own | shipped inside `@go4cas/quiver`; `/add-*` commands copy them |
 | The starter | A complete app that uses all of the above, with tests | `bunx degit go4cas/quiver/starter my-app` |
 
-::: warning Not on npm yet
-`@go4cas/quiver` 3.0.0 and `arrow-use` 0.1.0 are ready but not published yet. Until they are, the install commands on this page fail; clone the [repository](https://github.com/go4cas/quiver) and run `bun install && bun run dev` at its root to try the starter, or keep using the 2.x template (`bunx degit go4cas/quiver#v2.1.0 my-app`).
-:::
-
 ## Requirements
 
 - **Browsers.** The router is built on the Navigation API: Chrome and Edge 102+, Safari 26.2+, Firefox 147+. There is no fallback; see [browser support](./routing#browser-support).
