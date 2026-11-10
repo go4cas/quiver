@@ -278,8 +278,9 @@ export function takeRenderErrors() {
  * @param {string | null} from
  * @param {string} to
  * @param {NavInfo | undefined} info
+ * @param {string | undefined} fromUrl  the full URL to put back if a guard cancels
  */
-async function pipeline(from, to, info) {
+async function pipeline(from, to, info, fromUrl) {
   const epoch = begin()
   const redirects = info?.redirects ?? 0
   const first = info?.first ?? to
@@ -297,11 +298,14 @@ async function pipeline(from, to, info) {
   if (epoch !== navEpoch) return
 
   if (!errors && result === false) {
-    // Cancel: put the previous URL back without re-running anything (2.x).
-    settle(navigation.navigate(url(from ?? '/'), { history: 'replace', info: { rollback: true } }))
+    // Cancel: put the previous URL back, query and hash included, without
+    // re-running anything (2.x).
+    settle(navigation.navigate(fromUrl ?? url(from ?? '/'), { history: 'replace', info: { rollback: true } }))
     return
   }
-  if (!errors && typeof result === 'string') {
+  // A redirect to the path being navigated to proceeds, as on the initial load
+  // (C-16), so the redirect cap only catches real cycles (N66).
+  if (!errors && typeof result === 'string' && normalizePath(result) !== to) {
     if (redirects >= MAX_REDIRECTS) {
       errors = commitError(new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`), 'guard', to)
     } else {
@@ -326,14 +330,21 @@ function handleNavigate(event) {
   if (event.formData != null) return // a form POST is left to the browser
   const info = /** @type {NavInfo | undefined} */ (event.info)
   // Guard-cancel rollback: a URL-only correction, the page never changed.
-  if (info?.rollback) return
+  // Intercept with no handler, so the URL changes without a document load and
+  // without running the pipeline (N72).
+  if (info?.rollback) {
+    event.intercept()
+    return
+  }
 
   const relative = stripBase(new URL(event.destination.url).pathname)
   if (relative === null) return // outside the base: a normal document load (R3)
 
   const to = normalizePath(relative)
   const from = routerState.path || null
-  event.intercept({ handler: () => pipeline(from, to, info) })
+  // Still the previous entry: intercept() hasn't committed the new URL yet.
+  const fromUrl = navigation.currentEntry?.url ?? undefined
+  event.intercept({ handler: () => pipeline(from, to, info, fromUrl) })
 }
 
 // ---------------------------------------------------------------- lifecycle

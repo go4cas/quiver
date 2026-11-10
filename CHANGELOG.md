@@ -41,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `go()` and guard redirect strings keep their query and hash (2.x dropped them)
 - `Link` is a plain anchor (`href` via `url()`) without a click handler, so Cmd/Ctrl/middle-click open a new tab
 - Form POST and download navigations are left to the browser instead of being intercepted
+- A guard that cancels a navigation now puts back the previous URL with its query and hash, and no longer reloads the page
+- A guard redirect to the path already being navigated to proceeds in-app as it does on the first load, so a guard like `() => '/login'` no longer hits the redirect cap on `/login`
 
 ### Fixed
 

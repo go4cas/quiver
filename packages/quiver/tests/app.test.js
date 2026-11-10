@@ -275,7 +275,7 @@ describe('render errors (C-48)', () => {
 })
 
 describe('destroy (C-49, C-50, C-62, C-63)', () => {
-  it('(a) a page component\'s onCleanup runs on destroy()', async () => {
+  it('(a) a page component rendered without a layout has its onCleanup run on destroy() (N64 caveat)', async () => {
     const cleanup = vi.fn()
     const PageComponent = component(() => {
       onCleanup(cleanup)

@@ -64,6 +64,10 @@ export function installNavigation() {
   const nav = {
     /** @type {string[]} */
     documentLoads: [],
+    /** The current history entry; the URL isn't committed until a listener intercepts. */
+    get currentEntry() {
+      return { url: window.location.href }
+    },
     addEventListener: vi.fn((/** @type {string} */ type, /** @type {any} */ fn) => {
       if (type === 'navigate') listeners.add(fn)
     }),
