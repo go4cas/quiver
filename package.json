@@ -26,9 +26,9 @@
     "docs:preview": "bun run --filter quiver-docs preview"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.65.0",
     "jsdom": "^29.1.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.2"
+    "vitest": "^5.1.0"
   }
 }

@@ -15,7 +15,7 @@
     "@go4cas/quiver": "^3.0.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.65.0",
     "typescript": "^7.0.2"
   }
 }
