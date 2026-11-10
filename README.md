@@ -13,8 +13,6 @@ A drop-in router, context and meta layer for [Arrow.js](https://arrow-js.com), w
 
 **Docs:** <https://go4cas.github.io/quiver/>
 
-> **Not on npm yet.** `@go4cas/quiver` 3.0.0 and `arrow-use` 0.1.0 are ready but unpublished, so a fresh starter copy can't install them yet. Until then, clone this repository and run `bun install && bun run dev` at its root, or use the 2.x template: `bunx degit go4cas/quiver#v2.1.0 my-app`.
-
 ---
 
 ## Getting started
@@ -26,7 +24,7 @@ bun install
 bun run dev
 ```
 
-Open <http://localhost:5173>. With npm: `npx degit …`, then `npm install && npm run dev` (Node 22.12+). Or [open it in StackBlitz](https://stackblitz.com/github/go4cas/quiver).
+Open <http://localhost:5173>. With npm: `npx degit …`, then `npm install && npm run dev` (Node 22.12+). Or [open it in StackBlitz](https://stackblitz.com/github/go4cas/quiver/tree/main/starter).
 
 Or add Quiver to an Arrow app you already have:
 

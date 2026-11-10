@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `@go4cas/quiver`: the `bin` path is written without a leading `./`, so `npm publish` no longer warns that it was invalid and removed
+
 ## [3.0.0] - 2026-11-10
 
 ### Removed

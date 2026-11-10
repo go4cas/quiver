@@ -17,7 +17,7 @@
     "./client": { "types": "./client.d.ts" },
     "./package.json": "./package.json"
   },
-  "bin": { "quiver": "./bin/quiver.js" },
+  "bin": { "quiver": "bin/quiver.js" },
   "files": ["src", "types", "bin", "client.d.ts", "recipes", "AGENTS.md", "llms.txt", "README.md", "LICENSE"],
   "peerDependencies": {
     "@arrow-js/core": "^1.0.6"
