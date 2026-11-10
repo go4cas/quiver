@@ -362,7 +362,7 @@ export default function quiver(options)
 ```
 
 - **S-10** Resolves the id `quiver:routes` to `\0quiver:routes` and loads `generateManifest(scan, f => toPosix(path.join(absDir, f)))` (absolute paths).
-- **S-11** In dev, adding or removing a `.js` file under `dir` invalidates the virtual module and triggers a full reload. Editing a page uses Vite's normal HMR.
+- **S-11** In dev, adding or removing a `.js` file under `dir` invalidates the virtual module and triggers a full reload, unless the scanner skips it (a path segment starting with `_` or `.`, S-1; 3.0.1, N124). Editing a page uses Vite's normal HMR.
 - **S-12** Scan errors fail `vite build` and show the Vite error overlay in dev.
 - **S-13** The return type is a local structural typedef (`{ name, configResolved, resolveId, load, configureServer }`; `configResolved` resolves `dir` against Vite's root, N75), not `import('vite').Plugin`, so the published `.d.ts` needs no `vite` types and `vite` is not a peer (§9 rule 5).
 
@@ -405,7 +405,7 @@ quiver routes [--dir <pages dir>] [--out <file>] [--watch]
 
 Common rules for both published packages (D20):
 
-- **X-1** `"type": "module"`, `"license": "MIT"`, a `LICENSE` file, `"sideEffects": false`, an `exports` map with `"types"` first and `"default"` second in each condition object, `"./package.json"` exported. No `main`, `module` or `browser` field. The scoped `@go4cas/quiver` sets `"publishConfig": { "access": "public" }` (N120); the unscoped `arrow-use` needs none.
+- **X-1** `"type": "module"`, `"license": "MIT"`, a `LICENSE` file, `"sideEffects": false`, an `exports` map with `"types"` first and `"default"` second in each condition object, `"./package.json"` exported. No `main`, `module` or `browser` field. Core also sets a top-level `"types"` equal to `exports["."].types`, for TypeScript's `moduleResolution: node10`, which ignores `exports` (3.0.1, N124). The scoped `@go4cas/quiver` sets `"publishConfig": { "access": "public" }` (N120); the unscoped `arrow-use` needs none.
 - **X-2** `peerDependencies` is exactly `{ "@arrow-js/core": "^1.0.6" }`. `dependencies` is absent. `@arrow-js/core` is also in `devDependencies` for tests.
 - **X-3** Published runtime files are the untouched source. `prepack` only adds generated files (`types/`, and for core `recipes/`); `postpack` removes them. Both paths are in `.gitignore`.
 - **X-4** Every `exports` target and every `files` entry exists after `prepack`. *Check:* a test (P8) runs `npm pack --dry-run --json` per package and asserts the file list: runtime files, `.d.ts` per runtime file, `LICENSE`, `README.md`, and for core `AGENTS.md`, `llms.txt`, `recipes/**`, `bin/quiver.js`, `client.d.ts`.
@@ -415,10 +415,11 @@ Common rules for both published packages (D20):
 ```json
 {
   "name": "@go4cas/quiver",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
+  "types": "./types/index.d.ts",
   "exports": {
     ".":      { "types": "./types/index.d.ts",     "default": "./src/index.js" },
     "./vite": { "types": "./types/node/vite.d.ts", "default": "./src/node/vite.js" },
@@ -442,7 +443,7 @@ Common rules for both published packages (D20):
 - **X-10** `recipes/` lives at the repo root (D19) and is copied into `packages/quiver/recipes/` by `prepack`, because npm's `files` can't reach outside the package folder (N24). The copy excludes each recipe's tests and the recipes workspace's `package.json`/`jsconfig.json`. Recipes are not in `exports` (D32).
 - **X-11** `prepack` emits `.d.ts` into `types/` with `tsc -p jsconfig.types.json` (`declaration`, `emitDeclarationOnly`, `outDir: types`, includes `src`). TS 7.0.2 emits declarations from the 2.x JSDoc cleanly (N26).
 - **X-13** `./client` is a types-only entry: the hand-written `client.d.ts` declares the virtual module `quiver:routes` (default `RouteManifest`, `notFound: RouteLoader | undefined`). Apps add `"@go4cas/quiver/client"` to `compilerOptions.types` (N74, agreed with P4).
-- **X-12** The version is `3.0.0` from P2 on, not a prerelease. Bun links the starter's `^3.0.0` to the workspace only when the workspace version satisfies the range; `3.0.0-alpha.0` makes `bun install` go to npm and fail (N18).
+- **X-12** The version is `3.0.0` from P2 on (`3.0.1` since the first patch), not a prerelease. Bun links the starter's `^3.0.0` to the workspace only when the workspace version satisfies the range; `3.0.0-alpha.0` makes `bun install` go to npm and fail (N18).
 
 ### 5.2 `arrow-use` (`packages/arrow-use/package.json`)
 

@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-11-10
+
 ### Fixed
 
 - `@go4cas/quiver`: the `bin` path is written without a leading `./`, so `npm publish` no longer warns that it was invalid and removed
+- `@go4cas/quiver/vite`: adding or removing a file the scanner skips (a name or folder starting with `_` or `.`, e.g. `pages/_parts/Card.js`) no longer invalidates `quiver:routes` and reloads the page in dev
+- `@go4cas/quiver`: a top-level `"types"` field, so TypeScript projects on `moduleResolution: node10` (which ignores `exports`) find the main entry's types
 
 ## [3.0.0] - 2026-11-10
 
@@ -209,6 +213,7 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[3.0.1]: https://github.com/go4cas/quiver/releases/tag/v3.0.1
 [3.0.0]: https://github.com/go4cas/quiver/releases/tag/v3.0.0
 [2.1.0]: https://github.com/go4cas/quiver/releases/tag/v2.1.0
 [2.0.1]: https://github.com/go4cas/quiver/releases/tag/v2.0.1

@@ -80,6 +80,11 @@ describe('core ships the recipes and the agent docs (SPEC P7, D32, X-10)', () =>
     expect(pkg.exports).not.toHaveProperty('./recipes')
   })
 
+  it('has a top-level types field matching exports["."], for moduleResolution node10 (X-1)', () => {
+    expect(pkg.types).toBe('./types/index.d.ts')
+    expect(pkg.types).toBe(pkg.exports['.'].types)
+  })
+
   it('the starter CLAUDE.md imports both from the installed package', () => {
     const md = readFileSync(join(ROOT, 'starter/CLAUDE.md'), 'utf8')
     expect(md).toContain('@node_modules/@go4cas/quiver/AGENTS.md')

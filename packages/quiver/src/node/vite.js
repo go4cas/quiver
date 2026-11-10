@@ -61,12 +61,15 @@ export default function quiver(options = {}) {
     },
 
     // S-11: adding or removing a page changes the manifest, so invalidate it and
-    // reload the page. Edits to a page go through Vite's normal HMR.
+    // reload the page. Edits to a page go through Vite's normal HMR. A file the
+    // scanner skips (a path segment starting with `_` or `.`, S-1) is not a page,
+    // so adding or removing it leaves the manifest as it is.
     configureServer(server) {
       /** @param {string} file */
       const onChange = (file) => {
         const rel = relative(absDir, file)
         if (!file.endsWith('.js') || rel.startsWith('..') || isAbsolute(rel)) return
+        if (rel.split(/[\\/]/).some((part) => part.startsWith('_') || part.startsWith('.'))) return
         const mod = server.moduleGraph.getModuleById(RESOLVED)
         if (mod) server.moduleGraph.invalidateModule(mod)
         server.ws.send({ type: 'full-reload' })

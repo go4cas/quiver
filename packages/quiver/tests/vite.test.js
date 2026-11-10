@@ -59,4 +59,27 @@ describe('Vite plugin', () => {
     watcher.emit('unlink', join(FIXTURES, 'pages-other', 'x.js'))
     expect(server.ws.send).toHaveBeenCalledTimes(2)
   })
+
+  it('S-11: adding or removing a file the scanner skips (`_` or `.` segment) does not reload', () => {
+    const plugin = quiver({ dir: 'pages' })
+    plugin.configResolved({ root: FIXTURES })
+    const watcher = new EventEmitter()
+    const server = {
+      config: { root: FIXTURES },
+      watcher: /** @type {any} */ (watcher),
+      moduleGraph: { getModuleById: vi.fn(() => ({})), invalidateModule: vi.fn() },
+      ws: { send: vi.fn() },
+    }
+    plugin.configureServer(server)
+
+    watcher.emit('add', join(FIXTURES, 'pages', '_parts', 'Card.js'))
+    watcher.emit('unlink', join(FIXTURES, 'pages', 'users', '_helper.js'))
+    watcher.emit('add', join(FIXTURES, 'pages', '.drafts', 'idea.js'))
+    watcher.emit('add', join(FIXTURES, 'pages', '.hidden.js'))
+    expect(server.moduleGraph.invalidateModule).not.toHaveBeenCalled()
+    expect(server.ws.send).not.toHaveBeenCalled()
+
+    watcher.emit('add', join(FIXTURES, 'pages', 'users', 'new.js'))
+    expect(server.ws.send).toHaveBeenCalledTimes(1)
+  })
 })
