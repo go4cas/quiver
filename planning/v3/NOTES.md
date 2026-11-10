@@ -133,15 +133,21 @@ Read before writing the core API. Bun 1.4.4, Arrow 1.0.6, TypeScript 7.0.2, Play
 >
 > **Second bug (N99): a slot that switches between `''` and a template breaks a keyed list**
 >
-> Same version. In a keyed list, when a slot renders `''` for one item and a template for another, removing an item that rendered `''` breaks later renders: the next item added throws `InvalidNodeTypeError: Failed to execute 'setEndAfter' on 'Range': the given Node has no parent` in `executeQueue` and never appears, and the pending `nextTick` never resolves. It fails with a static slot and with a function slot:
+> Same version. In a keyed list, when an item's template has a slot that renders `''`, removing that item breaks the next render: the next item never appears. In Chromium the queue throws `InvalidNodeTypeError: Failed to execute 'setEndAfter' on 'Range': the given Node has no parent` in `executeQueue`. In jsdom it fails silently. It happens when the slot sits between whitespace text nodes, as in any multi-line template, with a static slot or a function slot:
 >
 > ```js
 > const s = reactive({ items: [] })
-> html`<ul>${() => s.items.map((i) => html`<li>${i.text}${() => (i.x ? html`<b>x</b>` : '')}</li>`.key(i.id))}</ul>`(document.body)
-> s.items.push({ id: 1, text: 'a', x: false })  // renders
-> s.items.splice(0, 1)                           // removed
-> s.items.push({ id: 2, text: 'b', x: true })    // throws, nothing rendered
+> html`<ul>${() => s.items.map((i) => html`
+>   <li>
+>     <span>${i.text}</span>
+>     ${() => (i.x ? html`<b>x</b>` : '')}
+>   </li>`.key(i.id))}</ul>`(document.body)
+> s.items.push({ id: 1, text: 'a', x: false }); await nextTick()  // renders
+> s.items = []; await nextTick()                                    // removed
+> s.items.push({ id: 2, text: 'b', x: true }); await nextTick()     // <ul> is empty: item 2 is missing
 > ```
+>
+> Written on one line (`<li><span>…</span>${…}</li>`) it renders. A one-line static slot fails differently: item 2 shows the text `(el) => renderTemplate(template, el)` instead of `<b>x</b>`.
 >
 > Returning an empty template (``` html`` ```) instead of `''` avoids it. Expected: `''` and a template are interchangeable in a slot, as they are outside keyed lists.
 
