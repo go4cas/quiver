@@ -40,8 +40,13 @@ starter/             # The starter app (degit target: go4cas/quiver/starter)
     ├── e2e/         # End-to-end tests (Playwright)
     └── visual/      # Screenshot parity, every page × 5 themes × 2 modes (Playwright)
 
+examples/            # One small app per build mode, each copyable on its own (SPEC P5)
+├── vite/            # Vite + quiver() plugin; e2e: dev server at /, production build under /sub/app/
+├── bun/             # Bun.build + @go4cas/quiver/bun (splitting); build.js, serve.js
+└── no-build/        # No bundler: import map for @arrow-js/core and @go4cas/quiver, hand-written src/routes.js
+
 docs/                # VitePress docs site (workspace quiver-docs)
-tests/repo/          # Repo-wide checks (Vitest): R7 grep, package boundaries, starter deps, core config
+tests/repo/          # Repo-wide checks (Vitest): R7 grep, package boundaries, starter deps, core config, examples
 ```
 
 The `/add-*` slash commands in `.claude/commands/` write to the starter; their `src/` and `tests/` paths are relative to `starter/`.
@@ -233,7 +238,8 @@ To add a theme: token blocks (light + dark) in `src/styles/tokens.css`, optional
 - Unit: Vitest in `packages/quiver/tests/` (core) and `starter/tests/unit/` (starter) — test pure functions with `describe`/`it`
 - Route discovery: `packages/quiver/tests/routes-parity.test.js` runs the Vite plugin, the Bun plugin and the CLI on `tests/fixtures/pages/` and compares each with `tests/fixtures/pages.manifest.txt` (TECH-SPEC S-40); update that file when the fixture or the manifest format changes. The Bun splitting test spawns `bun`, so Bun must be on `PATH`
 - E2E: Playwright in `starter/tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`. Every test runs twice, in the `root` project (port 5173) and the `subpath` project (port 5174, app under `/sub/app/`), so navigate with relative URLs (`page.goto('users')`, `page.goto('./')`, `toHaveURL('users')`), never a leading `/` (a repo test enforces it)
-- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter), W-11 (no `workspace:` ranges in `starter/package.json`), CI-3 (relative e2e URLs), and core's config (no ambient types, version `3.0.0`)
+- Examples: each folder in `examples/` has a Playwright smoke suite run by `bun run test:e2e`, once at `/` and once under `/sub/app/`, on fixed ports (vite `5180`/`5190`, bun `5181`/`5191`, no-build `5182`/`5192`; TECH-SPEC CI-1, CI-5). The Bun and no-build examples take the base from `<base href>`, which their `serve.js` fills in from `QUIVER_BASE`. `examples/no-build` also asserts that Arrow loads from one URL. Examples use real ranges (`^3.0.0`), never `workspace:`, and import nothing from outside their own folder, so each can be copied out
+- Repo checks: Vitest in `tests/repo/`: SPEC R7 (the old utility framework is gone from the repo), W-10 (core imports nothing from the starter or examples), W-11 (no `workspace:` ranges in `starter/package.json`), CI-3 (relative e2e URLs), core's config (no ambient types, version `3.0.0`), and the examples (`examples.test.js`: ranges, scripts, ports, self-contained imports, the no-build import map)
 - Visual: Playwright in `starter/tests/visual/` compares every page state in 5 themes × 2 modes with the baseline in `starter/tests/visual/__screenshots__/` (tolerance `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`; never loosen it). The baseline only matches inside `mcr.microsoft.com/playwright:v<version>-noble`, so CI's `screenshots` job runs it there; re-capture an intended visual change by running the `Tests` workflow by hand with `update-screenshots` on your branch (see `starter/tests/visual/README.md`)
 - Unit and E2E must pass before a task is complete; the `screenshots` CI job must pass before merge
 
