@@ -63,7 +63,7 @@
     },
     "packages/quiver": {
       "name": "@go4cas/quiver",
-      "version": "3.0.3",
+      "version": "3.1.0",
       "bin": {
         "quiver": "bin/quiver.js",
       },
@@ -93,7 +93,7 @@
       "name": "quiver-starter",
       "dependencies": {
         "@arrow-js/core": "^1.0.6",
-        "@go4cas/quiver": "^3.0.0",
+        "@go4cas/quiver": "^3.1.0",
         "arrow-use": "^0.1.0",
       },
       "devDependencies": {
