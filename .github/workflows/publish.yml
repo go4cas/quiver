@@ -1,0 +1,139 @@
+name: Publish
+
+# Stages npm releases with provenance through npm trusted publishing (OIDC), so no npm
+# token is stored anywhere (audit S05, planning/v3/NOTES.md N165, RELEASING.md).
+#
+# A release tag (`v3.0.4` for @go4cas/quiver, `arrow-use-v0.1.2` for arrow-use) builds,
+# checks and packs the package, then stages it on npm with `npm stage publish`. Nothing
+# goes live until a maintainer approves the staged version on npmjs.com with 2FA.
+# A manual run on a branch, or with dry-run ticked, stops after packing.
+#
+# The staging job only runs when the repository variable NPM_PUBLISH_FROM_CI is "true".
+# Until then a release tag still builds and verifies the tarball, and the release is
+# published from a maintainer's machine as before.
+on:
+  push:
+    tags: ['v*.*.*', 'arrow-use-v*.*.*']
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package to pack on a branch (on a tag, the tag decides)
+        type: choice
+        options: [quiver, arrow-use]
+        default: quiver
+      dry-run:
+        description: Pack and verify only, never stage on npm
+        type: boolean
+        default: true
+
+# No permissions by default. The build job installs and runs repository code with a
+# read-only token; the stage job gets the OIDC token, but checks nothing out, installs
+# nothing and runs no lifecycle scripts. Actions are pinned to full commit SHAs;
+# Dependabot (github-actions) bumps the SHA and the version comment together.
+permissions: {}
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      dir: ${{ steps.release.outputs.dir }}
+      name: ${{ steps.release.outputs.name }}
+      version: ${{ steps.release.outputs.version }}
+      dist-tag: ${{ steps.release.outputs.dist-tag }}
+      publish: ${{ steps.release.outputs.publish }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.x
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.2
+      - name: Resolve the release from the ref
+        id: release
+        run: node scripts/release-check.js
+        env:
+          REF: ${{ github.ref }}
+          PACKAGE: ${{ inputs.package }}
+          DRY_RUN: ${{ inputs.dry-run }}
+      - name: The tagged commit is on main
+        if: ${{ steps.release.outputs.publish == 'true' }}
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - name: The version is not on npm yet
+        if: ${{ steps.release.outputs.publish == 'true' && vars.NPM_PUBLISH_FROM_CI == 'true' }}
+        env:
+          NAME: ${{ steps.release.outputs.name }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if [ -n "$(npm view "$NAME@$VERSION" version 2>/dev/null)" ]; then
+            echo "::error::$NAME@$VERSION is already on npm"; exit 1
+          fi
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run pack:check
+      - name: Pack
+        env:
+          DIR: ${{ steps.release.outputs.dir }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/dist"
+          (cd "$DIR" && npm pack --pack-destination "$RUNNER_TEMP/dist")
+          cd "$RUNNER_TEMP/dist" && sha256sum -- *.tgz > SHA256SUMS && cat SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  stage:
+    needs: build
+    if: ${{ needs.build.outputs.publish == 'true' && vars.NPM_PUBLISH_FROM_CI == 'true' }}
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      id-token: write
+    steps:
+      # Node 24.22.2 bundles npm 11.19.1: trusted publishing needs 11.5.1+, staging 11.15.0+.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.2
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-tarball
+          path: ${{ runner.temp }}/dist/
+      - name: Unpack the built tarball
+        working-directory: ${{ runner.temp }}/dist
+        env:
+          NAME: ${{ needs.build.outputs.name }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          sha256sum -c SHA256SUMS
+          tarball=$(ls -- *.tgz)
+          tar -xzf "$tarball"
+          tar -tzf "$tarball" | sed 's#^package/##' | sort > built.txt
+          cd package
+          node -e '
+            const p = require("./package.json"), [maj, min] = process.argv[1].split(".").map(Number)
+            if (p.name !== process.env.NAME || p.version !== process.env.VERSION) throw new Error(`tarball is ${p.name}@${p.version}`)
+            if (maj < 11 || (maj === 11 && min < 15)) throw new Error(`npm ${process.argv[1]} cannot stage; need 11.15.0+`)
+          ' "$(npm --version)"
+          npm pack --dry-run --json --ignore-scripts | node -e '
+            let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () =>
+              console.log(JSON.parse(s)[0].files.map((f) => f.path).sort().join("\n")))
+          ' > ../repacked.txt
+          diff ../built.txt ../repacked.txt
+      - name: Stage on npm (approve on npmjs.com to publish)
+        working-directory: ${{ runner.temp }}/dist/package
+        env:
+          DIST_TAG: ${{ needs.build.outputs.dist-tag }}
+        run: npm stage publish --ignore-scripts --provenance --access public --tag "$DIST_TAG"

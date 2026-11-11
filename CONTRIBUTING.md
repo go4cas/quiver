@@ -101,6 +101,12 @@ All three must pass before opening a PR — CI runs them on every push, along wi
 
 ---
 
+## Releasing
+
+Maintainers only: see [RELEASING.md](RELEASING.md).
+
+---
+
 ## Licence
 
 By contributing, you agree that your changes will be released under the [MIT Licence](LICENSE).
