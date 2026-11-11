@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `@go4cas/quiver`: the router's browser suite also runs in Firefox and WebKit, at `/` and under `/sub/app/`, from `bun run test:browsers` and a CI `browsers` job in the pinned Playwright image; it also checks the error `initRouter()` throws without the Navigation API (N155)
+
 ### Security
 
 - Repo tooling, no package change: a `Publish` workflow can stage releases of `@go4cas/quiver` and `arrow-use` on npm from a release tag through trusted publishing (OIDC, no npm token), with provenance; the maintainer still approves each one on npmjs.com. It stays build-only until switched on; `RELEASING.md` has the setup and the release steps

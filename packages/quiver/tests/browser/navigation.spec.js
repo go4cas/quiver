@@ -1,6 +1,7 @@
 // Navigation on the real Navigation API (NOTES N126–N129). The jsdom fake in
 // tests/helpers/navigation.js can't show how a browser commits history
-// entries, so these run in Chromium against tests/browser/app.js.
+// entries, so these run against tests/browser/app.js in Chromium, Firefox and
+// WebKit (N155; `bun run test:browsers`).
 import { test, expect } from '@playwright/test'
 
 /** @typedef {{ flags: { denyOverview: boolean, holdLogin: boolean }, log: string[], go: (p: string) => Promise<void>, back: () => Promise<void>, forward: () => Promise<void>, release: (name: string) => void, status: () => string, path: () => string }} Fixture */
@@ -81,4 +82,16 @@ test('R09: a page without metadata gets the host title back and no stale descrip
   await expect(page.locator('#app h1')).toHaveText('Details')
   await expect(page).toHaveTitle('Host title')
   await expect(page.locator('meta[name="description"]')).toHaveCount(0)
+})
+
+test('without the Navigation API, initRouter() throws the documented message and renders nothing', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'navigation', { value: undefined, configurable: true })
+  })
+  const error = page.waitForEvent('pageerror')
+  await page.goto('./')
+  expect((await error).message).toContain(
+    'Quiver needs the Navigation API (Chrome/Edge 102+, Safari 26.2+, Firefox 147+). See https://go4cas.github.io/quiver/guide/routing#browser-support',
+  )
+  await expect(page.locator('#app')).toBeEmpty()
 })
