@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `arrow-use` `useStorage`: creating it no longer writes and removes a `__arrow-use__` probe key, which overwrote and deleted an app's own key of that name. Construction only reads, so a stored value now loads when the storage allows reads but not writes; a failed read, write or remove each falls back to memory on its own (N130)
+- `arrow-use` `useFetch`: a non-`Error` thrown value (e.g. a `transform` that throws `null`) no longer makes `refetch()` reject with a `TypeError`; it becomes an `error()` message. An abort through a caller's `signal` with a custom reason is no longer reported as an error. A `transform` that calls `reset()`, `stop()` or `refetch()` no longer publishes its stale result (N131)
 - `useForm` recipe: a throwing or rejecting `validate` no longer leaves the form stuck in `submitting`; its message goes to `form.message` and the user can submit again. Each submit clears `submitted` and `message` first, and `validate` and `onSubmit` get the same snapshot of the values
 - Starter: leaving the Posts page aborts its requests (from an `afterEach` registered in the page, since a page inside a layout gets no `onCleanup`)
 - Core tarball: `prepack` copies each recipe's registry `files` and README, the same copy `recipes:sync` uses, so stray files in a recipe folder can't ship

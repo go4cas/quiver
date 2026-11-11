@@ -148,3 +148,74 @@ describe('useStorage: syncing across tabs', () => {
     expect(s.value()).toBe(1)
   })
 })
+
+describe('useStorage: construction only reads (N130)', () => {
+  it.each(['local', 'session'])('%sStorage: creating it writes nothing and keeps unrelated keys', (which) => {
+    const area = which === 'local' ? localStorage : sessionStorage
+    area.setItem('__arrow-use__', 'app data')
+    area.setItem('other', 'x')
+    const setItem = vi.spyOn(Storage.prototype, 'setItem')
+    const removeItem = vi.spyOn(Storage.prototype, 'removeItem')
+    const clear = vi.spyOn(Storage.prototype, 'clear')
+    const s = useStorage('count', 0, { storage: /** @type {'local' | 'session'} */ (which) })
+    expect(s.value()).toBe(0)
+    expect(setItem).not.toHaveBeenCalled()
+    expect(removeItem).not.toHaveBeenCalled()
+    expect(clear).not.toHaveBeenCalled()
+    expect(area.getItem('__arrow-use__')).toBe('app data')
+    expect(area.getItem('other')).toBe('x')
+  })
+
+  it.each(['local', 'session'])('%sStorage: loads a stored value when writes fail', (which) => {
+    const area = which === 'local' ? localStorage : sessionStorage
+    area.setItem('prefs', JSON.stringify({ dense: true }))
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('read-only', 'QuotaExceededError')
+    })
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new DOMException('read-only', 'SecurityError')
+    })
+    const s = useStorage('prefs', { dense: false }, { storage: /** @type {'local' | 'session'} */ (which) })
+    expect(s.value()).toEqual({ dense: true })
+    s.set({ dense: false })
+    expect(s.value()).toEqual({ dense: false })
+    expect(area.getItem('prefs')).toBe('{"dense":true}')
+    s.remove()
+    expect(s.value()).toEqual({ dense: false })
+  })
+
+  it('when getItem throws, value() is initial and set()/remove() still write', () => {
+    localStorage.setItem('count', '5')
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('denied', 'SecurityError')
+    })
+    const s = useStorage('count', 0)
+    expect(s.value()).toBe(0)
+    getItem.mockRestore()
+    s.set(2)
+    expect(localStorage.getItem('count')).toBe('2')
+    s.remove()
+    expect(localStorage.getItem('count')).toBeNull()
+  })
+
+  it('after a failed local write, another tab writing the key still updates value()', () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError')
+    })
+    const s = useStorage('count', 0)
+    s.set(3)
+    expect(s.value()).toBe(3)
+    setItem.mockRestore()
+    otherTab('count', '8')
+    expect(s.value()).toBe(8)
+  })
+
+  it('without a storage area at all, the value lives in memory', () => {
+    vi.stubGlobal('localStorage', undefined)
+    const s = useStorage('count', 0)
+    s.set(6)
+    expect(s.value()).toBe(6)
+    s.remove()
+    expect(s.value()).toBe(0)
+  })
+})
