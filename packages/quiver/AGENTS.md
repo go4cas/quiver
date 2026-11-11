@@ -25,7 +25,7 @@ createApp({ target: '#app', layouts, defaultLayout: 'basic', loading, error })  
 
 `createApp()` before `initRouter()` resolves throws, as does a second `initRouter()` or `createApp()` before `destroy()`. `destroy()` (or `app.destroy()`) tears everything down so the sequence can run again.
 
-The manifest comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the Bun plugin (`@go4cas/quiver/bun`, for `Bun.build`), or the `quiver routes [--dir src/pages] [--out src/routes.gen.js] [--watch]` CLI for apps without a bundler (keep `--out` outside `--dir`, or name it `_routes.gen.js`). Never hand-edit a generated manifest. For types of `quiver:routes`, add `"@go4cas/quiver/client"` to `compilerOptions.types`.
+The manifest comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the Bun plugin (`@go4cas/quiver/bun`, for `Bun.build`), or the `quiver routes [--dir src/pages] [--out src/routes.gen.js] [--watch]` CLI for apps without a bundler (keep `--out` outside `--dir`, or name it `_routes.gen.js`). With `@go4cas/quiver` installed, run it as `bunx quiver routes` or `npx quiver routes`; without a local install, name the scoped package (`bunx --bun --package @go4cas/quiver@3 quiver routes`, `npm exec --package=@go4cas/quiver@3 -- quiver routes`), since a bare `quiver` resolves to an unrelated npm package. Never hand-edit a generated manifest. For types of `quiver:routes`, add `"@go4cas/quiver/client"` to `compilerOptions.types`.
 
 ## The 13 exports
 

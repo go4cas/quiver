@@ -24,7 +24,7 @@ bun install
 bun run dev
 ```
 
-Open <http://localhost:5173>. With npm: `npx degit …`, then `npm install && npm run dev` (Node 22.12+). Or [open it in StackBlitz](https://stackblitz.com/github/go4cas/quiver/tree/main/starter).
+Open <http://localhost:5173>. With npm: `npx degit …`, then `npm install && npm run dev` (Node 22.22.2+ or 24.15+, which the starter's Vitest and jsdom need; the `quiver` package itself runs on Node 22.12+). Or [open it in StackBlitz](https://stackblitz.com/github/go4cas/quiver/tree/main/starter).
 
 Or add Quiver to an Arrow app you already have:
 

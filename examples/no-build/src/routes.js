@@ -1,7 +1,7 @@
 // The route manifest, written by hand: no build step, so no plugin scans
 // src/pages/. Each loader is a dynamic import, so a page loads on first visit.
-// To generate this file from src/pages/ instead, run `quiver routes --watch`
-// (it writes src/routes.gen.js).
+// To generate it from src/pages/ instead, run `bunx quiver routes --watch`
+// (it writes src/routes.gen.js), then import './routes.gen.js' in main.js.
 
 /** @type {import('@go4cas/quiver').RouteManifest} */
 const routes = {

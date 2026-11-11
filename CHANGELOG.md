@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Docs: the no-bundler quickstart, the CLI reference and the no-build README name the scoped package when nothing is installed (`bunx --bun --package @go4cas/quiver@3 quiver routes`, `npm exec --package=@go4cas/quiver@3 -- quiver routes`); a bare `bunx quiver` / `npx quiver` fetched npm's unrelated `quiver` package
+- Docs: the getting-started quickstarts produce a working app: the common setup has a mount element and a declared layout, the Bun section shows where `index.html` goes and how deep links are served, and the no-build section switches `main.js` to `routes.gen.js`
+- Docs: type resolution is documented per entry point (the main entry also works under `node10` since 3.0.1), and the Vite page states the tested Vite range (8) instead of "any Vite"
+- Node minimums are stated separately: `@go4cas/quiver` (CLI and plugins) on Node 22.12+, the workspace and the starter (Vitest with jsdom) on Node `^22.22.2 || ^24.15.0 || >=26.0.0`; CI's unit job runs on those minimums
+- Example servers (`examples/bun`, `examples/no-build`, the arrow-use example, the recipes' e2e app) listen on `127.0.0.1` only, serve only the folders the page needs, answer malformed paths with 400, and refuse an unsafe `QUIVER_BASE`
+
+### Added
+
+- `bun run pack:types` uses the Vite plugin inside Vite's `defineConfig()` and the Bun plugin inside a `Bun.build()` call typed by `@types/bun`, with `skipLibCheck: false`
+
 ## [3.0.2] - 2026-11-10
 
 ### Fixed

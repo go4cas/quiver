@@ -59,7 +59,7 @@ Arrow runs a component's `onCleanup` only when that component is itself what a s
 
 ## Example
 
-[`example/`](example/) is a vanilla Arrow app (no bundler, no Quiver) that uses all four composables through an import map. Run it from this folder with `bun example/serve.js`, then open <http://localhost:3000/>. `bun run test:e2e` runs its Playwright smoke test.
+[`example/`](example/) is a vanilla Arrow app (no bundler, no Quiver) that uses all four composables through an import map. Run it from this folder with `bun example/serve.js` (a local server on `127.0.0.1` that serves only the example and the files its import map needs), then open <http://127.0.0.1:3000/>. `bun run test:e2e` runs its Playwright smoke test.
 
 With no bundler, map both packages to their files, so `arrow-use` and your app share one copy of Arrow:
 
