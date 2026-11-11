@@ -1,4 +1,5 @@
 import { html } from '@arrow-js/core'
+import { afterEach, useRoute } from '@go4cas/quiver'
 import { useFetch } from 'arrow-use'
 
 export const meta = {
@@ -9,9 +10,30 @@ export const meta = {
 const API    = 'https://jsonplaceholder.typicode.com/posts'
 const BROKEN = 'https://jsonplaceholder.typicode.com/does-not-exist-404'
 
+// The page's requests, so the next render can stop the last one's.
+/** @type {(() => void) | null} */
+let stopActive = null
+
 function PostsPage() {
   const posts  = useFetch(API, { transform: (data) => data.slice(0, 12) })
   const broken = useFetch(BROKEN, { immediate: false })
+
+  // A page inside a layout never gets Arrow's onCleanup (troubleshooting:
+  // "Cleanup never runs"), so useFetch can't abort on its own when you leave.
+  // Stop both requests after the first navigation to another path, or when the
+  // page renders again (same-path navigation, retry).
+  const here = useRoute().path()
+  stopActive?.()
+  const stop = () => {
+    posts.stop()
+    broken.stop()
+    offAfterEach()
+    if (stopActive === stop) stopActive = null
+  }
+  const offAfterEach = afterEach(({ to }) => {
+    if (to !== here) stop()
+  })
+  stopActive = stop
 
   return html`
     <div class="page">

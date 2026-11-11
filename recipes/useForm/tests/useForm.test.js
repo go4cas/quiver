@@ -184,3 +184,72 @@ describe('useForm — submission lifecycle', () => {
     expect(onSubmit).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('useForm — validator failures (audit R07, N140)', () => {
+  it('a throwing validate() releases submitting, sets form.message, and a retry succeeds', async () => {
+    let fail = true
+    const onSubmit = vi.fn()
+    const { form, handleSubmit } = useForm(
+      { x: '1' },
+      { validate: () => { if (fail) throw new Error('Validator crashed'); return {} }, onSubmit }
+    )
+    await handleSubmit(fakeSubmitEvent()) // resolves — no unhandled rejection
+    expect(form.submitting).toBe(false)
+    expect(form.message).toBe('Validator crashed')
+    expect(form.submitted).toBe(false)
+    expect(onSubmit).not.toHaveBeenCalled()
+
+    fail = false
+    await handleSubmit(fakeSubmitEvent())
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(form.submitted).toBe(true)
+    expect(form.message).toBe('') // the stale message clears on a new attempt
+  })
+
+  it('a rejecting async validate() releases submitting and a retry succeeds', async () => {
+    let fail = true
+    const onSubmit = vi.fn()
+    const { form, handleSubmit } = useForm(
+      { x: '1' },
+      { validate: async () => { if (fail) throw 'offline'; return {} }, onSubmit }
+    )
+    await handleSubmit(fakeSubmitEvent())
+    expect(form.submitting).toBe(false)
+    expect(form.message).toBe('offline')
+    expect(onSubmit).not.toHaveBeenCalled()
+
+    fail = false
+    await handleSubmit(fakeSubmitEvent())
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(form.submitting).toBe(false)
+  })
+
+  it('submits the values that were validated, not ones typed during an async validate()', async () => {
+    /** @type {(errs: object) => void} */
+    let resolveValidate = () => {}
+    const validate = vi.fn(() => new Promise((r) => { resolveValidate = r }))
+    const onSubmit = vi.fn()
+    const { field, handleSubmit } = useForm({ email: 'a@b.com' }, { validate, onSubmit })
+
+    const pending = handleSubmit(fakeSubmitEvent())
+    field('email').set(fakeInputEvent('not-validated'))
+    resolveValidate({})
+    await pending
+    expect(validate).toHaveBeenCalledWith({ email: 'a@b.com' })
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'a@b.com' }, expect.any(Object))
+  })
+
+  it('a new attempt clears form.submitted from the last success', async () => {
+    let valid = true
+    const { form, handleSubmit } = useForm(
+      { x: '' },
+      { validate: () => (valid ? {} : { x: 'Required.' }), onSubmit: vi.fn() }
+    )
+    await handleSubmit(fakeSubmitEvent())
+    expect(form.submitted).toBe(true)
+    valid = false
+    await handleSubmit(fakeSubmitEvent())
+    expect(form.submitted).toBe(false)
+    expect(form.errors.x).toBe('Required.')
+  })
+})

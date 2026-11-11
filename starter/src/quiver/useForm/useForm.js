@@ -34,28 +34,35 @@ export function useForm(initialValues = {}, { onSubmit, validate } = {}) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (form.submitting) return
-    // Guard the async validate window too — submitting goes true before any await.
+    // Guard the async validate window too: submitting goes true before any await,
+    // so a second submit while this one runs is ignored.
     form.submitting = true
+    // A new attempt starts clean: no stale success flag or message.
+    form.submitted = false
+    form.message = ''
+    // validate() and onSubmit() see the same snapshot, so a value typed while an
+    // async validator runs isn't submitted unvalidated.
+    const values = { ...form.values }
 
-    if (validate) {
-      // validate may be sync or async — await handles both.
-      const errs = await validate(form.values)
-      if (errs && Object.keys(errs).length) {
-        form.errors = errs
-        form.submitting = false
-        return
-      }
-    }
-
-    form.errors = {}
-
+    // validate() and onSubmit() share one try/finally, so a throwing or rejecting
+    // validator can't leave the form stuck in submitting (audit R07, N140).
     try {
-      if (onSubmit) await onSubmit(form.values, form)
+      if (validate) {
+        // validate may be sync or async — await handles both.
+        const errs = await validate(values)
+        if (errs && Object.keys(errs).length) {
+          form.errors = errs
+          return
+        }
+      }
+
+      form.errors = {}
+      if (onSubmit) await onSubmit(values, form)
       if (!Object.keys(form.errors).length) form.submitted = true
     } catch (err) {
-      // @submit handlers discard the returned promise, so a throwing
-      // onSubmit would otherwise become an unhandled rejection with no
-      // UI feedback — surface it as the form's status message instead.
+      // @submit handlers discard the returned promise, so a throwing validate()
+      // or onSubmit() would otherwise become an unhandled rejection with no UI
+      // feedback — surface it as the form's status message instead.
       form.message = err instanceof Error ? err.message : String(err)
     } finally {
       form.submitting = false

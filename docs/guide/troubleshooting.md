@@ -62,6 +62,34 @@ Arrow 1.0.6 runs a component's `onCleanup` only when that component is itself th
 
 So a watcher, timer or listener started in such a component keeps running. Stop it yourself when you're done with it, for example with the `stop()` that every `arrow-use` composable returns, or keep long-lived listeners in a store instead of a component. A page rendered without a layout does get its cleanup.
 
+For a page inside a layout, `afterEach` can stop what the page started once the app navigates elsewhere. The starter's Posts page does this (`src/pages/posts.js`):
+
+```js
+import { afterEach, useRoute } from '@go4cas/quiver'
+import { useFetch } from 'arrow-use'
+
+let stopActive = null // the last render's stop, for a same-path re-render
+
+function PostsPage() {
+  const posts = useFetch('/api/posts')
+  const here = useRoute().path()
+
+  stopActive?.()
+  const stop = () => {
+    posts.stop()          // aborts a request still in flight
+    offAfterEach()
+    if (stopActive === stop) stopActive = null
+  }
+  // The first call is the navigation that rendered this page (to === here).
+  const offAfterEach = afterEach(({ to }) => { if (to !== here) stop() })
+  stopActive = stop
+
+  return html`…`
+}
+```
+
+`destroy()` clears `afterEach` handlers without calling them, so this pattern doesn't cover tearing the whole app down; stop page resources yourself before `destroy()` if that matters.
+
 ## `Quiver needs the Navigation API`
 
 `initRouter()` throws this in browsers without `window.navigation`: before Chrome/Edge 102, Safari 26.2 or Firefox 147. There is no fallback; see [browser support](./routing#browser-support) for how to show your own message.

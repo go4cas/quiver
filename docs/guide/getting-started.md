@@ -17,7 +17,7 @@ Quiver comes in four parts. Use the ones you need:
 
 ## Start from the starter
 
-The starter is a full app: a dashboard, a team list with detail pages, a login form, posts from an API, toasts, five themes in light and dark, and unit, e2e and screenshot tests.
+The starter is a full app: a dashboard, a team list with detail pages, a demo sign-in form (no real authentication), posts from an API, toasts, five themes in light and dark, and unit, e2e and screenshot tests.
 
 ```bash
 bunx degit go4cas/quiver/starter my-app

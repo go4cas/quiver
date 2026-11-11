@@ -76,7 +76,7 @@ provide('currentUser', {
 | `'nav'` | `[{ to, label }]` | no links |
 | `'currentUser'` | `{ name, email, avatar, signOut? }` | a guest entry |
 
-To connect real authentication, fetch the user before `createApp()` and provide it. Since the recipe is a copy in `src/quiver/layouts/`, change anything else directly.
+To connect real authentication, fetch the user before `createApp()` and provide it, with a `signOut` that ends the server session and clears the client's user state before it navigates ([the contract](/recipes/layouts#sign-out)). The default only calls `go('/login')`, and the starter's sign-in page is a demo with no session. Since the recipe is a copy in `src/quiver/layouts/`, change anything else directly.
 
 ## Adding a layout
 

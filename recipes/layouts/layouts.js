@@ -12,7 +12,7 @@ import { ThemeSelector, ThemeToggle } from '../theme-switcher/theme-switcher.js'
 // this file:
 //   'app'         { name, tagline?, logo?, footer? }   logo is a base-relative path
 //   'nav'         [{ to, label }]                      sidebar links
-//   'currentUser' { name, email, avatar, signOut? }    signOut defaults to go('/login')
+//   'currentUser' { name, email, avatar, signOut? }    signOut defaults to go('/login'), which ends no session (README: Sign-out)
 
 /** @typedef {{ name: string, tagline?: string, logo?: string, footer?: string }} AppInfo */
 /** @typedef {{ to: string, label: string }} NavItem */

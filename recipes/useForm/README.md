@@ -31,5 +31,6 @@ html`
 
 - `validate` may be sync or async; return `{}` when valid or `{ field: 'message' }`.
 - A second submit while one is running is ignored (`form.submitting`).
-- A throwing `onSubmit` is caught and its message written to `form.message`; `onSubmit` may also set `form.errors` itself (server-side errors), which keeps `form.submitted` false.
+- A throwing or rejecting `validate` or `onSubmit` is caught and its message written to `form.message`; `form.submitting` goes back to `false`, so the user can fix things and submit again. `onSubmit` may also set `form.errors` itself (server-side errors), which keeps `form.submitted` false.
+- Each submit starts by clearing `form.submitted` and `form.message`. `validate` and `onSubmit` get the same copy of `form.values`, taken when the submit starts, so a value typed while an async validator runs is not submitted unvalidated.
 - For schema validation, call your validator (Zod, Valibot…) inside `validate` and map its issues to `{ field: message }`.

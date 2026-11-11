@@ -81,7 +81,7 @@ These are easy to get wrong and fail silently:
    ```js
    html`<li>${() => (item.done ? html`<b>done</b>` : html``)}</li>`.key(item.id)
    ```
-6. `onCleanup` only runs for a component that is itself a slot's value. Components nested inside a layout's template are not cleaned up, so don't rely on it there.
+6. `onCleanup` only runs for a component that is itself a slot's value. Components nested inside a layout's template are not cleaned up, so don't rely on it there: a page that starts a `useFetch`, timer or listener stops it from an `afterEach` registered in the page (`afterEach(({ to }) => { if (to !== here) stop() })`, with `here = useRoute().path()`).
 7. Arrow flushes DOM updates on a microtask: in tests, `await nextTick()` after changing state.
 
 ## State and composables
@@ -100,9 +100,9 @@ Recipes ship in this package under `recipes/`: `index.json` is the registry, `RE
 | `theme` | `tokens.css` (the `--q-*` contract), `base.css` (reset), optional `effects.css` | – |
 | `toasts` | `useToast()`, `toastState`, `ToastContainer` | `theme` |
 | `theme-switcher` | `themeState`, `ThemeSelector`, `ThemeToggle` (persisted, follows the system mode) | `theme`, `arrow-use` |
-| `layouts` | `BasicLayout`, `MenuLayout`, the `layouts` map; read `provide('app' / 'nav' / 'currentUser')` | `theme`, `link`, `toasts`, `theme-switcher` |
+| `layouts` | `BasicLayout`, `MenuLayout`, the `layouts` map; read `provide('app' / 'nav' / 'currentUser')`; a real `currentUser.signOut` ends the server session and clears user state (README "Sign-out") | `theme`, `link`, `toasts`, `theme-switcher` |
 | `views` | `LoadingView`, `ErrorView` (with `retry`) for `createApp()` | `theme` |
-| `link` | `Link({ to, children, class })` with `aria-current="page"` | – |
+| `link` | `Link({ to, children, class })` with `aria-current="page"`; `to` is a path or an `http(s):`/`mailto:`/`tel:` URL, anything else gets no `href` | – |
 | `useForm` | `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` | – |
 | `hmrState` | `hmrState(key, initial)`: state kept across Vite hot reloads | – |
 
