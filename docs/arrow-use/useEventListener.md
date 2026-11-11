@@ -65,4 +65,4 @@ scroll.stop()
 - **A function target is called once**, when `useEventListener` is called. Arrow has no element refs to watch, so the function is not re-read later. `() => window` is the safe way to name `window` in code that may run outside a browser: if the function throws or returns nothing, no listener is added.
 - **No target, no listener**, and `stop()` does nothing.
 - The same `options` are passed to `removeEventListener`, so a `capture` listener is removed correctly.
-- Inside a component nested in another template (a page inside a layout), unmount cleanup doesn't run in Arrow 1.0.6; call `stop()` yourself ([why](/guide/troubleshooting#cleanup-never-runs)).
+- Called in a Quiver 3.1+ page or layout function, the listener is removed when the page is left. Inside a `component()` nested in another template, unmount cleanup doesn't run in Arrow 1.0.6; call `stop()` yourself ([why](/guide/troubleshooting#cleanup-never-runs)).

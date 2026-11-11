@@ -43,7 +43,7 @@ html`
 `
 ```
 
-Every `arrow-use` composable returns getters plus `stop()`, cleans up when its `component()` unmounts (not inside a page with a layout, where you call `stop()` yourself: [why](./troubleshooting#cleanup-never-runs)), and can be imported on a server or in tests. One page per composable: [`useFetch`](/arrow-use/useFetch), [`useStorage`](/arrow-use/useStorage), [`useMediaQuery`](/arrow-use/useMediaQuery), [`useEventListener`](/arrow-use/useEventListener).
+Every `arrow-use` composable returns getters plus `stop()`, cleans up when its `component()` unmounts or, called in a page or layout function, when the page is left (a `component()` nested inside a page's template is the exception: [why](./troubleshooting#cleanup-never-runs)), and can be imported on a server or in tests. One page per composable: [`useFetch`](/arrow-use/useFetch), [`useStorage`](/arrow-use/useStorage), [`useMediaQuery`](/arrow-use/useMediaQuery), [`useEventListener`](/arrow-use/useEventListener).
 
 ## Toasts, forms, hot-reload state: recipes
 

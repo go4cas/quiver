@@ -216,7 +216,7 @@ When a guard, a loader or a render throws, the router renders the `error` view p
 
 The order is fixed: `provide()` → `beforeEach()` / `afterEach()` / `onError()` → `await initRouter()` → `createApp()`. Mistakes throw with a message that says what to do: `createApp()` before `initRouter()` has resolved, a second `initRouter()` or `createApp()`, a missing `target`, `go()` before `initRouter()`.
 
-`destroy()` (or `app.destroy()`) undoes all of it: it stops listening for navigations, clears guards, hooks, context and meta watchers, resets router state and empties the target. After it, the whole sequence can run again, which is handy in tests and for micro-frontends that come and go.
+`destroy()` (or `app.destroy()`) undoes all of it: it stops listening for navigations, clears guards, hooks, context and meta watchers, runs the current page's cleanups ([page cleanup](./troubleshooting#cleanup-never-runs)), puts back the host page's title and description, resets router state and empties the target. After it, the whole sequence can run again, which is handy in tests and for micro-frontends that come and go.
 
 ## Browser support
 

@@ -2,16 +2,18 @@
 
 Quiver publishes two npm packages from this repo: `@go4cas/quiver` (`packages/quiver/`) and `arrow-use` (`packages/arrow-use/`). Publishing, tags and GitHub releases happen only with the maintainer's go-ahead.
 
-There are two ways to publish. The `Publish` workflow (`.github/workflows/publish.yml`) stages releases from CI with npm provenance; until the maintainer switches it on (step 2 below), releases are published from the maintainer's machine as before. Both end the same way: a staged version that goes live only when the maintainer approves it on npmjs.com with 2FA.
+Releases are staged from CI: the `Publish` workflow (`.github/workflows/publish.yml`) stages each release with npm provenance when a release tag is pushed. It was switched on on 2026-11-11 (the setup below is done for both packages); publishing from the maintainer's machine remains as a fallback. Both end the same way: a staged version that goes live only when the maintainer approves it on npmjs.com with 2FA.
 
 ## Prepare the release (both ways)
 
 1. A release PR on its own branch: bump `version` in the package's `package.json`, move `## [Unreleased]` in `CHANGELOG.md` under the new version and date, add the compare link, and update the version check in `tests/repo/core-config.test.js` (core) or `tests/repo/packages.test.js` (arrow-use).
 2. CI green on the PR (`Tests`, including `screenshots` and `pack`), then merge to `main`.
 
-## Publish from CI (once switched on)
+## Publish from CI (the default)
 
 ### One-time setup on npmjs.com and GitHub
+
+Done on 2026-11-11 for both packages. Kept here to check the settings, or to redo them if the trusted publisher expires.
 
 For **each** package (`@go4cas/quiver`, `arrow-use`):
 
@@ -23,7 +25,7 @@ For **each** package (`@go4cas/quiver`, `arrow-use`):
    - Allowed actions: leave `npm publish` and `npm dist-tag` **off**. `npm stage publish` is always allowed, so CI can only stage; a release still needs your 2FA approval.
 2. Same page, **Publishing access**: choose **Require two-factor authentication and disallow tokens**. This does not affect the trusted publisher. Then revoke any npm automation or publish tokens you no longer need (npmjs.com → Access Tokens).
 
-A new trusted publisher that hasn't completed a successful publish within two days expires: if that happens, delete it and add it again.
+A new trusted publisher that hasn't completed a successful publish within two days expires: if that happens, delete it and add it again. Until the first release from CI succeeds, check this before pushing a release tag.
 
 On GitHub (`go4cas/quiver` → Settings):
 
@@ -43,7 +45,7 @@ To try the build without staging anything, run the `Publish` workflow by hand (A
 
 If a staging run fails after the tag is pushed (for example a trusted-publisher typo, which npm reports as `ENEEDAUTH` only at publish time), fix the cause and use **Re-run all jobs** on that run; the tag doesn't change.
 
-## Publish from the maintainer's machine (until switched on)
+## Publish from the maintainer's machine (fallback)
 
 From a clean checkout of the merged release commit on `main`, after `bun install --frozen-lockfile`:
 
@@ -52,4 +54,4 @@ cd packages/quiver      # or packages/arrow-use
 npm publish             # or npm stage publish; prepack builds the .d.ts and copies the recipes in
 ```
 
-Approve the staged version on npmjs.com if your account stages publishes, then tag the commit (`v<version>` or `arrow-use-v<version>`) and create the GitHub release. While `NPM_PUBLISH_FROM_CI` is unset, the tag push runs only the `Publish` workflow's `build` job, which re-checks and packs the release; it stages nothing. A version published this way has no provenance.
+Approve the staged version on npmjs.com if your account stages publishes, then tag the commit (`v<version>` or `arrow-use-v<version>`) and create the GitHub release. A version published this way has no provenance. With `NPM_PUBLISH_FROM_CI` set to `true`, the tag push still runs the `Publish` workflow, and its `build` job fails at the "not on npm yet" check, so nothing is staged twice; to skip that red run, unset the variable before pushing the tag and set it back afterwards.

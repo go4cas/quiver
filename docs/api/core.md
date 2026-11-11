@@ -144,7 +144,7 @@ Registers a guard and returns its unregister function. Guards run in registratio
 
 - `false` cancels: the last page that finished loading stays (or comes back, if another navigation had started loading), with its URL, query and hash. A cancelled link click or Back/Forward adds and rewrites no history entry; a cancelled replace puts the old URL back in place. On the first load, `false` redirects to `/`.
 - a string redirects (base-relative, may carry a query and hash). A redirect to the path already being navigated to proceeds. More than 10 redirects in a row is an error (`Too many redirects (10) from "<path>".`). A redirect must stay inside the app: an absolute URL (`https:`, `javascript:`, `//host`) or a path outside the base is a guard error (`A guard redirected to "…". Redirects must be base-relative paths inside the app; use go() for other URLs.`); call `go()` in the guard's place for an external URL.
-- `from` is the page on screen, never one still loading for a navigation that was superseded. Once a newer navigation starts, the older one's remaining guards don't run.
+- `from` is the page on screen, never one still loading for a navigation that was superseded. Once a newer navigation starts, the older one's remaining guards don't run, and its guards' result (cancel, redirect or error) is ignored.
 - anything else continues.
 
 A throwing guard renders the error view and calls `onError` with `phase: 'guard'`.

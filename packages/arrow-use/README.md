@@ -47,7 +47,7 @@ Every composable here follows the same rules, and so should one you add:
 1. **Arrow only.** `@arrow-js/core` is the only peer dependency, and only its public exports are used. No Quiver imports: anything that needs a router belongs in the app or in Quiver.
 2. **Getters, not values.** The return value is a plain object of functions. State is read with getters (`data()`, `value()`), so `${() => posts.data()}` stays reactive. No `reactive()` object is exposed, and getters return plain values, not reactive proxies.
 3. **Always `stop()`.** Every composable returns `stop()`, which releases its listeners and requests. Calling it twice is fine, and the getters keep their last values afterwards (a request in flight is aborted, so `useFetch().loading()` becomes `false`).
-4. **Inside or outside a component.** Called inside `component()`, cleanup runs when the component unmounts. Called anywhere else (module scope, a plain function, a test), nothing throws, and you call `stop()` yourself.
+4. **Inside or outside a component.** Called inside `component()`, cleanup runs when the component unmounts. Called in a Quiver 3.1+ page or layout function, cleanup runs when the page is left. Called anywhere else (module scope, a plain function, a test), nothing throws, and you call `stop()` yourself.
 5. **Nothing at import.** Importing the package runs no code. Browser APIs are checked when the composable is called, so the package can be imported on a server or in tests.
 6. **Options last.** `useX(required…, options = {})`, every option optional with a default.
 7. **One file per composable.** `src/useX.js` exports `useX`; `src/index.js` re-exports them, plus their typedefs.
@@ -55,7 +55,7 @@ Every composable here follows the same rules, and so should one you add:
 
 ### Cleanup and nested components
 
-Arrow runs a component's `onCleanup` only when that component is itself what a slot drops, as in `${() => show ? Panel() : ''}`. A component rendered inside another template isn't cleaned up when its parent goes away (Arrow 1.0.6). If a composable there holds something that must be released, call `stop()` yourself. In a Quiver 3.1+ app, composables called in a page or layout function are cleaned up when the page is left, inside a layout too.
+Arrow runs a component's `onCleanup` only when that component is itself what a slot drops, as in `${() => (show ? Panel() : html``)}`. A component rendered inside another template isn't cleaned up when its parent goes away (Arrow 1.0.6). If a composable there holds something that must be released, call `stop()` yourself. In a Quiver 3.1+ app, composables called in a page or layout function are cleaned up when the page is left, inside a layout too.
 
 ## Example
 

@@ -64,10 +64,10 @@ One concern per PR. Avoid mixing bug fixes with refactors or unrelated doc edits
 ```bash
 bun run typecheck     # JSDoc type check (tsc, checkJs)
 bun run test          # repo checks, then every workspace's unit tests
-bun run test:e2e      # end-to-end tests in the starter, examples, arrow-use and recipes
+bun run test:e2e      # end-to-end tests in the starter, examples, arrow-use, recipes and core (Chromium)
 ```
 
-All three must pass before opening a PR — CI runs them on every push, along with the screenshot suite and the npm tarball checks (`bun run pack:check`, `bun run pack:try`). After editing a recipe in `recipes/`, run `bun run recipes:sync` so the starter's copy matches. User-visible changes go under `## [Unreleased]` in `CHANGELOG.md`.
+All three must pass before opening a PR — CI runs them on every push, along with the screenshot suite, core's router suite in Firefox and WebKit (`bun run test:browsers`), the npm tarball checks (`bun run pack:check`, `bun run pack:try`, `bun run pack:types`) and the dependency audit (`bun run audit`). If you change the router, run `bun run test:browsers` locally after `bunx playwright install firefox webkit`. After editing a recipe in `recipes/`, run `bun run recipes:sync` so the starter's copy matches. User-visible changes go under `## [Unreleased]` in `CHANGELOG.md`.
 
 **4. Match the existing code style:**
 
@@ -92,10 +92,13 @@ All three must pass before opening a PR — CI runs them on every push, along wi
 | `bun run dev` | Start the starter's Vite dev server |
 | `bun run test` | Repo checks, then every workspace's unit tests (Vitest) |
 | `bun run test:watch` | The starter's unit tests in watch mode |
-| `bun run test:e2e` | End-to-end tests (Playwright) in every workspace that has them |
+| `bun run test:e2e` | End-to-end tests (Playwright) in every workspace that has them; core's router suite in Chromium |
+| `bun run test:browsers` | Core's router suite in Chromium, Firefox and WebKit |
 | `bun run typecheck` | Type-check every workspace via JSDoc (tsc, checkJs) |
 | `bun run pack:check` | Check the file lists of both npm tarballs |
 | `bun run pack:try` | Run the examples and the starter against the packed tarballs |
+| `bun run pack:types` | Type-check the packed `.d.ts` in fresh TypeScript projects |
+| `bun run audit` | Check the lockfile for dependency advisories |
 | `bun run recipes:sync` | Copy `recipes/` into `starter/src/quiver/` |
 | `bun run docs:dev` | Start the documentation site locally |
 
