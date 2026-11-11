@@ -15,6 +15,52 @@ export function clearMeta() {
   activeStops = []
 }
 
+// The host page's own title and description, captured by initRouter() (N128).
+/** @type {{ title: string, description: string | null } | null} */
+let defaults = null
+
+const descriptionTag = () => document.querySelector('meta[name="description"]')
+
+/** Remember the host page's title and description as the defaults. */
+export function captureMetaDefaults() {
+  defaults = { title: document.title, description: descriptionTag()?.getAttribute('content') ?? null }
+}
+
+/**
+ * A navigation committed: stop the old page's watchers and put back the
+ * defaults, then the page's static `meta.title`. useMeta() in the page that
+ * renders next overrides them. A description tag the host page didn't have is
+ * removed (N128).
+ * @param {{ title?: unknown }} [meta]
+ */
+export function resetMeta(meta) {
+  clearMeta()
+  if (!defaults) return
+  document.title = typeof meta?.title === 'string' && meta.title ? meta.title : defaults.title
+  const tag = descriptionTag()
+  if (defaults.description === null) tag?.remove()
+  else if (tag) tag.setAttribute('content', defaults.description)
+  else setDescription(defaults.description)
+}
+
+/** destroy(): put the defaults back and forget them. */
+export function restoreMetaDefaults() {
+  resetMeta()
+  defaults = null
+}
+
+/** @param {string} content @returns {Element} */
+function setDescription(content) {
+  let tag = descriptionTag()
+  if (!tag) {
+    tag = document.createElement('meta')
+    tag.setAttribute('name', 'description')
+    document.head.appendChild(tag)
+  }
+  tag.setAttribute('content', content)
+  return tag
+}
+
 // useMeta({ title, description }) — call at the top of any page function.
 // Pass static strings for one-shot assignment, or arrow functions for reactive updates.
 /**
@@ -34,17 +80,12 @@ export function useMeta({ title, description } = {}) {
   }
 
   if (description) {
-    let meta = document.querySelector('meta[name="description"]')
-    if (!meta) {
-      meta = document.createElement('meta')
-      meta.setAttribute('name', 'description')
-      document.head.appendChild(meta)
-    }
     if (typeof description === 'function') {
+      const meta = setDescription('')
       const [, stop] = watch(() => { meta.setAttribute('content', description()) })
       activeStops.push(stop)
     } else {
-      meta.setAttribute('content', description)
+      setDescription(description)
     }
   }
 }

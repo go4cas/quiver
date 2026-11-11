@@ -98,7 +98,7 @@ export default function UserPage() {
 }
 ```
 
-The router stops these watchers on every navigation, so a title never leaks onto the next page. `description` sets `<meta name="description">`, creating it if needed.
+The router stops these watchers on every navigation, so a title never leaks onto the next page. `description` sets `<meta name="description">`, creating it if needed. A page that sets neither gets the host page's own title and description back (those in `index.html`).
 
 ## Reading the route
 
@@ -141,7 +141,7 @@ await router.back()
 await router.forward()
 ```
 
-Each returns a promise that settles when the navigation and its `afterEach` hooks have finished. A navigation that another one interrupts resolves quietly.
+Each returns a promise that settles when the navigation and its `afterEach` hooks have finished, following a guard's redirect to the end. A navigation that an unrelated one interrupts resolves quietly.
 
 ## Base path
 
@@ -179,8 +179,9 @@ beforeEach(({ from, to }) => {
 ```
 
 - Guards may be async. They run in registration order, and the first `false` or path wins.
-- Cancelling puts back the previous URL, query and hash included. On the first load there is no previous page, so `false` redirects to `/`.
+- Cancelling keeps the page that's on screen, with its URL, query and hash, and leaves history as it was: Back after a cancelled click goes where it went before. On the first load there is no previous page, so `false` redirects to `/`.
 - A redirect keeps its query and hash. A redirect to the path being navigated to just proceeds, so a guard without a `to !== '/login'` check still reaches `/login`.
+- A redirect stays inside the app. Returning an absolute URL or a path outside the base is a guard error, so a `?next=` value from the query string can't send users elsewhere. Check such values before using them in a link, too.
 - Redirect chains stop after 10 hops with an error (shown in the error view, reported to `onError` with `phase: 'guard'`).
 - `beforeEach()` returns a function that unregisters the guard.
 

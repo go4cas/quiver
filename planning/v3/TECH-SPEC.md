@@ -118,7 +118,7 @@ export function afterEach(fn)
 export function onError(fn)
 ```
 
-- **C-30** `go(path)` calls `navigation.navigate(url(path))`. It keeps query and hash (2.x dropped them, N21). It resolves when `finished` settles, swallows `AbortError` (2.x behaviour) and rethrows anything else. *Check:* unit tests with a mocked `navigation`.
+- **C-30** `go(path)` calls `navigation.navigate(url(path))`. It keeps query and hash (2.x dropped them, N21). It resolves when `finished` settles, and then waits for any redirect or rollback the router started for it (N127); it swallows `AbortError` from an unrelated navigation (2.x behaviour) and rethrows anything else. *Check:* unit tests with a mocked `navigation`.
 - **C-31** `go()` before `initRouter()` or after `destroy()` throws `Quiver router is not initialised. Call initRouter() first.` *Check:* unit test.
 - **C-32** Guard contract is unchanged from 2.x except for paths (base-relative, C-21): `({ from, to }) => false | string | void | Promise<…>`. `false` cancels and puts back the previous URL, query and hash included (§2 step 3, N67); a string redirects; anything else proceeds. A redirect string is base-relative and may carry query and hash, which are kept (N21). Guards run in registration order and stop at the first `false` or string.
 - **C-33** Unregister functions are idempotent, and unregistering during a run does not skip the next handler in that run (the run iterates a copy). *Check:* unit test.
@@ -171,7 +171,7 @@ export function destroy()
   1. bumps the navigation epoch, so in-flight loads and hooks are dropped
   2. removes the `navigate` listener
   3. clears guards, `afterEach` and `onError` handlers
-  4. stops `useMeta` watchers (`document.title` is not restored)
+  4. stops `useMeta` watchers and puts back the host page's title and description captured by `initRouter()` (N128)
   5. clears the `provide`/`inject` context
   6. unmounts the outlet: sets the mount's private `mounted` flag to `false` so Arrow drops the page chunk and runs component `onCleanup` callbacks, then `target.replaceChildren()`
   7. replaces router state with a fresh object `{ status: 'idle', path: '', params: {}, meta: {}, … }` and the base with `'/'`
@@ -221,7 +221,7 @@ export function inject(key, fallback)
 
 - **C-60** `useRoute()` getters read the current router state object at call time (so they follow C-50 replacement). `params()` values are decoded with the 2.x `matchPath` fallback for malformed escapes. *Check:* unit test reads each getter inside a `watch()` and sees it update.
 - **C-61** `useRouter().back()` / `forward()` call `navigation.back()` / `forward()`, resolve on `finished`, and swallow `AbortError` like `go()`. *Check:* unit test.
-- **C-62** `useMeta` semantics are unchanged from 2.x (static strings set once, functions become `watch()`ers that core stops on every navigation and on `destroy()`). A page's static `meta.title` is applied by the router after load, before render. *Check:* existing 2.x `meta.test.js` cases, plus one for `destroy()`.
+- **C-62** `useMeta` semantics are unchanged from 2.x (static strings set once, functions become `watch()`ers that core stops on every navigation and on `destroy()`). A page's static `meta.title` is applied by the router after load, before render. Every committed navigation first puts back the title and description the host page had at `initRouter()` (a description tag it didn't have is removed), and so does `destroy()` (N128). *Check:* existing 2.x `meta.test.js` cases, plus one for `destroy()`, plus `router-history.test.js`.
 - **C-63** `provide`/`inject` keep 2.x semantics: one app-global map, last write wins. Core reserves no keys; `'app'` and `'currentUser'` become starter conventions. *Check:* existing `context.test.js`, plus one for `destroy()`.
 
 ---
@@ -236,15 +236,15 @@ One pipeline handles in-app navigations, the initial load (C-15) and `retry()` (
    - `event.downloadRequest !== null`
    - `event.formData !== null` (a form POST is left to the browser, N22)
    - `event.navigationType === 'reload'` without `event.info?.retry` (a script reload such as `location.reload()` or Vite's dev full reload is a real document reload, N73)
-   - `event.info?.rollback` (guard-cancel rollback, 2.x). This one calls `event.intercept()` with no handler before returning, so the URL changes in place without a document load or a pipeline run (N72)
+   - `event.info?.rollback` (guard-cancel rollback, 2.x; only `info` objects Quiver created count, N129). This one calls `event.intercept()` with no handler before returning, so the URL changes in place without a document load or a pipeline run (N72)
    - `stripBase(new URL(event.destination.url).pathname) === null` (outside the base, R3)
    
    Otherwise it calls `event.intercept({ handler })` and steps 2–8 run in the handler.
 2. **Epoch.** `const epoch = ++navEpoch`. After every `await`, a stale epoch returns at once: no state writes, no hooks.
-3. **Guards** with `{ from: currentPath | null, to }`. A throw goes to step 6 with `phase: 'guard'` (N2). `false`: in-app, `navigation.navigate(fromUrl, { history: 'replace', info: { rollback: true } })` and stop, no hooks, where `fromUrl` is `navigation.currentEntry.url` captured in the `navigate` handler before `intercept()` commits the new URL, so the previous query and hash survive (N67); initial load, redirect to `/`. A string whose normalised path equals `to` proceeds to step 4 (C-16, N66). Any other string: `navigation.navigate(url(result), { history: 'replace', info: { redirects: n + 1 } })` (initial load: `history.replaceState`) and stop; the new navigation runs its own pipeline.
+3. **Guards** with `{ from: settledPath | null, to }`, where `settledPath` is the last committed route (N126). After each guard, a stale epoch stops: later guards don't run. A throw goes to step 6 with `phase: 'guard'` (N2). `false`: in-app, go back to the last committed route and stop, no hooks (N126): restore its router state if a superseded navigation had set `'loading'`, then `navigation.traverseTo(settledKey, { info: rollback })` when that entry still exists and isn't current (a push or traversal: no entry added or rewritten), else `navigation.navigate(settledUrl, { history: 'replace', info: rollback })` (a replace); query and hash survive (N67). With nothing committed yet, and on the initial load, `false` redirects to `/`. A string whose normalised path equals `to` proceeds to step 4 (C-16, N66). A string that isn't a same-origin path inside the base after `url()` goes to step 6 with `phase: 'guard'` (N129). Any other string: `navigation.navigate(url(result), { history: 'replace', info: { redirects: n + 1 } })` (initial load: `history.replaceState`) and stop; the new navigation runs its own pipeline, and the caller's `go()` waits for it (N127).
 4. **Load.** Clear meta watchers, set state `{ status: 'loading', path: to, params: {}, meta: {}, error: null }`. Pick the first sorted route (M-6) whose pattern matches; otherwise the `notFound` loader; otherwise not-found without a page. `await loader()`. A rejection, or a module whose `default` isn't a function, goes to step 6 with `phase: 'load'`. The bad-export message names the pattern: `Route "/users/:id" must default export a page function.` (D21).
-5. **Commit.** Set state `{ status: 'ready' | 'not-found', page, params, meta, layout }`, apply a static `meta.title`.
-6. **Error commit** (from 3 or 4). Set state `{ status: 'error', error, page: null, meta: {} }`. Queue `onError({ error, from, to, phase })`.
+5. **Commit.** Set state `{ status: 'ready' | 'not-found', page, params, meta, layout }`, put back the host title and description, then apply a static `meta.title` (N128). Record the current entry and state as the settled route (N126).
+6. **Error commit** (from 3 or 4). Set state `{ status: 'error', error, page: null, meta: {} }`, put back the host title and description, record it as the settled route. Queue `onError({ error, from, to, phase })`.
 7. **Render.** `await nextTick()`. Arrow re-renders the outlet. A synchronous render throw (C-48) sets status `'error'` and queues `onError` with `phase: 'render'`.
 8. **Hooks.** Call queued `onError` handlers, then `afterEach({ from, to, status })` with the final status (`'ready'`, `'not-found'` or `'error'`). For the initial load, step 7 and 8 happen inside `createApp()` (C-44).
 

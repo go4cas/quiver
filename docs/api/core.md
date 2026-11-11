@@ -99,7 +99,7 @@ import { afterEach } from 'vitest'
 afterEach(() => destroy())
 ```
 
-`onCleanup` runs only for a page rendered without a layout ([why](/guide/troubleshooting#cleanup-never-runs)). `document.title` is not restored.
+`onCleanup` runs only for a page rendered without a layout ([why](/guide/troubleshooting#cleanup-never-runs)). `document.title` and `<meta name="description">` go back to what the host page had when `initRouter()` ran.
 
 ## Navigation
 
@@ -109,7 +109,7 @@ afterEach(() => destroy())
 go(path: string): Promise<void>
 ```
 
-Navigates to a base-relative path (query and hash kept) or an absolute URL. Resolves when the navigation and its `afterEach` handlers have finished. A navigation interrupted by another resolves quietly; other errors reject. Throws before `initRouter()` (`Quiver router is not initialised. Call initRouter() first.`).
+Navigates to a base-relative path (query and hash kept) or an absolute URL. Resolves when the navigation and its `afterEach` handlers have finished, including a guard's redirect (and that target's own guards) or the rollback after a cancel. A navigation interrupted by an unrelated one resolves quietly, without waiting for the newer one; other errors reject. Throws before `initRouter()` (`Quiver router is not initialised. Call initRouter() first.`).
 
 ```js
 await go('/users/42?tab=activity#notes')
@@ -142,8 +142,9 @@ beforeEach(guard: NavigationGuard): () => void
 
 Registers a guard and returns its unregister function. Guards run in registration order before every navigation, the first page load included (`from: null`), and the first `false` or string wins:
 
-- `false` cancels and puts back the previous URL (query and hash too). On the first load, it redirects to `/`.
-- a string redirects (base-relative, may carry a query and hash). A redirect to the path already being navigated to proceeds. More than 10 redirects in a row is an error (`Too many redirects (10) from "<path>".`).
+- `false` cancels: the last page that finished loading stays (or comes back, if another navigation had started loading), with its URL, query and hash. A cancelled link click or Back/Forward adds and rewrites no history entry; a cancelled replace puts the old URL back in place. On the first load, `false` redirects to `/`.
+- a string redirects (base-relative, may carry a query and hash). A redirect to the path already being navigated to proceeds. More than 10 redirects in a row is an error (`Too many redirects (10) from "<path>".`). A redirect must stay inside the app: an absolute URL (`https:`, `javascript:`, `//host`) or a path outside the base is a guard error (`A guard redirected to "…". Redirects must be base-relative paths inside the app; use go() for other URLs.`); call `go()` in the guard's place for an external URL.
+- `from` is the page on screen, never one still loading for a navigation that was superseded. Once a newer navigation starts, the older one's remaining guards don't run.
 - anything else continues.
 
 A throwing guard renders the error view and calls `onError` with `phase: 'guard'`.
@@ -208,7 +209,7 @@ html`<h1>User ${() => route.params().id}</h1>`
 useRouter(): { go: typeof go, back: () => Promise<void>, forward: () => Promise<void> }
 ```
 
-`go` is the function above; `back()` and `forward()` move through history and resolve when the navigation finishes.
+`go` is the function above; `back()` and `forward()` move through history and resolve when the navigation finishes, like `go()`.
 
 ```js
 const router = useRouter()
@@ -222,7 +223,7 @@ useMeta(config?: { title?: MetaValue, description?: MetaValue }): void
 // MetaValue = string | (() => string)
 ```
 
-Sets `document.title` and `<meta name="description">` (created if missing). A function value is watched and re-applied when what it reads changes; the router stops those watchers on every navigation and on `destroy()`. A page's static `meta.title` export is applied before it renders.
+Sets `document.title` and `<meta name="description">` (created if missing). A function value is watched and re-applied when what it reads changes; the router stops those watchers on every navigation and on `destroy()`. On every navigation that commits, the title and description go back to the host page's own (what they were when `initRouter()` ran; a description tag the host page didn't have is removed), then a page's static `meta.title` export is applied, before it renders. So a page without metadata, the not-found page and the error view never show the previous page's.
 
 ```js
 useMeta({ title: () => `Team (${userState.users.length})`, description: 'Everyone on the team.' })
