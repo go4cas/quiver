@@ -50,7 +50,7 @@ if (save.error()) toast.error(save.error())
 | Option | Type | Default | |
 |---|---|---|---|
 | `immediate` | `boolean` | `true` | start the request when `useFetch` is called |
-| `transform` | `(raw: any) => any` | none | maps the parsed JSON before it reaches `data()` |
+| `transform` | `(raw: any) => any` | none | maps the parsed JSON before it reaches `data()`; synchronous: a returned promise is stored as `data()`, not awaited |
 | any `RequestInit` field | | | passed to `fetch`: `method`, `headers`, `body`, `credentials`, `signal`, … |
 
 A `signal` you pass is combined with the composable's own, so either can abort the request.
@@ -70,7 +70,9 @@ A `signal` you pass is combined with the composable's own, so either can abort t
 ## Behaviour
 
 - **Superseded requests never write.** When `refetch()` starts a new request, the old one is aborted, and if its response still arrives, it's ignored. Only the newest request sets `data`, `status`, `error` and `loading`.
-- **Errors are values, not exceptions.** `refetch()` never rejects; check `error()`. An abort is not an error.
+- **Errors are values, not exceptions.** `refetch()` never rejects; check `error()`. Whatever is thrown (by `fetch`, `res.json()` or your `transform`) becomes a string: an `Error`'s message, a thrown string itself, or `'Request failed'` for `null`, `undefined` or an object without a message.
+- **An abort is not an error.** Cancelling through `refetch()`, `reset()`, `stop()`, unmounting or your own `signal` leaves `error()` as it was and sets `loading()` to `false`, whatever reason the signal was aborted with.
+- **`transform` can't publish a stale result.** If `transform` calls `reset()`, `stop()` or `refetch()`, the value it returns is dropped.
 - **`data()` is plain JSON**, not a reactive proxy. Templates re-render when a new response arrives, but mutating the object yourself doesn't re-render: call `refetch()`, or copy it into your own `reactive()`.
 - **Cleanup.** Inside a `component()` that a slot drops, the request is aborted on unmount. Inside a page with a layout, call `stop()` yourself if a request must not outlive the page ([why](/guide/troubleshooting#cleanup-never-runs)).
-- **No browser.** Without a global `fetch`, nothing is requested: `data()` is `null` and `loading()` is `false`.
+- **Outside the browser.** `useFetch` uses the global `fetch`, so runtimes that have one (Node 18+, Bun, Deno) make real requests, for example during tests. Without a global `fetch`, nothing is requested: `data()` is `null` and `loading()` is `false`.
