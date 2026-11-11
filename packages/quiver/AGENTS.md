@@ -36,12 +36,12 @@ The manifest comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the 
 | `destroy()` | tears down router, guards, hooks, context, meta watchers and the mounted target |
 | `go(path)` | navigates; returns a promise that settles when the navigation finishes |
 | `url(path)` | adds the base to a base-relative path, for `href` and `src` |
-| `beforeEach(fn)` | guard `({ from, to })`: return `false` to cancel, a path to redirect, anything else to proceed; returns an unregister function |
+| `beforeEach(fn)` | guard `({ from, to })`: return `false` to cancel (the page on screen stays, history unchanged), a base-relative path to redirect (an absolute URL or a path outside the base is a guard error), anything else to proceed; returns an unregister function |
 | `afterEach(fn)` | `({ from, to, status })` after each committed navigation |
 | `onError(fn)` | `({ error, from, to, phase })` for `'guard'`, `'load'` and `'render'` errors |
 | `useRoute()` | `{ path(), params(), status(), meta() }`, reactive |
 | `useRouter()` | `{ go, back, forward }` |
-| `useMeta({ title, … })` | sets document meta; values may be functions (reactive) |
+| `useMeta({ title, … })` | sets document meta; values may be functions (reactive). A page without it gets the host page's title and description back |
 | `provide(key, value)` / `inject(key, fallback)` | app-global context; last `provide` wins |
 
 Every path the app sees or passes is **base-relative**: manifest keys, `go()`, guard `from`/`to` and redirects, hook paths, `useRoute().path()`. Only `url()` adds the base. Guards also run on the first load with `from: null`; there, `false` redirects to `/`.

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <base href="%BASE%" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@arrow-js/core": "./vendor/@arrow-js/core/dist/index.mjs",
+          "@go4cas/quiver": "./vendor/@go4cas/quiver/index.js"
+        }
+      }
+    </script>
+    <title>Host title</title>
+  </head>
+  <body>
+    <nav>
+      <a href="./">Overview</a>
+      <a href="details">Details</a>
+      <a href="slow">Slow</a>
+      <a href="denied">Denied</a>
+      <a href="admin">Admin</a>
+    </nav>
+    <main id="app"></main>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

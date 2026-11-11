@@ -1,6 +1,6 @@
 import { nextTick } from '@arrow-js/core'
 import { routerState } from './state.js'
-import { clearMeta } from './meta.js'
+import { captureMetaDefaults, clearMeta, resetMeta } from './meta.js'
 import { resolveBase, setBase, stripBase, url } from './base.js'
 import { compareRoutes, matchPath, normalizePath, validateManifest } from './match.js'
 
@@ -14,7 +14,14 @@ import { compareRoutes, matchPath, normalizePath, validateManifest } from './mat
 /** @typedef {import('./types.js').ErrorPhase} ErrorPhase */
 /** @typedef {import('./types.js').FinalStatus} FinalStatus */
 /** @typedef {{ error: unknown, phase: ErrorPhase }} PipelineError */
-/** @typedef {{ redirects?: number, first?: string, rollback?: boolean, retry?: boolean }} NavInfo */
+/** @typedef {import('./state.js').RouterState} RouterState */
+/**
+ * The navigations started on behalf of one go(), retry(), back(), forward() or
+ * link click: guard redirects and rollbacks set `next`, so the caller's promise
+ * waits for the whole chain (N127).
+ * @typedef {{ next: SettleableResult | null }} NavOp
+ */
+/** @typedef {{ redirects?: number, first?: string, rollback?: boolean, retry?: boolean, op?: NavOp }} NavInfo */
 
 const MAX_REDIRECTS = 10
 const NO_NAVIGATION_API =
@@ -43,6 +50,28 @@ let navEpoch = 0
 let renderErrors = []
 /** @type {{ to: string, errors: PipelineError[] } | null} hooks owed for the initial navigation (C-44) */
 let initialReport = null
+/**
+ * The last navigation that committed: its history entry and router state. A
+ * cancelled navigation goes back to it (N126).
+ * @type {{ key: string | undefined, url: string, state: Omit<RouterState, never> } | null}
+ */
+let settled = null
+// True while a navigation has replaced the settled state with 'loading'.
+let unsettled = false
+// The info objects Quiver passes to the Navigation API. Only these are read as
+// rollback/retry/redirect markers, so an app's own `info` is never mistaken for
+// one (N129).
+/** @type {WeakSet<object>} */
+const internal = new WeakSet()
+
+/**
+ * @param {NavInfo} info
+ * @returns {NavInfo}
+ */
+function mark(info) {
+  internal.add(info)
+  return info
+}
 
 // ---------------------------------------------------------------- registration
 
@@ -144,6 +173,46 @@ export function settle(result) {
   )
 }
 
+/**
+ * Settle on `result` and on every navigation the router started for the same
+ * operation (a guard redirect, a rollback), so the promise resolves once the
+ * final one finishes. An unrelated navigation that supersedes it ends the
+ * chain (N127).
+ * @param {SettleableResult} result
+ * @param {NavOp} op
+ * @returns {Promise<void>}
+ */
+async function settleChain(result, op) {
+  for (let current = result; ;) {
+    await settle(current)
+    const next = op.next
+    if (!next || next === current) return
+    current = next
+  }
+}
+
+/**
+ * Start a navigation for an operation: the caller's promise follows it, and a
+ * failure is logged rather than left unhandled.
+ * @param {NavOp} op
+ * @param {SettleableResult} result
+ */
+function follow(op, result) {
+  op.next = result
+  settle(result).catch((error) => console.error('[quiver] navigation failed', error))
+}
+
+/**
+ * @param {(info: NavInfo) => SettleableResult} start
+ * @param {NavInfo} [extra]
+ * @returns {Promise<void>}
+ */
+function run(start, extra) {
+  /** @type {NavOp} */
+  const op = { next: null }
+  return settleChain(start(mark({ ...extra, op })), op)
+}
+
 /** Throws unless initRouter() has been called (and destroy() hasn't since). */
 export function assertRouter() {
   if (phase === 'off') throw new Error(NOT_INITIALISED)
@@ -156,28 +225,92 @@ export function assertRouter() {
  */
 export function go(path) {
   assertRouter()
-  return settle(navigation.navigate(url(path)))
+  return run((info) => navigation.navigate(url(path), { info }))
 }
 
 /** @returns {Promise<void>} re-runs the pipeline for the current URL (C-46) */
 export function retry() {
   assertRouter()
-  return settle(navigation.reload({ info: { retry: true } }))
+  return run((info) => navigation.reload({ info }), { retry: true })
+}
+
+/**
+ * Back or forward one entry; resolves when the traversal and any redirect or
+ * rollback it causes finish.
+ * @param {-1 | 1} direction
+ * @returns {Promise<void>}
+ */
+export function traverse(direction) {
+  return run((info) => (direction < 0 ? navigation.back({ info }) : navigation.forward({ info })))
 }
 
 // ---------------------------------------------------------------- pipeline (§2)
 
 /**
+ * @param {number} epoch
  * @param {string | null} from
  * @param {string} to
- * @returns {Promise<true | false | string>}
+ * @returns {Promise<true | false | string | null>} null when a newer navigation took over,
+ *   so a superseded navigation calls no further guards (N126)
  */
-async function runGuards(from, to) {
+async function runGuards(epoch, from, to) {
   for (const { fn } of [...guards]) {
     const result = await fn({ from, to })
+    if (epoch !== navEpoch) return null
     if (result === false || typeof result === 'string') return result
   }
   return true
+}
+
+/**
+ * The href for a guard's redirect. It must stay a base-relative path in this
+ * app: an absolute URL, `//host`, or a path that leaves the base is a guard
+ * error, not a navigation (N129).
+ * @param {string} target
+ * @returns {string}
+ */
+function redirectHref(target) {
+  const href = url(target)
+  /** @type {URL | null} */
+  let dest = null
+  try {
+    dest = new URL(href, window.location.href)
+  } catch {}
+  if (!dest || dest.origin !== window.location.origin || stripBase(dest.pathname) === null) {
+    throw new Error(`A guard redirected to "${target}". Redirects must be base-relative paths inside the app; use go() for other URLs.`)
+  }
+  return href
+}
+
+/** A navigation committed: remember it as the one a cancel goes back to. */
+function markSettled() {
+  unsettled = false
+  const entry = navigation.currentEntry
+  settled = { key: entry?.key, url: entry?.url ?? window.location.href, state: { ...routerState } }
+}
+
+/**
+ * A guard cancelled: put back the last committed route and its history entry.
+ * A traversal or a push goes back to that entry, so no history entry is added
+ * or rewritten; a replace puts its URL back in place (N126).
+ * @param {NavOp} op
+ */
+function rollback(op) {
+  const target = /** @type {NonNullable<typeof settled>} */ (settled)
+  if (unsettled) {
+    // A superseded navigation had started loading: show the committed route again.
+    unsettled = false
+    Object.assign(routerState, target.state)
+    resetMeta(target.state.meta)
+  }
+  const current = navigation.currentEntry
+  const info = mark({ rollback: true })
+  if (target.key !== undefined && current?.key !== target.key &&
+      navigation.entries().some((entry) => entry.key === target.key)) {
+    follow(op, navigation.traverseTo(target.key, { info }))
+  } else if (current?.url !== target.url) {
+    follow(op, navigation.navigate(target.url, { history: 'replace', info }))
+  }
 }
 
 /**
@@ -189,6 +322,8 @@ async function runGuards(from, to) {
  */
 function commitError(error, phase, to) {
   Object.assign(routerState, { status: 'error', error: () => error, path: to, params: {}, page: null, layout: '', meta: {} })
+  resetMeta()
+  markSettled()
   return [{ error, phase }]
 }
 
@@ -200,6 +335,7 @@ function commitError(error, phase, to) {
  */
 async function load(epoch, to) {
   clearMeta()
+  unsettled = true
   Object.assign(routerState, { status: 'loading', path: to, params: {}, meta: {}, page: null, layout: '', error: null })
 
   /** @type {Record<string, string> | null} */
@@ -209,6 +345,8 @@ async function load(epoch, to) {
 
   if (!loader) {
     routerState.status = 'not-found'
+    resetMeta()
+    markSettled()
     return []
   }
 
@@ -235,7 +373,8 @@ async function load(epoch, to) {
     meta,
     status: route ? 'ready' : 'not-found',
   })
-  if (typeof meta.title === 'string' && meta.title) document.title = meta.title
+  resetMeta(meta)
+  markSettled()
   return []
 }
 
@@ -272,6 +411,9 @@ async function renderAndReport(epoch, from, to, errors) {
 export function reportRenderError(error) {
   renderErrors.push(error)
   Object.assign(routerState, { status: 'error', error: () => error, page: null, layout: '', meta: {} })
+  // Drop what the failed render's useMeta() set, watchers included (N128).
+  resetMeta()
+  if (settled) settled.state = { ...routerState }
 }
 
 /** @returns {unknown[]} render errors collected since the current navigation began */
@@ -285,19 +427,19 @@ export function takeRenderErrors() {
  * @param {string | null} from
  * @param {string} to
  * @param {NavInfo | undefined} info
- * @param {string | undefined} fromUrl  the full URL to put back if a guard cancels
+ * @param {NavOp} op
  */
-async function pipeline(from, to, info, fromUrl) {
+async function pipeline(from, to, info, op) {
   const epoch = begin()
   const redirects = info?.redirects ?? 0
   const first = info?.first ?? to
 
   /** @type {PipelineError[] | null} */
   let errors = null
-  /** @type {true | false | string} */
+  /** @type {true | false | string | null} */
   let result = true
   try {
-    result = await runGuards(from, to)
+    result = await runGuards(epoch, from, to)
   } catch (error) {
     if (epoch !== navEpoch) return
     errors = commitError(error, 'guard', to)
@@ -305,19 +447,32 @@ async function pipeline(from, to, info, fromUrl) {
   if (epoch !== navEpoch) return
 
   if (!errors && result === false) {
-    // Cancel: put the previous URL back, query and hash included, without
-    // re-running anything (2.x).
-    settle(navigation.navigate(fromUrl ?? url(from ?? '/'), { history: 'replace', info: { rollback: true } }))
-    return
+    // Cancel: go back to the last committed route and entry, query and hash
+    // included, without re-running anything (2.x, N126).
+    if (settled) {
+      rollback(op)
+      return
+    }
+    // Nothing committed yet (a navigation during startup): there is no page
+    // to stay on, so false goes to '/', as on the initial load (C-16).
+    result = '/'
   }
   // A redirect to the path being navigated to proceeds, as on the initial load
   // (C-16), so the redirect cap only catches real cycles (N66).
   if (!errors && typeof result === 'string' && normalizePath(result) !== to) {
-    if (redirects >= MAX_REDIRECTS) {
+    /** @type {string | null} */
+    let href = null
+    try {
+      href = redirectHref(result)
+    } catch (error) {
+      errors = commitError(error, 'guard', to)
+    }
+    if (!errors && redirects >= MAX_REDIRECTS) {
       errors = commitError(new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`), 'guard', to)
-    } else {
-      // The redirect target runs its own pipeline and fires the hooks.
-      settle(navigation.navigate(url(result), { history: 'replace', info: { redirects: redirects + 1, first } }))
+    } else if (!errors) {
+      // The redirect target runs its own pipeline and fires the hooks; the
+      // caller's go() waits for it (N127).
+      follow(op, navigation.navigate(/** @type {string} */ (href), { history: 'replace', info: mark({ redirects: redirects + 1, first, op }) }))
       return
     }
   }
@@ -335,7 +490,7 @@ function handleNavigate(event) {
   if (event.hashChange) return
   if (event.downloadRequest != null) return
   if (event.formData != null) return // a form POST is left to the browser
-  const info = /** @type {NavInfo | undefined} */ (event.info)
+  const info = /** @type {NavInfo | undefined} */ (internal.has(event.info) ? event.info : undefined)
   // A reload that isn't retry() (location.reload(), Vite's full reload) is a real
   // document reload, as it is without Quiver (N73).
   if (event.navigationType === 'reload' && !info?.retry) return
@@ -351,10 +506,10 @@ function handleNavigate(event) {
   if (relative === null) return // outside the base: a normal document load (R3)
 
   const to = normalizePath(relative)
-  const from = routerState.path || null
-  // Still the previous entry: intercept() hasn't committed the new URL yet.
-  const fromUrl = navigation.currentEntry?.url ?? undefined
-  event.intercept({ handler: () => pipeline(from, to, info, fromUrl) })
+  // The route on screen, not one still loading for a superseded navigation (N126).
+  const from = settled?.state.path || null
+  const op = info?.op ?? { next: null }
+  event.intercept({ handler: () => pipeline(from, to, info, op) })
 }
 
 // ---------------------------------------------------------------- lifecycle
@@ -380,6 +535,7 @@ export async function initRouter(options) {
   }
 
   setBase(resolvedBase)
+  captureMetaDefaults()
   records = Object.entries(/** @type {RouteManifest} */ (routes))
     .map(([pattern, loader]) => ({ pattern, loader }))
     .sort((a, b) => compareRoutes(a.pattern, b.pattern))
@@ -398,24 +554,32 @@ export async function initRouter(options) {
   let errors = null
 
   for (let hops = 0; ; hops++) {
-    /** @type {true | false | string} */
+    /** @type {true | false | string | null} */
     let result
     try {
-      result = await runGuards(null, to)
+      result = await runGuards(epoch, null, to)
     } catch (error) {
       if (epoch !== navEpoch) break
       errors = commitError(error, 'guard', to)
       break
     }
-    if (epoch !== navEpoch || result === true) break
+    if (epoch !== navEpoch || result === true || result === null) break
     const target = result === false ? '/' : result
     const next = normalizePath(target)
     if (next === to) break // 2.x: a redirect to the current path proceeds
+    /** @type {string} */
+    let href
+    try {
+      href = redirectHref(target)
+    } catch (error) {
+      errors = commitError(error, 'guard', to)
+      break
+    }
     if (hops === MAX_REDIRECTS) {
       errors = commitError(new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`), 'guard', to)
       break
     }
-    history.replaceState(history.state, '', url(target))
+    history.replaceState(history.state, '', href)
     to = next
   }
 
@@ -460,5 +624,7 @@ export function resetRouter() {
   notFoundLoader = undefined
   renderErrors = []
   initialReport = null
+  settled = null
+  unsettled = false
   phase = 'off'
 }

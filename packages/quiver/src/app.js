@@ -1,6 +1,6 @@
 import { html, reactive } from '@arrow-js/core'
 import { routerState, resetRouterState } from './state.js'
-import { clearMeta } from './meta.js'
+import { restoreMetaDefaults } from './meta.js'
 import { clearContext } from './context.js'
 import { setBase } from './base.js'
 import {
@@ -108,13 +108,13 @@ export function createApp(options) {
 /**
  * Tear down router, hooks, context, meta and the mounted app (D25). Idempotent;
  * works when only initRouter() ran. initRouter() + createApp() work again after it.
- * `document.title` is not restored.
+ * `document.title` and the description tag go back to the host page's own (N128).
  * @returns {void}
  */
 export function destroy() {
   bumpEpoch()               // 1. drop in-flight loads and hooks
   stopRouter()              // 2–3. navigate listener, guards, afterEach, onError
-  clearMeta()               // 4. useMeta watchers
+  restoreMetaDefaults()     // 4. useMeta watchers; host title and description back (N128)
   clearContext()            // 5. provide/inject
   if (current) {            // 6. unmount the outlet
     current.mount.mounted = false
