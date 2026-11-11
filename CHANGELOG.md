@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `useForm` recipe: a throwing or rejecting `validate` no longer leaves the form stuck in `submitting`; its message goes to `form.message` and the user can submit again. Each submit clears `submitted` and `message` first, and `validate` and `onSubmit` get the same snapshot of the values
+- Starter: leaving the Posts page aborts its requests (from an `afterEach` registered in the page, since a page inside a layout gets no `onCleanup`)
+- Core tarball: `prepack` copies each recipe's registry `files` and README, the same copy `recipes:sync` uses, so stray files in a recipe folder can't ship
+- `/add-layout`: the scaffold adds the toast import and the `ToastContainer()` mount together, only when the toasts recipe is installed
+
+### Security
+
+- `Link` recipe: `to` may be a path or an `http(s):`, `mailto:` or `tel:` URL; any other scheme (`javascript:`, `data:`…) and `//host` render without an `href`
+- Starter: the sign-in page says it is a demo with no password check and no session; the layouts recipe documents what a real `signOut` must do (end the server session, clear client user state)
+
+### Documentation
+
+- Cleanup claims for `arrow-use` and pages are qualified for pages inside a layout, with the `afterEach` pattern in troubleshooting
+
 ## [3.0.2] - 2026-11-10
 
 ### Fixed
