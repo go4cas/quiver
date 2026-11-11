@@ -99,7 +99,7 @@ import { afterEach } from 'vitest'
 afterEach(() => destroy())
 ```
 
-`onCleanup` runs only for a page rendered without a layout ([why](/guide/troubleshooting#cleanup-never-runs)). `document.title` and `<meta name="description">` go back to what the host page had when `initRouter()` ran.
+`onCleanup` callbacks registered in the page and layout functions run, inside a layout too ([page cleanup](/guide/troubleshooting#cleanup-never-runs)). `document.title` and `<meta name="description">` go back to what the host page had when `initRouter()` ran.
 
 ## Navigation
 

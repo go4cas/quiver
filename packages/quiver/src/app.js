@@ -1,4 +1,4 @@
-import { html, reactive } from '@arrow-js/core'
+import { html, reactive, component } from '@arrow-js/core'
 import { routerState, resetRouterState } from './state.js'
 import { restoreMetaDefaults } from './meta.js'
 import { clearContext } from './context.js'
@@ -21,6 +21,30 @@ const BareError = ({ message }) => html`<p role="alert">${message}</p>`
 
 /** @type {{ target: Element, mount: { mounted: boolean } } | null} the mounted app, if any */
 let current = null
+
+/**
+ * A page that returns a `component()` has its factory run here, inside the page
+ * scope, so its onCleanup callbacks belong to the scope (N162). Otherwise the
+ * component would sit in a template and Arrow would never clean it up (N64).
+ * Reads Arrow 1.0.6's component descriptor (`h` factory, `p` props); a unit test
+ * pins it, so an Arrow upgrade that changes the shape fails CI.
+ * @param {Renderable} view
+ * @returns {Renderable}
+ */
+function inScope(view) {
+  const cmp = /** @type {{ h?: unknown, p?: unknown }} */ (view)
+  if (cmp && typeof cmp === 'object' && typeof cmp.h === 'function') {
+    return /** @type {(props: unknown, emit: () => void) => Renderable} */ (cmp.h)(cmp.p ?? {}, () => {})
+  }
+  return view
+}
+
+/**
+ * A component factory must return a template; wrap anything else in one.
+ * @param {Renderable} view
+ * @returns {any}
+ */
+const asTemplate = (view) => (typeof view === 'function' ? view : html`${view}`)
 
 /** @param {unknown} error @returns {string} */
 const messageOf = (error) => (error instanceof Error ? error.message : String(error))
@@ -73,22 +97,27 @@ export function createApp(options) {
       console.warn(`[quiver] unknown layout "${name}"`)
     }
 
-    /** @type {Renderable} */
-    let view
-    try {
-      view = Layout ? Layout(Page()) : Page()
-    } catch (err) {
-      // Synchronous render error (C-48): show the error view now; the
-      // pipeline (or createApp, for the first mount) fires onError.
-      reportRenderError(err)
-      return errorView(err)
-    }
-    const keyed = /** @type {{ key?: (k: string) => Renderable }} */ (view)
-    return typeof keyed?.key === 'function' ? keyed.key(state.path) : view
+    // The page scope (N160): Page() and Layout() run inside a private component
+    // that is itself the outlet's slot value, keyed by path. Arrow runs its
+    // onCleanup callbacks when it is dropped (the next navigation's loading view,
+    // retry, destroy()), so onCleanup and arrow-use's cleanup work in page and
+    // layout bodies, inside a layout too (N64). Reactive reads in their bodies
+    // no longer re-run the outlet (N161).
+    const Scope = component(() => {
+      try {
+        return asTemplate(Layout ? Layout(inScope(Page())) : inScope(Page()))
+      } catch (err) {
+        // Synchronous render error (C-48): show the error view now; the
+        // pipeline (or createApp, for the first mount) fires onError.
+        reportRenderError(err)
+        return asTemplate(errorView(err))
+      }
+    })
+    return Scope().key(state.path)
   }
 
   // A fresh reactive flag per mount (C-50): destroy() sets it to false so Arrow
-  // drops the outlet's chunk and runs component onCleanup callbacks.
+  // drops the page scope and runs its onCleanup callbacks (N160).
   const mount = reactive({ mounted: true })
   el.replaceChildren()
   html`${() => (mount.mounted ? Outlet() : '')}`(el)

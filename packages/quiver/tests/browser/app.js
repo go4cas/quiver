@@ -1,7 +1,7 @@
 // The browser fixture for core's navigation tests (NOTES N126–N129): a bare
 // Quiver app with a gated loader and guards the tests switch on and off.
 // It runs unbundled from src/, behind an import map, like examples/no-build.
-import { html } from '@arrow-js/core'
+import { html, onCleanup } from '@arrow-js/core'
 import { afterEach, beforeEach, createApp, destroy, go, initRouter, useMeta, useRoute, useRouter } from '@go4cas/quiver'
 
 /** A promise the test resolves with window.fixture.release(name). */
@@ -35,11 +35,26 @@ const routes = {
   '/denied': () => ({ default: Page('Denied') }),
   '/admin': () => ({ default: Page('Admin') }),
   '/login': () => ({ default: Page('Login') }),
+  // A page inside a layout that starts a request and aborts it in onCleanup (N160).
+  '/feed': () => ({
+    meta: { layout: 'shell' },
+    default: () => {
+      const controller = new AbortController()
+      fetch('feed.json', { signal: controller.signal }).catch(() => {})
+      onCleanup(() => { cleaned.push('feed'); controller.abort() })
+      return html`<h1>Feed</h1>`
+    },
+  }),
   '/flaky': () => {
     if (!flags.flakyLoads) throw new Error('Flaky failed to load')
     return { default: Page('Flaky') }
   },
 }
+
+/** @type {string[]} the pages whose onCleanup ran */
+const cleaned = []
+/** @param {unknown} content */
+const Shell = (content) => html`<div data-layout="shell">${content}</div>`
 
 const flags = { denyOverview: false, holdLogin: false, flakyLoads: false }
 /** @type {string[]} */
@@ -61,6 +76,7 @@ async function start() {
   await initRouter({ routes })
   createApp({
     target: '#app',
+    layouts: { shell: Shell },
     error: ({ message, retry: again }) => {
       retry = again
       return html`<p role="alert">${message}</p>`
@@ -83,6 +99,7 @@ Object.assign(window, {
     release: (name) => { gate(name); gates[name].open() },
     status: () => route.status(),
     path: () => route.path(),
+    cleaned,
     retry: () => /** @type {() => Promise<void>} */ (retry)(),
     destroy,
     start,

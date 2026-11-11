@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `@go4cas/quiver` (3.1): each page renders with its layout inside a cleanup scope, a private component keyed by path. `onCleanup` from `@arrow-js/core`, and every `arrow-use` composable, called in a page or layout function is cleaned up when the page is left (after the next navigation's guards pass), on `retry()` and on `destroy()`, inside a layout too; before, `onCleanup` there threw and composables were never stopped. A `component()` nested inside a page's template still gets no cleanup (Arrow 1.0.6). No new export (N160, N162, N163)
+- `@go4cas/quiver` (3.1): a reactive value read in a page or layout body (outside a `() =>` slot) no longer renders the whole page again; only slots update (N161)
+- Starter: the Posts page drops its `afterEach` workaround; `useFetch` aborts on its own when you leave the page or call `destroy()`
 - `@go4cas/quiver`, internal only: the manifest check and the page scanner share one set of route-pattern rules and collision checks (each keeps its own messages), and the router classifies guard results in one place for the initial load and in-app navigations, with each navigation's pending render errors and initial report kept on the navigation itself (audit R14, N170, N171). No API or behaviour change; new tests run one rule table against manual and scanned manifests, and the browser suite now covers startup redirects, `retry()` and `destroy()` during a load in all three engines
 
 ### Security

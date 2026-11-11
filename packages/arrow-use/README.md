@@ -55,7 +55,7 @@ Every composable here follows the same rules, and so should one you add:
 
 ### Cleanup and nested components
 
-Arrow runs a component's `onCleanup` only when that component is itself what a slot drops, as in `${() => show ? Panel() : ''}`. A component rendered inside another template, such as a page inside a layout, isn't cleaned up when its parent goes away (Arrow 1.0.6). If a composable there holds something that must be released, call `stop()` yourself.
+Arrow runs a component's `onCleanup` only when that component is itself what a slot drops, as in `${() => show ? Panel() : ''}`. A component rendered inside another template isn't cleaned up when its parent goes away (Arrow 1.0.6). If a composable there holds something that must be released, call `stop()` yourself. In a Quiver 3.1+ app, composables called in a page or layout function are cleaned up when the page is left, inside a layout too.
 
 ## Example
 

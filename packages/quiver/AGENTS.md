@@ -81,7 +81,7 @@ These are easy to get wrong and fail silently:
    ```js
    html`<li>${() => (item.done ? html`<b>done</b>` : html``)}</li>`.key(item.id)
    ```
-6. `onCleanup` only runs for a component that is itself a slot's value. Components nested inside a layout's template are not cleaned up, so don't rely on it there: a page that starts a `useFetch`, timer or listener stops it from an `afterEach` registered in the page (`afterEach(({ to }) => { if (to !== here) stop() })`, with `here = useRoute().path()`).
+6. Quiver renders each page and its layout inside a cleanup scope, so `onCleanup` (from `@arrow-js/core`) and `arrow-use` composables called in the page or layout function are cleaned up when the page is left, on `retry()` and on `destroy()`, inside a layout too. A `component()` nested inside the page's template is not (Arrow 1.0.6): call composables in the page function and pass values down, or call their `stop()` yourself.
 7. Arrow flushes DOM updates on a microtask: in tests, `await nextTick()` after changing state.
 
 ## State and composables

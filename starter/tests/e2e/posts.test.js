@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test'
 
 const API = 'https://jsonplaceholder.typicode.com/posts'
 
-// Audit R04 (N141): the Posts page sits inside the menu layout, where Arrow never
-// runs onCleanup, so it stops its own requests from an afterEach hook.
+// Audit R04 (N141, N160): the Posts page sits inside the menu layout; Quiver's
+// page scope runs useFetch's cleanup when you leave it.
 test('leaving Posts aborts its in-flight request once, and a later visit starts fresh', async ({ page }) => {
   /** @type {import('@playwright/test').Route[]} */
   const held = []
