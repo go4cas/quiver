@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.3] - 2026-11-11
+
+Published as `@go4cas/quiver` 3.0.3 and `arrow-use` 0.1.1. Fixes from the external review and security audit of 3.0.2.
+
 ### Fixed
 
 - `@go4cas/quiver`: a guard that cancels while another route is still loading no longer leaves the app stuck on the loading view; the page on screen, its URL and status come back. Guards get that page as `from`, and a superseded navigation calls no further guards (N126)
@@ -262,6 +266,8 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[Unreleased]: https://github.com/go4cas/quiver/compare/v3.0.3...HEAD
+[3.0.3]: https://github.com/go4cas/quiver/releases/tag/v3.0.3
 [3.0.2]: https://github.com/go4cas/quiver/releases/tag/v3.0.2
 [3.0.1]: https://github.com/go4cas/quiver/releases/tag/v3.0.1
 [3.0.0]: https://github.com/go4cas/quiver/releases/tag/v3.0.0
