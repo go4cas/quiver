@@ -46,7 +46,7 @@ await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
 
 - It does **not** reject when a guard, loader or the not-found case fails for the first page: the error view shows it once `createApp()` mounts, and `onError` reports it then.
 - It throws (rejects) when: `window.navigation` is missing (`Quiver needs the Navigation API (…)`, see [browser support](/guide/routing#browser-support)); it was already called (`initRouter() was already called. Call destroy() first.`); the manifest is invalid (`TypeError` naming the key); `base` doesn't start with `/` (`TypeError`); the current URL is outside the base (`Current URL "…" is outside base "…".`).
-- Manifest rules: keys start with `/`, no trailing slash (except `/`), no `//`, `?` or `#`; `:param` names are identifiers, unique per pattern; no two keys that differ only in param names. Values are functions.
+- Manifest rules: keys start with `/`, no trailing slash (except `/`), no `//`, `?` or `#`; `:param` names are identifiers, unique per pattern; no two keys that differ only in param names, or that spell one route two ways (`/café`, `/caf%C3%A9`). Values are functions. Static segments match decoded and NFC-normalised, so a literal or an encoded key matches the browser's URL.
 - Matching: the most specific pattern wins (a static segment beats a param, leftmost first), whatever the key order.
 
 ### createApp

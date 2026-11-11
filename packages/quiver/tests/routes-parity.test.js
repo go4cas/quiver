@@ -37,7 +37,7 @@ describe('S-40: route front-end parity', () => {
     for (const spec of specs(viaCli(PAGES).source)) expect(spec).toMatch(/^\.\.?\//)
   })
 
-  it.each(['nested-not-found', 'duplicate', 'param-names', 'bad-pattern'])('broken fixture %s fails the same way in all three', async (name) => {
+  it.each(['nested-not-found', 'duplicate', 'param-names', 'bad-pattern', 'percent'])('broken fixture %s fails the same way in all three', async (name) => {
     const dir = join(FIXTURES, 'broken', name)
     const vite = await viaVite(dir).catch((e) => e.message)
     const bun = await viaBun(dir).catch((e) => e.message)

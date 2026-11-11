@@ -3,8 +3,8 @@
 // pages directory to a file, for builds without the Vite or Bun plugin.
 // Node ≥ 22.12 or Bun; no Bun-only API.
 import { watch } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateManifest, scanPages, toPosix } from '../src/node/scanner.js'
 
@@ -25,8 +25,13 @@ function show(path) {
   return rel && !rel.startsWith('..') ? toPosix(rel) : path
 }
 
+/** @param {unknown} error @returns {string} the message alone, no stack */
+const message = (error) => (error instanceof Error ? error.message : String(error))
+
 /**
- * Scan and write `out` when its content changed (S-30, S-31).
+ * Scan and write `out` when its content changed (S-30, S-31). The file is
+ * written to a sibling temporary file and renamed over `out`, so a reader never
+ * sees half a manifest, and a scan error leaves the last good one in place (N136).
  * @param {string} dir absolute pages dir
  * @param {string} out absolute output file
  * @returns {Promise<boolean>} whether the file was written
@@ -41,8 +46,93 @@ async function writeRoutes(dir, out) {
   const current = await readFile(out, 'utf8').catch(() => null)
   if (current === source) return false
   await mkdir(outDir, { recursive: true })
-  await writeFile(out, source)
+  // A leading "." keeps the temp file out of a scan when --out is inside --dir (S-1).
+  const temp = join(outDir, `.${basename(out)}.${process.pid}.tmp`)
+  try {
+    await writeFile(temp, source)
+    await rename(temp, out)
+  } catch (error) {
+    await rm(temp, { force: true })
+    throw error
+  }
   return true
+}
+
+/**
+ * `--watch` (S-33, N136): one scan at a time. Changes are debounced 50 ms, and a
+ * change during a scan queues exactly one more, so the last scan starts after
+ * the last change. A scan error is printed and the last good manifest stays.
+ * The watcher starts before the first scan, so a page added during it is not
+ * missed. A pages directory that can't be watched, or a watcher that fails
+ * later, ends the process with exit code 1 and one `[quiver] ` line.
+ * @param {string} dir absolute pages dir
+ * @param {string} out absolute output file
+ * @returns {Promise<number | undefined>} 1 when watching can't start; undefined while it runs
+ */
+async function watchRoutes(dir, out) {
+  // Fail fast, before any watcher exists, on a directory that is missing or
+  // unreadable; fs.watch would throw or keep running blind.
+  try {
+    await readdir(dir)
+  } catch (error) {
+    const code = /** @type {NodeJS.ErrnoException} */ (error).code
+    process.stderr.write(code === 'ENOENT' || code === 'ENOTDIR'
+      ? `[quiver] Pages directory not found: ${dir}\n`
+      : `[quiver] Cannot watch ${show(dir)}: ${message(error)}\n`)
+    return 1
+  }
+
+  /** @type {Promise<void> | null} */
+  let running = null
+  let again = false
+  let first = true
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
+  let timer
+
+  const scan = () => {
+    if (running) {
+      again = true
+      return
+    }
+    running = (async () => {
+      do {
+        again = false
+        try {
+          const written = await writeRoutes(dir, out)
+          if (written || first) process.stdout.write(`${written ? 'Wrote' : 'Unchanged'} ${show(out)}\n`)
+        } catch (error) {
+          process.stderr.write(`${message(error)}\n`)
+        }
+        if (first) process.stdout.write(`Watching ${show(dir)}\n`)
+        first = false
+      } while (again)
+      running = null
+    })()
+  }
+
+  /** @type {import('node:fs').FSWatcher} */
+  let watcher
+  try {
+    watcher = watch(dir, { recursive: true }, (event, filename) => {
+      if (event !== 'rename') return
+      // Skipped names (S-1), including the temp file, never change the manifest.
+      if (filename && toPosix(filename).split('/').some((part) => part.startsWith('_') || part.startsWith('.'))) return
+      clearTimeout(timer)
+      timer = setTimeout(scan, 50)
+    })
+  } catch (error) {
+    process.stderr.write(`[quiver] Cannot watch ${show(dir)}: ${message(error)}\n`)
+    return 1
+  }
+  watcher.on('error', (error) => {
+    clearTimeout(timer)
+    watcher.close()
+    process.stderr.write(`[quiver] Stopped watching ${show(dir)}: ${message(error)}\n`)
+    process.exitCode = 1
+  })
+
+  scan()
+  return undefined
 }
 
 /** @param {string[]} argv */
@@ -69,7 +159,7 @@ async function main(argv) {
   try {
     parsed = parse(argv)
   } catch (error) {
-    process.stderr.write(`${/** @type {Error} */ (error).message}\n\n${USAGE}`)
+    process.stderr.write(`${message(error)}\n\n${USAGE}`)
     return 2
   }
 
@@ -97,35 +187,16 @@ async function main(argv) {
     return 2
   }
 
-  // S-33: rescan on add/remove/rename, debounced 50 ms; errors are printed and
-  // the watcher keeps running. It starts before the first write, so a page added
-  // while that scan runs is not missed.
-  if (values.watch) {
-    /** @type {ReturnType<typeof setTimeout> | undefined} */
-    let timer
-    watch(dir, { recursive: true }, (event) => {
-      if (event !== 'rename') return
-      clearTimeout(timer)
-      timer = setTimeout(() => {
-        writeRoutes(dir, out).then(
-          (written) => written && process.stdout.write(`Wrote ${show(out)}\n`),
-          (error) => process.stderr.write(`${/** @type {Error} */ (error).message}\n`),
-        )
-      }, 50)
-    })
-  }
+  if (values.watch) return watchRoutes(dir, out)
 
   try {
     const written = await writeRoutes(dir, out)
     process.stdout.write(`${written ? 'Wrote' : 'Unchanged'} ${show(out)}\n`)
   } catch (error) {
-    process.stderr.write(`${/** @type {Error} */ (error).message}\n`)
-    if (!values.watch) return 1
+    process.stderr.write(`${message(error)}\n`)
+    return 1
   }
-
-  if (!values.watch) return 0
-  process.stdout.write(`Watching ${show(dir)}\n`)
-  return undefined
+  return 0
 }
 
 const code = await main(process.argv.slice(2))

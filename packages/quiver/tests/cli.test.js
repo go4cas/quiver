@@ -2,7 +2,7 @@
 // TECH-SPEC §4.5, S-30…S-34: the `quiver routes` CLI.
 import { describe, it, expect } from 'vitest'
 import { spawn } from 'node:child_process'
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { CLI, runCli } from './helpers/frontends.js'
@@ -126,6 +126,83 @@ describe('quiver routes', () => {
       expect(read()).toContain("'/contact'")
     } finally {
       child.kill()
+    }
+  })
+
+  /**
+   * Start `quiver routes --watch` in cwd.
+   * @param {string} cwd
+   */
+  function watching(cwd) {
+    const child = spawn('node', [CLI, 'routes', '--watch'], { cwd })
+    const io = { stdout: '', stderr: '', child }
+    child.stdout.on('data', (d) => { io.stdout += d })
+    child.stderr.on('data', (d) => { io.stderr += d })
+    return io
+  }
+
+  /** @param {import('node:child_process').ChildProcess} child */
+  const exited = (child) => new Promise((resolve) => child.on('exit', (code) => resolve(code)))
+
+  it('N136: --watch on a missing directory prints one [quiver] line and exits 1', async () => {
+    const cwd = mkdtempSync(join(tmpdir(), 'quiver-cli-'))
+    const io = watching(cwd)
+    expect(await exited(io.child)).toBe(1)
+    expect(io.stderr).toBe(`[quiver] Pages directory not found: ${join(cwd, 'src', 'pages')}\n`)
+    expect(io.stdout).toBe('')
+  })
+
+  // Root reads any directory, so the permission case only runs as a normal user.
+  it.skipIf(process.getuid?.() === 0 || process.platform === 'win32')('N136: --watch on an unreadable directory prints one [quiver] line and exits 1', async () => {
+    const cwd = project()
+    const pages = join(cwd, 'src', 'pages')
+    chmodSync(pages, 0o000)
+    try {
+      const io = watching(cwd)
+      expect(await exited(io.child)).toBe(1)
+      expect(io.stderr).toMatch(/^\[quiver\] Cannot watch src\/pages: .*EACCES.*\n$/)
+      expect(io.stderr).not.toContain('    at ')
+    } finally {
+      chmodSync(pages, 0o755)
+    }
+  })
+
+  it('N136: rapid changes end at the latest manifest; a bad scan keeps the last good one', async () => {
+    const cwd = project()
+    const pages = join(cwd, 'src', 'pages')
+    const out = join(cwd, 'src', 'routes.gen.js')
+    const read = () => { try { return readFileSync(out, 'utf8') } catch { return '' } }
+    const io = watching(cwd)
+    try {
+      await until(() => io.stdout.includes('Watching'))
+
+      // A burst of adds and removes, spread past the 50 ms debounce so scans
+      // overlap with new events.
+      for (let i = 0; i < 12; i++) {
+        writeFileSync(join(pages, `p${i}.js`), "export default () => ''\n")
+        if (i % 3 === 2) rmSync(join(pages, `p${i - 1}.js`))
+        await new Promise((r) => setTimeout(r, 20))
+      }
+      const expected = Array.from({ length: 12 }, (_, i) => i).filter((i) => i % 3 !== 1)
+      await until(() => expected.every((i) => read().includes(`'/p${i}'`)) && !read().includes("'/p1'"))
+      await new Promise((r) => setTimeout(r, 300))
+      for (let i = 0; i < 12; i++) expect(read().includes(`'/p${i}'`)).toBe(expected.includes(i))
+
+      // An invalid edit: the error is printed, the last good manifest stays.
+      const good = read()
+      writeFileSync(join(pages, '100%.js'), "export default () => ''\n")
+      await until(() => io.stderr.includes('100%.js contains "%"'))
+      await new Promise((r) => setTimeout(r, 200))
+      expect(read()).toBe(good)
+      expect(io.child.exitCode).toBeNull()
+
+      // Fixing it resumes; no temporary file is left behind.
+      rmSync(join(pages, '100%.js'))
+      writeFileSync(join(pages, 'last.js'), "export default () => ''\n")
+      await until(() => read().includes("'/last'"))
+      expect(readdirSync(join(cwd, 'src')).filter((f) => f.endsWith('.tmp'))).toEqual([])
+    } finally {
+      io.child.kill()
     }
   })
 })
