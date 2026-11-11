@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach as before } from 'vitest'
 import { html, component, onCleanup, nextTick } from '@arrow-js/core'
 import { createApp, destroy } from '../src/app.js'
-import { initRouter, go, beforeEach as guard, afterEach as after, onError } from '../src/router.js'
+import { initRouter, go, retry as retryRoute, beforeEach as guard, afterEach as after, onError } from '../src/router.js'
 import { provide, inject } from '../src/context.js'
 import { useMeta } from '../src/meta.js'
 import { useRoute } from '../src/route.js'
@@ -275,7 +275,7 @@ describe('render errors (C-48)', () => {
 })
 
 describe('destroy (C-49, C-50, C-62, C-63)', () => {
-  it('(a) a page component rendered without a layout has its onCleanup run on destroy() (N64 caveat)', async () => {
+  it('(a) a page component rendered without a layout has its onCleanup run on destroy() (N162)', async () => {
     const cleanup = vi.fn()
     const PageComponent = component(() => {
       onCleanup(cleanup)
@@ -385,5 +385,139 @@ describe('destroy (C-49, C-50, C-62, C-63)', () => {
     await boot({ '/': mod(Page('two')) })
     createApp({ target })
     expect(target.textContent).toBe('two')
+  })
+})
+
+describe('page scope: onCleanup in pages and layouts (N160–N163)', () => {
+  const menu = (/** @type {any} */ c) => html`<div data-layout="menu">${c}</div>`
+  const layouts = { menu }
+
+  /** @param {() => void} cleanup @param {string} [text] */
+  const CleaningPage = (cleanup, text = 'a') => () => {
+    onCleanup(cleanup)
+    return html`<p>${text}</p>`
+  }
+
+  it('a plain page inside a layout: onCleanup runs when the next navigation leaves it, once', async () => {
+    const cleanup = vi.fn()
+    const nav = await boot({ '/': mod(CleaningPage(cleanup), { layout: 'menu' }), '/b': mod(Page('b'), { layout: 'menu' }) })
+    createApp({ target, layouts })
+    expect(target.textContent).toBe('a')
+    expect(cleanup).not.toHaveBeenCalled()
+    await go('/b')
+    await nav.idle()
+    expect(target.textContent).toBe('b')
+    expect(cleanup).toHaveBeenCalledTimes(1)
+  })
+
+  it('a plain page inside a layout: onCleanup runs on destroy()', async () => {
+    const cleanup = vi.fn()
+    await boot({ '/': mod(CleaningPage(cleanup), { layout: 'menu' }) })
+    createApp({ target, layouts })
+    destroy()
+    await nextTick()
+    expect(cleanup).toHaveBeenCalledTimes(1)
+  })
+
+  it('a guard that cancels keeps the page and runs no cleanup', async () => {
+    const cleanup = vi.fn()
+    guard(({ to }) => (to === '/b' ? false : undefined))
+    const nav = await boot({ '/': mod(CleaningPage(cleanup), { layout: 'menu' }), '/b': mod(Page('b'), { layout: 'menu' }) })
+    createApp({ target, layouts })
+    await go('/b')
+    await nav.idle()
+    expect(target.textContent).toBe('a')
+    expect(cleanup).not.toHaveBeenCalled()
+  })
+
+  it('retry() renders the page again and cleans up the old render first', async () => {
+    const cleanup = vi.fn()
+    let renders = 0
+    const page = () => { renders++; onCleanup(cleanup); return html`<p>a</p>` }
+    const nav = await boot({ '/': mod(page, { layout: 'menu' }) })
+    createApp({ target, layouts })
+    await retryRoute()
+    await nav.idle()
+    expect(renders).toBe(2)
+    expect(cleanup).toHaveBeenCalledTimes(1)
+    expect(target.textContent).toBe('a')
+  })
+
+  it('the layout body gets onCleanup too, per page render', async () => {
+    const cleanup = vi.fn()
+    const tracked = (/** @type {any} */ c) => { onCleanup(cleanup); return html`<div>${c}</div>` }
+    const nav = await boot({ '/': mod(Page('a'), { layout: 'tracked' }), '/b': mod(Page('b'), { layout: 'tracked' }) })
+    createApp({ target, layouts: { tracked } })
+    await go('/b')
+    await nav.idle()
+    expect(cleanup).toHaveBeenCalledTimes(1)
+    destroy()
+    await nextTick()
+    expect(cleanup).toHaveBeenCalledTimes(2)
+  })
+
+  it('a page that returns a component() gets its cleanup inside a layout too (N162)', async () => {
+    const cleanup = vi.fn()
+    const PageComponent = component(() => {
+      onCleanup(cleanup)
+      return html`<p>comp</p>`
+    })
+    const nav = await boot({ '/': mod(() => PageComponent(), { layout: 'menu' }), '/b': mod(Page('b'), { layout: 'menu' }) })
+    createApp({ target, layouts })
+    expect(target.querySelector('[data-layout="menu"]')?.textContent).toBe('comp')
+    await go('/b')
+    await nav.idle()
+    expect(cleanup).toHaveBeenCalledTimes(1)
+  })
+
+  it('a composable that registers its stop with try { onCleanup } aborts its request on leave and on destroy()', async () => {
+    /** @type {AbortSignal[]} */
+    const signals = []
+    // The arrow-use pattern (U-5): no throw outside a component, stop() on unmount.
+    const useRequest = () => {
+      const controller = new AbortController()
+      signals.push(controller.signal)
+      try { onCleanup(() => controller.abort()) } catch {}
+    }
+    const page = () => { useRequest(); return html`<p>a</p>` }
+    const nav = await boot({ '/': mod(page, { layout: 'menu' }), '/b': mod(Page('b'), { layout: 'menu' }) })
+    createApp({ target, layouts })
+    await go('/b')
+    await nav.idle()
+    expect(signals[0].aborted).toBe(true)
+    await go('/')
+    await nav.idle()
+    expect(signals[1].aborted).toBe(false)
+    destroy()
+    await nextTick()
+    expect(signals[1].aborted).toBe(true)
+  })
+
+  it('a reactive read in a page body does not render the page again (N161)', async () => {
+    const state = reactive({ n: 1 })
+    let renders = 0
+    const page = () => { renders++; void state.n; return html`<p>${() => state.n}</p>` }
+    await boot({ '/': mod(page, { layout: 'menu' }) })
+    createApp({ target, layouts })
+    state.n = 2
+    await nextTick()
+    expect(target.textContent).toBe('2')
+    expect(renders).toBe(1)
+  })
+
+  it('known limit (N64): a component nested in a page template still gets no cleanup', async () => {
+    // Arrow 1.0.6 recycles a template's nested components without running their
+    // cleanups. If an Arrow upgrade fixes this, this test fails: update the docs
+    // ("Cleanup never runs") and NOTES N163, then flip the assertion.
+    const cleanup = vi.fn()
+    const Child = component(() => {
+      onCleanup(cleanup)
+      return html`<i>child</i>`
+    })
+    const nav = await boot({ '/': mod(() => html`<p>${Child()}</p>`), '/b': mod(Page('b')) })
+    createApp({ target })
+    await go('/b')
+    await nav.idle()
+    expect(cleanup).not.toHaveBeenCalled()
   })
 })

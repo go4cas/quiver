@@ -58,37 +58,23 @@ html`<li>${() => (item.done ? html`<b>done</b>` : html``)}</li>`.key(item.id)
 
 ## Cleanup never runs
 
-Arrow 1.0.6 runs a component's `onCleanup` only when that component is itself the value a slot drops, as in `${() => (open ? Panel() : html``)}`. A component inside another template, including every page rendered inside a layout, is recycled with its parent and never gets `onCleanup`, on navigation or on `destroy()`.
-
-So a watcher, timer or listener started in such a component keeps running. Stop it yourself when you're done with it, for example with the `stop()` that every `arrow-use` composable returns, or keep long-lived listeners in a store instead of a component. A page rendered without a layout does get its cleanup.
-
-For a page inside a layout, `afterEach` can stop what the page started once the app navigates elsewhere. The starter's Posts page does this (`src/pages/posts.js`):
+Since 3.1, Quiver renders each page and its layout inside a cleanup scope. `onCleanup` from `@arrow-js/core`, and every `arrow-use` composable, called in the page or layout function is cleaned up when the page leaves the screen: after the next navigation's guards pass, on `retry()`, and on `destroy()`. That holds inside a layout too. A navigation a guard cancels keeps the page and runs nothing.
 
 ```js
-import { afterEach, useRoute } from '@go4cas/quiver'
+import { html, onCleanup } from '@arrow-js/core'
 import { useFetch } from 'arrow-use'
 
-let stopActive = null // the last render's stop, for a same-path re-render
-
-function PostsPage() {
-  const posts = useFetch('/api/posts')
-  const here = useRoute().path()
-
-  stopActive?.()
-  const stop = () => {
-    posts.stop()          // aborts a request still in flight
-    offAfterEach()
-    if (stopActive === stop) stopActive = null
-  }
-  // The first call is the navigation that rendered this page (to === here).
-  const offAfterEach = afterEach(({ to }) => { if (to !== here) stop() })
-  stopActive = stop
-
+export default function PostsPage() {
+  const posts = useFetch('/api/posts')     // aborted when you leave
+  const id = setInterval(refresh, 30_000)
+  onCleanup(() => clearInterval(id))      // runs at the same moment
   return html`…`
 }
 ```
 
-`destroy()` clears `afterEach` handlers without calling them, so this pattern doesn't cover tearing the whole app down; stop page resources yourself before `destroy()` if that matters.
+One case is still Arrow's (1.0.6): a `component()` rendered inside another template, as in `` html`<div>${Panel()}</div>` ``, is recycled with its parent and never gets `onCleanup`. A component is cleaned up only when it is itself the value a slot drops, as in `${() => (open ? Panel() : html``)}`. So call composables in the page function and pass their values down, or call the `stop()` every `arrow-use` composable returns.
+
+In 3.0, pages inside a layout got no cleanup at all; the 3.0 workaround of stopping requests from an `afterEach` in the page can go.
 
 ## `Quiver needs the Navigation API`
 

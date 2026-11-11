@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `@go4cas/quiver`: the router's browser suite also runs in Firefox and WebKit, at `/` and under `/sub/app/`, from `bun run test:browsers` and a CI `browsers` job in the pinned Playwright image; it also checks the error `initRouter()` throws without the Navigation API (N155)
 
+### Changed
+
+- `@go4cas/quiver` (3.1): each page renders with its layout inside a cleanup scope, a private component keyed by path. `onCleanup` from `@arrow-js/core`, and every `arrow-use` composable, called in a page or layout function is cleaned up when the page is left (after the next navigation's guards pass), on `retry()` and on `destroy()`, inside a layout too; before, `onCleanup` there threw and composables were never stopped. A `component()` nested inside a page's template still gets no cleanup (Arrow 1.0.6). No new export (N160, N162, N163)
+- `@go4cas/quiver` (3.1): a reactive value read in a page or layout body (outside a `() =>` slot) no longer renders the whole page again; only slots update (N161)
+- Starter: the Posts page drops its `afterEach` workaround; `useFetch` aborts on its own when you leave the page or call `destroy()`
+
 ### Security
 
 - Repo tooling, no package change: a `Publish` workflow can stage releases of `@go4cas/quiver` and `arrow-use` on npm from a release tag through trusted publishing (OIDC, no npm token), with provenance; the maintainer still approves each one on npmjs.com. It stays build-only until switched on; `RELEASING.md` has the setup and the release steps

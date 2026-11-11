@@ -76,7 +76,7 @@ export const Counter = component((props) => {
 
 - [`hmrState(key, initial)`](/recipes/hmrState) is `reactive(initial)` that survives Vite hot reloads in dev. The key must be unique per instance on the page.
 - `watch(fn)` runs `fn` and re-runs it when what it read changes; it returns `[value, stop]`.
-- `onCleanup(stop)` runs when the component unmounts. Within a layout it may not ([why](./troubleshooting#cleanup-never-runs)).
+- `onCleanup(stop)` runs when the component unmounts. A component nested inside a page's template may not; the page function itself always gets it ([why](./troubleshooting#cleanup-never-runs)).
 
 ## Lists
 

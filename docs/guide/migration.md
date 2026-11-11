@@ -120,7 +120,7 @@ Most apps need nothing here, but these changed:
 
 ## 7. Know the cleanup caveat
 
-This is unchanged from 2.x, but now documented: Arrow 1.0.6 runs `onCleanup` only for a component that is itself the value a slot drops. Components inside a layout's template (every page with a layout, and their children) never get `onCleanup`, on navigation or on `destroy()`. Stop watchers, timers and listeners there yourself ([troubleshooting](./troubleshooting#cleanup-never-runs)).
+In 2.x and 3.0, a page inside a layout never got `onCleanup`, on navigation or on `destroy()`. Since 3.1, Quiver renders each page and its layout inside a cleanup scope, so `onCleanup` and `arrow-use` composables called in the page or layout function are cleaned up. Arrow 1.0.6 still runs `onCleanup` only for a component that is itself the value a slot drops, so a `component()` nested inside a page's template gets none: stop what it starts yourself ([troubleshooting](./troubleshooting#cleanup-never-runs)).
 
 ## New in 3.0
 
