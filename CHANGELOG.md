@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docs: type resolution is documented per entry point (the main entry also works under `node10` since 3.0.1), and the Vite page states the tested Vite range (8) instead of "any Vite"
 - Node minimums are stated separately: `@go4cas/quiver` (CLI and plugins) on Node 22.12+, the workspace and the starter (Vitest with jsdom) on Node `^22.22.2 || ^24.15.0 || >=26.0.0`; CI's unit job runs on those minimums
 - Example servers (`examples/bun`, `examples/no-build`, the arrow-use example, the recipes' e2e app) listen on `127.0.0.1` only, serve only the folders the page needs, answer malformed paths with 400, and refuse an unsafe `QUIVER_BASE`
+- `arrow-use` `useStorage`: creating it no longer writes and removes a `__arrow-use__` probe key, which overwrote and deleted an app's own key of that name. Construction only reads, so a stored value now loads when the storage allows reads but not writes; a failed read, write or remove each falls back to memory on its own (N130)
+- `arrow-use` `useFetch`: a non-`Error` thrown value (e.g. a `transform` that throws `null`) no longer makes `refetch()` reject with a `TypeError`; it becomes an `error()` message. An abort through a caller's `signal` with a custom reason is no longer reported as an error. A `transform` that calls `reset()`, `stop()` or `refetch()` no longer publishes its stale result (N131)
 
 ### Added
 
