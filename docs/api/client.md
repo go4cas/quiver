@@ -19,7 +19,7 @@ Which entry points have types depends on `moduleResolution`. `"bundler"` and `"n
 |---|---|---|
 | `@go4cas/quiver` | types | types (top-level `types`, since 3.0.1) |
 | `@go4cas/quiver/vite`, `/bun`, `/client` | types | no types: subpaths exist only in `exports` |
-| `arrow-use` | types | no types: `arrow-use` 0.1.1 has no top-level `types` |
+| `arrow-use` | types | no types: `arrow-use` 0.1.2 has no top-level `types` |
 
 So use `"bundler"` (or `"node16"`/`"nodenext"`), as above. Quiver's CI installs the packed packages into fresh projects and type-checks each column with `skipLibCheck: false` on TypeScript 5.9 and 7 (node10 on 5.9 only, since TypeScript 7 removed it), with the Vite plugin inside Vite's `defineConfig()` and the Bun plugin inside a `Bun.build()` call typed by `@types/bun`.
 

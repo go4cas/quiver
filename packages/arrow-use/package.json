@@ -1,6 +1,6 @@
 {
   "name": "arrow-use",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Composables for Arrow.js: useFetch, useStorage, useMediaQuery, useEventListener.",
   "type": "module",
   "license": "MIT",
