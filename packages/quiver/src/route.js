@@ -1,5 +1,5 @@
 import { routerState } from './state.js'
-import { go, settle } from './router.js'
+import { go, traverse } from './router.js'
 
 /** @typedef {import('./types.js').RouteStatus} RouteStatus */
 /** @typedef {import('./types.js').PageMeta} PageMeta */
@@ -24,14 +24,15 @@ export function useRoute() {
 }
 
 /**
- * Navigation helpers. `back()` and `forward()` resolve when the traversal
- * finishes and swallow AbortError, like `go()`.
+ * Navigation helpers. Each resolves when the navigation finishes, including a
+ * guard's redirect or rollback, and swallows AbortError when an unrelated
+ * navigation takes over.
  * @returns {{ go: typeof go, back: () => Promise<void>, forward: () => Promise<void> }}
  */
 export function useRouter() {
   return {
     go,
-    back: () => settle(navigation.back()),
-    forward: () => settle(navigation.forward()),
+    back: () => traverse(-1),
+    forward: () => traverse(1),
   }
 }

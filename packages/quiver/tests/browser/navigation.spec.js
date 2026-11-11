@@ -1,0 +1,84 @@
+// Navigation on the real Navigation API (NOTES N126–N129). The jsdom fake in
+// tests/helpers/navigation.js can't show how a browser commits history
+// entries, so these run in Chromium against tests/browser/app.js.
+import { test, expect } from '@playwright/test'
+
+/** @typedef {{ flags: { denyOverview: boolean, holdLogin: boolean }, log: string[], go: (p: string) => Promise<void>, back: () => Promise<void>, forward: () => Promise<void>, release: (name: string) => void, status: () => string, path: () => string }} Fixture */
+
+/** @param {import('@playwright/test').Page} page */
+async function open(page, path = './') {
+  await page.goto(path)
+  await expect(page.locator('#app h1')).toBeVisible()
+}
+
+
+test('R01: a cancel while a route is loading puts back the rendered page, URL and status', async ({ page, baseURL }) => {
+  await open(page)
+  await page.getByRole('link', { name: 'Slow' }).click()
+  await expect(page.locator('#app')).toHaveText('Loading…')
+  await page.getByRole('link', { name: 'Denied' }).click()
+  await page.evaluate(() => /** @type {any} */ (window).fixture.release('slow'))
+  await expect(page.locator('#app h1')).toHaveText('Overview')
+  expect(await page.evaluate(() => /** @type {any} */ (window).fixture.status())).toBe('ready')
+  expect(new URL(page.url()).pathname).toBe(new URL(/** @type {string} */ (baseURL)).pathname)
+  await expect(page).toHaveTitle('Overview')
+})
+
+test('R02: a cancelled link click adds no history entry', async ({ page }) => {
+  await open(page)
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await page.getByRole('link', { name: 'Denied' }).click()
+  await expect(page).toHaveURL(/details$/)
+  await expect(page.locator('#app h1')).toHaveText('Details')
+
+  await page.goBack()
+  await expect(page.locator('#app h1')).toHaveText('Overview')
+  await page.goForward()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await expect(page).toHaveURL(/details$/)
+})
+
+test('R02: a cancelled Back keeps the entry it was going to, query and hash included', async ({ page }) => {
+  await open(page, './?tab=2#top')
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await page.evaluate(() => { /** @type {any} */ (window).fixture.flags.denyOverview = true })
+  await page.evaluate(() => /** @type {any} */ (window).fixture.back())
+  await expect(page).toHaveURL(/details$/)
+  await expect(page.locator('#app h1')).toHaveText('Details')
+
+  await page.evaluate(() => { /** @type {any} */ (window).fixture.flags.denyOverview = false })
+  await page.evaluate(() => /** @type {any} */ (window).fixture.back())
+  await expect(page.locator('#app h1')).toHaveText('Overview')
+  expect(new URL(page.url()).search + new URL(page.url()).hash).toBe('?tab=2#top')
+})
+
+test('R03: await go() waits for the redirect target and its guards', async ({ page }) => {
+  await open(page)
+  const result = await page.evaluate(async () => {
+    const f = /** @type {any} */ (window).fixture
+    f.flags.holdLogin = true
+    let done = false
+    const pending = f.go('/admin').then(() => { done = true })
+    await new Promise((r) => setTimeout(r, 200))
+    const early = done
+    f.release('login')
+    await pending
+    return { early, path: f.path(), log: [...f.log] }
+  })
+  expect(result.early).toBe(false)
+  expect(result.path).toBe('/login')
+  expect(result.log.at(-1)).toBe('/login:ready')
+  await expect(page.locator('#app h1')).toHaveText('Login')
+})
+
+test('R09: a page without metadata gets the host title back and no stale description', async ({ page }) => {
+  await open(page)
+  await expect(page).toHaveTitle('Overview')
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', 'About the overview')
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await expect(page).toHaveTitle('Host title')
+  await expect(page.locator('meta[name="description"]')).toHaveCount(0)
+})

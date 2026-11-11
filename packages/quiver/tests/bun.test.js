@@ -46,11 +46,11 @@ describe('Bun plugin', () => {
     expect(stderr).toBe('')
     expect(status).toBe(0)
     const report = JSON.parse(stdout)
-    expect(report.kinds).toEqual(['chunk', 'chunk', 'chunk', 'chunk', 'chunk', 'chunk', 'entry-point'])
+    expect(report.kinds).toEqual([...Array(8).fill('chunk'), 'entry-point'])
     expect(report.pages).toEqual({
-      '/': 'home', '/about': 'about', '/blog/:slug/comments': 'comments', '/users': 'users', '/users/:id': 'user',
+      '/': 'home', '/about': 'about', '/blog/:slug/comments': 'comments', '/café': 'café', '/release notes': 'release notes', '/users': 'users', '/users/:id': 'user',
     })
     expect(report.notFound).toBe('not found')
-    expect(readdirSync(outdir).filter((f) => f.startsWith('chunk-'))).toHaveLength(6)
+    expect(readdirSync(outdir).filter((f) => f.startsWith('chunk-'))).toHaveLength(8)
   })
 })

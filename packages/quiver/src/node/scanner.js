@@ -4,6 +4,7 @@
 // plugin runs under Node as well as Bun.
 import { readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
+import { routeKeys } from '../match.js'
 
 /**
  * @typedef {{ pattern: string, file: string }} ScanRoute  file: POSIX path relative to the pages dir
@@ -14,13 +15,15 @@ const PARAM_NAME = /^[A-Za-z_$][\w$]*$/
 
 /**
  * Map a page file to its route pattern (2.x semantics, S-2): strip `.js`,
- * `/index` → parent (`index.js` → `/`), `[name]` → `:name`.
+ * `/index` → parent (`index.js` → `/`), `[name]` → `:name`. The pattern is
+ * Unicode NFC, the form the router matches (N135), whatever form the file
+ * system stores the name in; the import specifier keeps the name on disk.
  * @param {string} file POSIX path relative to the pages dir, e.g. 'users/[id].js'
  * @returns {string} e.g. '/users/:id'
  */
 export function fileToRoutePath(file) {
   const path = ('/' + file.replace(/\.js$/, '')).replace(/\/index$/, '') || '/'
-  return path.replace(/\[([^\]]+)\]/g, ':$1')
+  return path.replace(/\[([^\]]+)\]/g, ':$1').normalize('NFC')
 }
 
 /**
@@ -33,6 +36,10 @@ function patternProblem(pattern) {
   if (pattern.includes('//')) return 'has an empty segment ("//")'
   if (/[?#]/.test(pattern)) return 'contains "?" or "#"'
   if (pattern.includes('*')) return 'contains a wildcard ("*")'
+  // N135: URLs are matched decoded, so a file name is the decoded text and a "%"
+  // in it would be read as an escape. A backslash becomes "/" in a URL.
+  if (pattern.includes('%')) return 'contains "%"; name the file with the characters themselves (a space, é), not percent-escapes'
+  if (pattern.includes('\\')) return 'contains "\\", which a browser turns into "/"'
   const names = new Set()
   for (const segment of pattern.split('/').filter(Boolean)) {
     if (!segment.startsWith(':')) continue
@@ -43,9 +50,6 @@ function patternProblem(pattern) {
   }
   return null
 }
-
-/** @param {string} pattern @returns {string} the pattern with parameter names erased */
-const shapeOf = (pattern) => pattern.split('/').map((s) => (s.startsWith(':') ? ':' : s)).join('/')
 
 /**
  * Every `.js` file under `dir`, recursively, as sorted POSIX paths relative to
@@ -84,7 +88,7 @@ export async function scanPages(dir) {
   const routes = []
   /** @type {string | null} */
   let notFound = null
-  /** @type {Map<string, string>} pattern → file */
+  /** @type {Map<string, string>} canonical route → file */
   const byPattern = new Map()
   /** @type {Map<string, string>} shape (params erased) → file */
   const byShape = new Map()
@@ -106,19 +110,19 @@ export async function scanPages(dir) {
       continue
     }
 
-    const same = byPattern.get(pattern)
+    const { route, shape } = routeKeys(pattern)
+    const same = byPattern.get(route)
     if (same !== undefined) {
       errors.push(`${same} and ${file} both map to "${pattern}".`)
       continue
     }
-    const shape = shapeOf(pattern)
     const similar = byShape.get(shape)
     if (similar !== undefined) {
       errors.push(`${similar} and ${file} differ only in parameter names ("${fileToRoutePath(similar)}", "${pattern}"), so one could never match.`)
       continue
     }
 
-    byPattern.set(pattern, file)
+    byPattern.set(route, file)
     byShape.set(shape, file)
     routes.push({ pattern, file })
   }

@@ -37,6 +37,7 @@
     "typecheck": "tsc -p jsconfig.json && tsc -p jsconfig.node.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "prepack": "node scripts/prepack.js",
     "postpack": "node scripts/postpack.js"
   }

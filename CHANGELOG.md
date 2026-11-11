@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `@go4cas/quiver`: a guard that cancels while another route is still loading no longer leaves the app stuck on the loading view; the page on screen, its URL and status come back. Guards get that page as `from`, and a superseded navigation calls no further guards (N126)
+- `@go4cas/quiver`: cancelling a link click or Back/Forward no longer adds or rewrites a history entry, so Back after a cancelled click goes where it went before (N126)
+- `@go4cas/quiver`: `await go()`, `retry()`, `back()` and `forward()` resolve after a guard's redirect target, its guards and hooks, or a cancel's rollback, have finished, instead of when the first navigation is replaced (N127)
+- `@go4cas/quiver`: a page without a title or description no longer keeps the previous page's; every committed navigation, the not-found page and the error view get the host page's own back, and so does `destroy()` (N128)
+- `@go4cas/quiver`: a guard redirect must be a base-relative path inside the app; an absolute URL (`https:`, `javascript:`, `//host`) or a path outside the base is a guard error instead of a navigation, also on the first load, where it used to make `initRouter()` throw. Quiver ignores an app's own Navigation API `info` that looks like its internal markers (N129)
 - Docs: the no-bundler quickstart, the CLI reference and the no-build README name the scoped package when nothing is installed (`bunx --bun --package @go4cas/quiver@3 quiver routes`, `npm exec --package=@go4cas/quiver@3 -- quiver routes`); a bare `bunx quiver` / `npx quiver` fetched npm's unrelated `quiver` package
 - Docs: the getting-started quickstarts produce a working app: the common setup has a mount element and a declared layout, the Bun section shows where `index.html` goes and how deep links are served, and the no-build section switches `main.js` to `routes.gen.js`
 - Docs: type resolution is documented per entry point (the main entry also works under `node10` since 3.0.1), and the Vite page states the tested Vite range (8) instead of "any Vite"
@@ -16,9 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example servers (`examples/bun`, `examples/no-build`, the arrow-use example, the recipes' e2e app) listen on `127.0.0.1` only, serve only the folders the page needs, answer malformed paths with 400, and refuse an unsafe `QUIVER_BASE`
 - `arrow-use` `useStorage`: creating it no longer writes and removes a `__arrow-use__` probe key, which overwrote and deleted an app's own key of that name. Construction only reads, so a stored value now loads when the storage allows reads but not writes; a failed read, write or remove each falls back to memory on its own (N130)
 - `arrow-use` `useFetch`: a non-`Error` thrown value (e.g. a `transform` that throws `null`) no longer makes `refetch()` reject with a `TypeError`; it becomes an `error()` message. An abort through a caller's `signal` with a custom reason is no longer reported as an error. A `transform` that calls `reset()`, `stop()` or `refetch()` no longer publishes its stale result (N131)
+- `@go4cas/quiver`: pages whose names hold spaces or other Unicode (`release notes.js`, `café.js`) are reachable. The browser reports `/release%20notes`, and static segments used to be compared byte for byte with the literal key; they are now compared decoded and in Unicode NFC, so literal and percent-encoded keys both match, at the root and under a base, from the Vite plugin, the Bun plugin and `quiver routes`. A file name stored as NFD (older macOS) gives the same NFC route
+- `@go4cas/quiver`: `initRouter()` rejects two keys that spell one route two ways (`/café`, `/caf%C3%A9`), and the scanner rejects `%` and `\` in page names, naming the file
+- `quiver routes --watch`: a missing or unreadable pages folder prints one `[quiver] ` line and exits 1, instead of a stack trace; a watcher error does the same. Scans no longer overlap, so a burst of changes ends at the manifest for the folder's final state, and the file is replaced atomically through a temporary file. A scan error still leaves the last good manifest in place
 
 ### Added
 
+- `@go4cas/quiver`: a Playwright suite on the real Navigation API (`packages/quiver/tests/browser/`, ports 5185 and 5195), run by `bun run test:e2e`
 - `bun run pack:types` uses the Vite plugin inside Vite's `defineConfig()` and the Bun plugin inside a `Bun.build()` call typed by `@types/bun`, with `skipLibCheck: false`
 
 ### Security

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { scoreRoute, normalizePath, matchPath, compareRoutes, validateManifest } from '../src/match.js'
+import { scoreRoute, normalizePath, matchPath, compareRoutes, validateManifest, canonicalSegment } from '../src/match.js'
 
 const fn = () => ({ default: () => '' })
 
@@ -84,6 +84,72 @@ describe('matchPath (M-7)', () => {
 
   it('falls back to the raw segment on a malformed percent-escape', () => {
     expect(matchPath('/users/:id', '/users/%zz')).toEqual({ id: '%zz' })
+  })
+})
+
+describe('static segments with spaces and Unicode (R05, N135)', () => {
+  it('canonicalSegment decodes escapes and normalises to NFC', () => {
+    expect(canonicalSegment('release%20notes')).toBe('release notes')
+    expect(canonicalSegment('caf%C3%A9')).toBe('caf\u00e9')
+    expect(canonicalSegment('caf%c3%a9')).toBe('caf\u00e9')
+    expect(canonicalSegment('cafe\u0301')).toBe('caf\u00e9')
+    expect(canonicalSegment('cafe%CC%81')).toBe('caf\u00e9')
+    expect(canonicalSegment('a%2Fb')).toBe('a/b')
+  })
+
+  it('canonicalSegment keeps a malformed escape as written', () => {
+    expect(canonicalSegment('100%')).toBe('100%')
+    expect(canonicalSegment('%zz')).toBe('%zz')
+    expect(canonicalSegment('%E9')).toBe('%E9')
+  })
+
+  // The pathname a browser reports for each spelling.
+  const encoded = (/** @type {string} */ path) => new URL(path, 'https://x.test').pathname
+
+  it.each([
+    ['/release notes', '/release notes'],
+    ['/release notes', '/release%20notes'],
+    ['/release%20notes', '/release notes'],
+    ['/caf\u00e9', '/caf\u00e9'],
+    ['/caf\u00e9', '/caf%C3%A9'],
+    ['/caf\u00e9', '/cafe\u0301'],
+    ['/caf%C3%A9', '/caf\u00e9'],
+    ['/cafe\u0301', '/caf\u00e9'],
+    ['/caf%c3%a9/:id', '/caf\u00e9/1'],
+  ])('key %j matches the browser pathname for %j', (key, path) => {
+    expect(matchPath(key, encoded(path))).not.toBeNull()
+  })
+
+  it('keeps segment boundaries: an encoded "/" never splits a segment', () => {
+    expect(matchPath('/a%2Fb', '/a%2Fb')).toEqual({})
+    expect(matchPath('/a%2Fb', '/a/b')).toBeNull()
+    expect(matchPath('/a/b', '/a%2Fb')).toBeNull()
+    expect(matchPath('/:x', '/a%2Fb')).toEqual({ x: 'a/b' })
+  })
+
+  it('a malformed escape matches only itself', () => {
+    expect(matchPath('/100%', encoded('/100%'))).toEqual({})
+    expect(matchPath('/100%', '/100%25')).toEqual({})
+    expect(matchPath('/100%', '/100')).toBeNull()
+  })
+
+  it('parameters are decoded but not normalised', () => {
+    expect(matchPath('/tags/:t', '/tags/cafe%CC%81')).toEqual({ t: 'cafe\u0301' })
+  })
+
+  it('a static Unicode route still beats a parameter at the same position', () => {
+    const keys = ['/users/:id', '/users/caf\u00e9'].sort(compareRoutes)
+    const hit = keys.find((k) => matchPath(k, encoded('/users/caf\u00e9')))
+    expect(hit).toBe('/users/caf\u00e9')
+    expect(keys.find((k) => matchPath(k, '/users/42'))).toBe('/users/:id')
+  })
+
+  it('validateManifest rejects two spellings of one route', () => {
+    expect(() => validateManifest({ '/caf\u00e9': fn, '/caf%C3%A9': fn }, undefined))
+      .toThrow('route "/caf%C3%A9" is the same route as "/caf\u00e9"')
+    expect(() => validateManifest({ '/a b/:id': fn, '/a%20b/:id': fn }, undefined)).toThrow('is the same route as "/a b/:id"')
+    expect(() => validateManifest({ '/a b/:id': fn, '/a%20b/:slug': fn }, undefined)).toThrow('differs from "/a b/:id" only in parameter names')
+    expect(() => validateManifest({ '/a': fn, '/%3A': fn, '/:x': fn }, undefined)).not.toThrow()
   })
 })
 
