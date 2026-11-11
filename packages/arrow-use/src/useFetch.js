@@ -3,7 +3,8 @@ import { reactive, onCleanup } from '@arrow-js/core'
 /**
  * @typedef {{ immediate?: boolean, transform?: (raw: any) => any } & RequestInit} UseFetchOptions
  *   `immediate` (default `true`) starts the request at once; `transform` (default none)
- *   maps the parsed JSON before it reaches `data()`. Everything else is passed to `fetch`.
+ *   synchronously maps the parsed JSON before it reaches `data()` (a returned promise is
+ *   stored as is, not awaited). Everything else is passed to `fetch`.
  */
 
 /**
@@ -22,7 +23,11 @@ import { reactive, onCleanup } from '@arrow-js/core'
  * superseded request never writes its result. Inside a `component()`, the request
  * is aborted when the component unmounts.
  *
- * With no global `fetch` (a non-browser runtime), nothing is requested and the
+ * Any failure, whatever was thrown, ends up in `error()`; `refetch()` never rejects.
+ * An abort, by this composable or by a caller's `signal`, is not an error.
+ *
+ * Requests use the global `fetch`, so runtimes that have one (Node 18+, Bun, Deno)
+ * make real requests too. Without a global `fetch`, nothing is requested and the
  * getters keep their initial values.
  *
  * @param {string} url
@@ -59,19 +64,24 @@ export function useFetch(url, options = {}) {
     state.loading = true
     state.error = null
 
+    /** @type {AbortSignal} */
+    let signal = own.signal
     try {
       // Combine with a caller-supplied signal so both can abort the request.
-      const signal = fetchOptions.signal ? AbortSignal.any([own.signal, fetchOptions.signal]) : own.signal
+      if (fetchOptions.signal) signal = AbortSignal.any([own.signal, fetchOptions.signal])
       const res = await fetch(url, { ...fetchOptions, signal })
       if (controller !== own) return // superseded by a newer refetch, a reset or stop
       state.status = res.status
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const raw = await res.json()
       if (controller !== own) return // superseded while parsing
-      setData(transform ? transform(raw) : raw)
+      const value = transform ? transform(raw) : raw
+      if (controller !== own) return // the transform reset, stopped or refetched
+      setData(value)
     } catch (err) {
-      const e = /** @type {Error} */ (err)
-      if (controller === own && e.name !== 'AbortError') state.error = e.message
+      // Cancellation is read from the signal, not from the shape of the thrown
+      // value: a caller may abort with any reason (N131).
+      if (controller === own && !signal.aborted) state.error = errorMessage(err)
     } finally {
       // Only the current request may touch loading: a stale aborted request
       // must not clear it while a newer one is still in flight.
@@ -112,4 +122,17 @@ export function useFetch(url, options = {}) {
     reset,
     stop,
   }
+}
+
+/**
+ * A readable message for anything a request, `res.json()` or `transform` threw.
+ * @param {unknown} err
+ * @returns {string}
+ */
+function errorMessage(err) {
+  if (typeof err === 'string') return err || 'Request failed'
+  const message = err !== null && typeof err === 'object' ? /** @type {{ message?: unknown }} */ (err).message : undefined
+  if (typeof message === 'string' && message) return message
+  if (err === null || err === undefined || typeof err === 'object') return 'Request failed'
+  return String(err)
 }

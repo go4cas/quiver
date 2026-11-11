@@ -251,3 +251,140 @@ describe('useFetch: stop() (U-5, U-6)', () => {
     expect(f.loading()).toBe(false)
   })
 })
+
+/** A fetch that never resolves and rejects with the signal's reason, as browsers do. */
+function reasonFetch() {
+  return vi.fn((_url, options) =>
+    new Promise((_resolve, reject) => {
+      const signal = options.signal
+      if (signal.aborted) reject(signal.reason)
+      signal.addEventListener('abort', () => reject(signal.reason))
+    }),
+  )
+}
+
+describe('useFetch: any failure reaches error() (N131)', () => {
+  it.each([
+    ['null', null, 'Request failed'],
+    ['undefined', undefined, 'Request failed'],
+    ['a string', 'bad shape', 'bad shape'],
+    ['a number', 42, '42'],
+    ['a plain object', { code: 1 }, 'Request failed'],
+    ['an object with a message', { message: 'nope' }, 'nope'],
+    ['an Error', new TypeError('broken'), 'broken'],
+  ])('a transform that throws %s', async (_label, thrown, message) => {
+    const f = useFetch('/api/test', {
+      immediate: false,
+      transform: () => {
+        throw thrown
+      },
+    })
+    await expect(f.refetch()).resolves.toBeUndefined()
+    expect(f.error()).toBe(message)
+    expect(f.loading()).toBe(false)
+    expect(f.data()).toBeNull()
+  })
+
+  it('a fetch that rejects with a non-Error value', async () => {
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(null)))
+    const f = useFetch('/api/test', { immediate: false })
+    await expect(f.refetch()).resolves.toBeUndefined()
+    expect(f.error()).toBe('Request failed')
+  })
+
+  it('a caller abort with a custom reason is not an error, and clears loading', async () => {
+    vi.stubGlobal('fetch', reasonFetch())
+    const user = new AbortController()
+    const f = useFetch('/api/slow', { immediate: false, signal: user.signal })
+    const done = f.refetch()
+    expect(f.loading()).toBe(true)
+    user.abort(new Error('user left'))
+    await expect(done).resolves.toBeUndefined()
+    expect(f.error()).toBeNull()
+    expect(f.loading()).toBe(false)
+  })
+
+  it('a caller abort with a non-Error reason is not an error', async () => {
+    vi.stubGlobal('fetch', reasonFetch())
+    const user = new AbortController()
+    const f = useFetch('/api/slow', { immediate: false, signal: user.signal })
+    const done = f.refetch()
+    user.abort('timeout')
+    await done
+    expect(f.error()).toBeNull()
+    expect(f.loading()).toBe(false)
+  })
+
+  it('a caller signal aborted before the request is not an error', async () => {
+    vi.stubGlobal('fetch', reasonFetch())
+    const f = useFetch('/api/slow', { immediate: false, signal: AbortSignal.abort(42) })
+    await f.refetch()
+    expect(f.error()).toBeNull()
+    expect(f.loading()).toBe(false)
+  })
+
+  it('an internal abort (refetch, reset, stop) with the real abort reason is not an error', async () => {
+    vi.stubGlobal('fetch', reasonFetch())
+    const f = useFetch('/api/slow')
+    f.stop()
+    await Promise.resolve()
+    expect(f.error()).toBeNull()
+    expect(f.loading()).toBe(false)
+  })
+})
+
+describe('useFetch: ownership is re-checked after transform (N131)', () => {
+  it('reset() inside transform keeps the result from publishing', async () => {
+    /** @type {any} */
+    let f
+    f = useFetch('/api/test', {
+      immediate: false,
+      transform: (raw) => {
+        f.reset()
+        return raw
+      },
+    })
+    await f.refetch()
+    expect(f.data()).toBeNull()
+    expect(f.status()).toBeNull()
+    expect(f.loading()).toBe(false)
+    expect(f.error()).toBeNull()
+  })
+
+  it('stop() inside transform keeps the result from publishing', async () => {
+    /** @type {any} */
+    let f
+    f = useFetch('/api/test', {
+      immediate: false,
+      transform: (raw) => {
+        f.stop()
+        return raw
+      },
+    })
+    await f.refetch()
+    expect(f.data()).toBeNull()
+    expect(f.loading()).toBe(false)
+  })
+
+  it('a refetch started inside transform supersedes it; only the newer result publishes', async () => {
+    let calls = 0
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ n: ++calls }) })))
+    /** @type {any} */
+    let f
+    /** @type {Promise<void> | undefined} */
+    let inner
+    f = useFetch('/api/test', {
+      immediate: false,
+      transform: (raw) => {
+        if (raw.n === 1) inner = f.refetch()
+        return raw
+      },
+    })
+    await f.refetch()
+    expect(f.data()).toBeNull()
+    expect(f.loading()).toBe(true)
+    await inner
+    expect(f.data()).toEqual({ n: 2 })
+    expect(f.loading()).toBe(false)
+  })
+})
