@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-11-11
+
+Published as `@go4cas/quiver` 3.1.0; `arrow-use` stays 0.1.1 (no code change, N180). Pages and layouts get a cleanup scope, the router is refactored per the audit (R14), and the router's browser suite runs in all three engines.
+
 ### Added
 
 - `@go4cas/quiver`: the router's browser suite also runs in Firefox and WebKit, at `/` and under `/sub/app/`, from `bun run test:browsers` and a CI `browsers` job in the pinned Playwright image; it also checks the error `initRouter()` throws without the Navigation API (N155)
@@ -15,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `@go4cas/quiver` (3.1): each page renders with its layout inside a cleanup scope, a private component keyed by path. `onCleanup` from `@arrow-js/core`, and every `arrow-use` composable, called in a page or layout function is cleaned up when the page is left (after the next navigation's guards pass), on `retry()` and on `destroy()`, inside a layout too; before, `onCleanup` there threw and composables were never stopped. A `component()` nested inside a page's template still gets no cleanup (Arrow 1.0.6). No new export (N160, N162, N163)
 - `@go4cas/quiver` (3.1): a reactive value read in a page or layout body (outside a `() =>` slot) no longer renders the whole page again; only slots update (N161)
-- Starter: the Posts page drops its `afterEach` workaround; `useFetch` aborts on its own when you leave the page or call `destroy()`
+- Starter: the Posts page drops its `afterEach` workaround; `useFetch` aborts on its own when you leave the page or call `destroy()`. The starter depends on `@go4cas/quiver` `^3.1.0`, since it relies on that cleanup (N180)
 - `@go4cas/quiver`, internal only: the manifest check and the page scanner share one set of route-pattern rules and collision checks (each keeps its own messages), and the router classifies guard results in one place for the initial load and in-app navigations, with each navigation's pending render errors and initial report kept on the navigation itself (audit R14, N170, N171). No API or behaviour change; new tests run one rule table against manual and scanned manifests, and the browser suite now covers startup redirects, `retry()` and `destroy()` during a load in all three engines
 
 ### Security
@@ -281,7 +285,8 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
-[Unreleased]: https://github.com/go4cas/quiver/compare/v3.0.3...HEAD
+[Unreleased]: https://github.com/go4cas/quiver/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/go4cas/quiver/releases/tag/v3.1.0
 [3.0.3]: https://github.com/go4cas/quiver/releases/tag/v3.0.3
 [3.0.2]: https://github.com/go4cas/quiver/releases/tag/v3.0.2
 [3.0.1]: https://github.com/go4cas/quiver/releases/tag/v3.0.1
