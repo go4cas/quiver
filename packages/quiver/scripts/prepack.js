@@ -2,18 +2,21 @@
 // before `npm pack` / `npm publish`. The runtime files are the untouched source.
 //
 // - recipes/: copied from the repo's recipes/ workspace, because npm `files`
-//   can't reach outside the package folder (N24). Each recipe's tests/, and the
-//   workspace's own package.json, jsconfig.json, vitest and Playwright configs
-//   and e2e/ fixture, stay behind. Recipes are not in `exports` (D32).
+//   can't reach outside the package folder (N24): index.json, README.md, and for
+//   each recipe exactly the paths in its registry `files` plus its README.md
+//   (N143), with the same copy the starter sync uses (scripts/copy-recipes.js).
+//   Tests, the workspace's configs and e2e/ fixture stay behind. Recipes are not
+//   in `exports` (D32).
 // - types/: .d.ts files emitted from the JSDoc by `tsc -p jsconfig.types.json`
 //   (X-11, D20), for src/ and src/node/, so `.`, `./vite` and `./bun` all have
 //   types.
 //
 // postpack.js removes both. Both paths are git-ignored.
 import { execFileSync } from 'node:child_process'
-import { cpSync, existsSync, readFileSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, rmSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
+import { copyRecipes } from '../../../scripts/copy-recipes.js'
 
 const PKG = join(import.meta.dirname, '..')
 
@@ -32,16 +35,7 @@ if (!existsSync(join(SOURCE, 'index.json'))) {
   throw new Error(`prepack: no recipe registry at ${SOURCE}/index.json`)
 }
 
-/** @type {Record<string, unknown>} */
-const index = JSON.parse(readFileSync(join(SOURCE, 'index.json'), 'utf8'))
-
-rmSync(DEST, { recursive: true, force: true })
+const names = copyRecipes(SOURCE, DEST, { readmes: true })
 for (const file of ['index.json', 'README.md']) cpSync(join(SOURCE, file), join(DEST, file))
-for (const name of Object.keys(index)) {
-  cpSync(join(SOURCE, name), join(DEST, name), {
-    recursive: true,
-    filter: (src) => !src.split(/[\\/]/).includes('tests'),
-  })
-}
 // stderr, so `npm pack --json` output stays parseable.
-console.error(`prepack: copied ${Object.keys(index).length} recipes into recipes/`)
+console.error(`prepack: copied ${names.length} recipes into recipes/`)

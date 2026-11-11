@@ -31,6 +31,27 @@ A page picks its layout with `export const meta = { layout: 'menu' }`. To add yo
 | `'nav'` | `[{ to, label }]` | no links |
 | `'currentUser'` | `{ name, email, avatar, signOut? }` | a guest; Sign out calls `go('/login')` |
 
+## Sign-out
+
+The default Sign out only navigates to `/login`: it ends nothing, because the recipe knows nothing about your sessions. A real app passes `signOut` on `'currentUser'`, and it must:
+
+1. End the session on the server (for example `POST /logout`, which clears the HttpOnly session cookie or revokes the token), since the server is what protects data.
+2. Clear the client's identity: the user store, cached user data, anything in `localStorage` tied to the user.
+3. Then navigate, typically `go('/login')`.
+
+```js
+provide('currentUser', {
+  ...user,
+  signOut: async () => {
+    await fetch('/logout', { method: 'POST', credentials: 'same-origin' })
+    authState.clear()
+    await go('/login')
+  },
+})
+```
+
+Navigation guards only decide what the app shows; they protect nothing on the server. The starter's sign-in page is a demo with a fixed user and no session.
+
 ## Styling
 
 Classes `q-basic`, `q-basic__card`, `q-menu`, `q-menu__*` (`sidebar`, `brand`, `logo`, `name`, `tagline`, `nav`, `nav-link`, `footer`, `body`, `header`, `path`, `actions`, `content`) and `q-user-menu`, `q-user-menu__*`; the hook classes `q-panel`, `q-sidebar`, `q-header` and `q-accent` let theme effects reach them. The active nav link has `aria-current="page"`; the open user menu is `<details open>`.

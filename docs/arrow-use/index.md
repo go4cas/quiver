@@ -1,6 +1,6 @@
 # arrow-use
 
-Composables for [Arrow.js](https://arrow-js.com): small functions that wrap a browser API in reactive getters and clean up after themselves. They need only `@arrow-js/core`, so they work in any Arrow app, with or without Quiver's router.
+Composables for [Arrow.js](https://arrow-js.com): small functions that wrap a browser API in reactive getters and a `stop()` that releases them, called for you when the owning `component()` unmounts (with one Arrow limitation, see "Cleanup and nested components" below). They need only `@arrow-js/core`, so they work in any Arrow app, with or without Quiver's router.
 
 ```bash
 bun add arrow-use @arrow-js/core

@@ -64,6 +64,7 @@ useForm(initialValues?: object, options?: { validate?, onSubmit? }): { form, han
 ## Behaviour
 
 - A second submit while one is running is ignored (`form.submitting`).
-- A throwing `onSubmit` is caught, and its message goes to `form.message`.
+- A throwing or rejecting `validate` or `onSubmit` is caught, its message goes to `form.message`, and `form.submitting` goes back to `false`, so the user can submit again.
+- Each submit clears `form.submitted` and `form.message` first. `validate` and `onSubmit` get the same copy of the values, taken when the submit starts.
 - `onSubmit` may set `form.errors` itself (errors from the server), which keeps `form.submitted` false.
 - For schema validation, call Zod, Valibot or similar inside `validate` and map the issues to `{ field: message }`.

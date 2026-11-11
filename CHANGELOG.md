@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@go4cas/quiver`: pages whose names hold spaces or other Unicode (`release notes.js`, `café.js`) are reachable. The browser reports `/release%20notes`, and static segments used to be compared byte for byte with the literal key; they are now compared decoded and in Unicode NFC, so literal and percent-encoded keys both match, at the root and under a base, from the Vite plugin, the Bun plugin and `quiver routes`. A file name stored as NFD (older macOS) gives the same NFC route
 - `@go4cas/quiver`: `initRouter()` rejects two keys that spell one route two ways (`/café`, `/caf%C3%A9`), and the scanner rejects `%` and `\` in page names, naming the file
 - `quiver routes --watch`: a missing or unreadable pages folder prints one `[quiver] ` line and exits 1, instead of a stack trace; a watcher error does the same. Scans no longer overlap, so a burst of changes ends at the manifest for the folder's final state, and the file is replaced atomically through a temporary file. A scan error still leaves the last good manifest in place
+- `useForm` recipe: a throwing or rejecting `validate` no longer leaves the form stuck in `submitting`; its message goes to `form.message` and the user can submit again. Each submit clears `submitted` and `message` first, and `validate` and `onSubmit` get the same snapshot of the values
+- Starter: leaving the Posts page aborts its requests (from an `afterEach` registered in the page, since a page inside a layout gets no `onCleanup`)
+- Core tarball: `prepack` copies each recipe's registry `files` and README, the same copy `recipes:sync` uses, so stray files in a recipe folder can't ship
+- `/add-layout`: the scaffold adds the toast import and the `ToastContainer()` mount together, only when the toasts recipe is installed
 
 ### Added
 
@@ -29,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Repo tooling only, no package change: the docs toolchain resolves Vue 3.5.45 (was 3.5.33, GHSA-g2v6-rqmx-r4w6) and a single `source-map-js` 1.2.2 (was also 1.2.1, GHSA-68fv-2mgg-jv7q) through root `overrides`. VitePress 1.6.4's Vite 5.4.21 and esbuild 0.21.5 dev-server advisories are accepted until 2027-02-11 (NOTES N150)
 - `bun run audit` and a CI `audit` job fail on any lockfile advisory not listed, unexpired and version-scoped, in `scripts/audit-exceptions.json`
 - CI: the Pages deploy permissions are on the deploy job only; actions are pinned to commit SHAs and the Playwright image to its digest; checkouts don't persist credentials; the screenshot re-capture renders with a read-only token and a separate job, which installs and runs nothing, commits the PNGs (NOTES N151)
+- `Link` recipe: `to` may be a path or an `http(s):`, `mailto:` or `tel:` URL; any other scheme (`javascript:`, `data:`…) and `//host` render without an `href`
+- Starter: the sign-in page says it is a demo with no password check and no session; the layouts recipe documents what a real `signOut` must do (end the server session, clear client user state)
+
+### Documentation
+
+- Cleanup claims for `arrow-use` and pages are qualified for pages inside a layout, with the `afterEach` pattern in troubleshooting
 
 ## [3.0.2] - 2026-11-10
 

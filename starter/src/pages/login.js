@@ -35,7 +35,12 @@ function LoginPage() {
           return
         }
 
-        // Mock auth — password is validated for presence only, not checked against a credential.
+        // DEMO ONLY (audit S06, N142): no credential check, no session, nothing
+        // stored. A real app posts the credentials to its server, which sets the
+        // session (e.g. an HttpOnly cookie), and keeps the signed-in user in a
+        // store; MenuLayout's signOut must then end that session too (see
+        // src/quiver/layouts/README.md). Guards only hide pages: protect data on
+        // the server.
         await new Promise((r) => setTimeout(r, 600))
         router.go('/')
       },
@@ -79,7 +84,7 @@ function LoginPage() {
         >${() => (form.submitting ? 'Signing in…' : 'Sign in')}</button>
       </form>
 
-      <p class="login__hint">Try: alice@example.com · bob@example.com · charlie@example.com</p>
+      <p class="login__hint">Demo sign-in: no password check and no session. Try alice@example.com · bob@example.com · charlie@example.com</p>
     </div>
   `
 }

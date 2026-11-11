@@ -25,7 +25,7 @@ features:
     details: Serve the app under a sub-path. Every path your code sees is base-relative, url() adds the base for hrefs, and links outside the base load normally.
     link: /guide/routing#base-path
   - title: arrow-use composables
-    details: useFetch, useStorage, useMediaQuery and useEventListener for any Arrow app, with or without Quiver. Getters plus stop(), cleaned up on unmount.
+    details: useFetch, useStorage, useMediaQuery and useEventListener for any Arrow app, with or without Quiver. Getters plus stop(), released automatically when the component() that owns them unmounts.
     link: /arrow-use/
   - title: Copy-in recipes
     details: Theme tokens, toasts, a theme switcher, layouts, loading and error views, Link, useForm and hmrState. You copy them into src/quiver/ and own them; /add-* commands do it for you.

@@ -16,6 +16,9 @@ provide('nav', [
   { to: '/posts', label: 'Posts' },
   { to: '/toasts', label: 'Toasts' },
 ])
+// A fixed demo identity: the starter has no sessions. A real app provides the
+// signed-in user from its own store and a signOut() that ends the server session
+// (src/quiver/layouts/README.md, "Sign-out").
 provide('currentUser', { name: 'Alice Nkosi', email: 'alice@example.com', avatar: aliceAvatar })
 
 // BASE_URL is Vite's `base` ('/' unless QUIVER_BASE is set, see vite.config.js).

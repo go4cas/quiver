@@ -22,11 +22,28 @@ If the recipe is already installed, say so and stop.
 
 Normalise the name to PascalCase with a `Layout` suffix (`sidebar` → `SidebarLayout`); the registration key is the lowercase base name (`sidebar`).
 
-1. Create `src/layouts/<Name>.js`:
+1. Create `src/layouts/<Name>.js`. Check first whether `src/quiver/toasts/toasts.js` exists.
+
+   Without the toasts recipe, the layout is:
 
 ```js
 import { html } from '@arrow-js/core'
-import { ToastContainer } from '../quiver/toasts/toasts.js'   // if the toasts recipe is installed
+
+/** @param {any} content  the rendered page */
+export function <Name>(content) {
+  return html`
+    <div class="<key>-layout">
+      <main class="<key>-layout__content">${content}</main>
+    </div>
+  `
+}
+```
+
+   With the toasts recipe installed, add both the import and the mount, so `useToast()` works on pages in this layout; never one without the other:
+
+```js
+import { html } from '@arrow-js/core'
+import { ToastContainer } from '../quiver/toasts/toasts.js'
 
 /** @param {any} content  the rendered page */
 export function <Name>(content) {
