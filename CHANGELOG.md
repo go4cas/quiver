@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `arrow-use` `useStorage`: creating it no longer writes and removes a `__arrow-use__` probe key, which overwrote and deleted an app's own key of that name. Construction only reads, so a stored value now loads when the storage allows reads but not writes; a failed read, write or remove each falls back to memory on its own (N130)
 - `arrow-use` `useFetch`: a non-`Error` thrown value (e.g. a `transform` that throws `null`) no longer makes `refetch()` reject with a `TypeError`; it becomes an `error()` message. An abort through a caller's `signal` with a custom reason is no longer reported as an error. A `transform` that calls `reset()`, `stop()` or `refetch()` no longer publishes its stale result (N131)
 
+### Security
+
+- Repo tooling only, no package change: the docs toolchain resolves Vue 3.5.45 (was 3.5.33, GHSA-g2v6-rqmx-r4w6) and a single `source-map-js` 1.2.2 (was also 1.2.1, GHSA-68fv-2mgg-jv7q) through root `overrides`. VitePress 1.6.4's Vite 5.4.21 and esbuild 0.21.5 dev-server advisories are accepted until 2027-02-11 (NOTES N150)
+- `bun run audit` and a CI `audit` job fail on any lockfile advisory not listed, unexpired and version-scoped, in `scripts/audit-exceptions.json`
+- CI: the Pages deploy permissions are on the deploy job only; actions are pinned to commit SHAs and the Playwright image to its digest; checkouts don't persist credentials; the screenshot re-capture renders with a read-only token and a separate job, which installs and runs nothing, commits the PNGs (NOTES N151)
+
 ## [3.0.2] - 2026-11-10
 
 ### Fixed

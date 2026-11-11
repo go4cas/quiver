@@ -1,0 +1,14 @@
+{
+  "$comment": "Accepted advisories for `bun run audit` (audit S01, planning/v3/NOTES.md N150). Each entry names the advisory, the package and the exact locked versions it is accepted for, who owns it and when it expires. An expired entry, or one the audit no longer reports, fails the check: renew it with a fresh assessment in NOTES.md or delete it.",
+  "exceptions": [
+    { "id": "GHSA-4w7w-66w2-5vf9", "package": "vite", "versions": ["5.4.21"], "via": "quiver-docs > vitepress@1.6.4", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" },
+    { "id": "GHSA-rq7h-c2jc-7f22", "package": "vite", "versions": ["5.4.21"], "via": "quiver-docs > vitepress@1.6.4", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" },
+    { "id": "GHSA-fx2h-pf6j-xcff", "package": "vite", "versions": ["5.4.21"], "via": "quiver-docs > vitepress@1.6.4", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" },
+    { "id": "GHSA-9jrq-w75r-8gcw", "package": "vite", "versions": ["5.4.21"], "via": "quiver-docs > vitepress@1.6.4", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" },
+    { "id": "GHSA-587h-7wmj-h5pm", "package": "vite", "versions": ["5.4.21"], "via": "quiver-docs > vitepress@1.6.4", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" },
+    { "id": "GHSA-698v-4r3x-3vcv", "package": "vite", "versions": ["5.4.21"], "via": "quiver-docs > vitepress@1.6.4", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" },
+    { "id": "GHSA-r825-w8mm-5pxw", "package": "vite", "versions": ["5.4.21"], "via": "quiver-docs > vitepress@1.6.4", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" },
+    { "id": "GHSA-v6wh-96g9-6wx3", "package": "vite", "versions": ["5.4.21"], "via": "quiver-docs > vitepress@1.6.4", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" },
+    { "id": "GHSA-67mh-4wv8-2f99", "package": "esbuild", "versions": ["0.21.5"], "via": "quiver-docs > vitepress@1.6.4 > vite@5.4.21", "owner": "go4cas", "expires": "2027-02-11", "notes": "N150" }
+  ]
+}
