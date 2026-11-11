@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `@go4cas/quiver`: the router's browser suite also runs in Firefox and WebKit, at `/` and under `/sub/app/`, from `bun run test:browsers` and a CI `browsers` job in the pinned Playwright image; it also checks the error `initRouter()` throws without the Navigation API (N155)
+
+## [3.0.3] - 2026-11-11
+
+Published as `@go4cas/quiver` 3.0.3 and `arrow-use` 0.1.1. Fixes from the external review and security audit of 3.0.2.
+
 ### Fixed
 
 - `@go4cas/quiver`: a guard that cancels while another route is still loading no longer leaves the app stuck on the loading view; the page on screen, its URL and status come back. Guards get that page as `from`, and a superseded navigation calls no further guards (N126)
@@ -32,7 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `@go4cas/quiver`: a Playwright suite on the real Navigation API (`packages/quiver/tests/browser/`, ports 5185 and 5195), run by `bun run test:e2e`
-- `@go4cas/quiver`: the router's browser suite also runs in Firefox and WebKit, at `/` and under `/sub/app/`, from `bun run test:browsers` and a CI `browsers` job in the pinned Playwright image; it also checks the error `initRouter()` throws without the Navigation API (N155)
 - `bun run pack:types` uses the Vite plugin inside Vite's `defineConfig()` and the Bun plugin inside a `Bun.build()` call typed by `@types/bun`, with `skipLibCheck: false`
 
 ### Security
@@ -263,6 +270,8 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[Unreleased]: https://github.com/go4cas/quiver/compare/v3.0.3...HEAD
+[3.0.3]: https://github.com/go4cas/quiver/releases/tag/v3.0.3
 [3.0.2]: https://github.com/go4cas/quiver/releases/tag/v3.0.2
 [3.0.1]: https://github.com/go4cas/quiver/releases/tag/v3.0.1
 [3.0.0]: https://github.com/go4cas/quiver/releases/tag/v3.0.0
