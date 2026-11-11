@@ -124,6 +124,87 @@ export function matchPath(routePath, urlPath) {
 const PARAM_NAME = /^[A-Za-z_$][\w$]*$/
 
 /**
+ * One rule a route pattern must follow: `code` names the rule, `test` is true
+ * when the pattern breaks it.
+ * @typedef {{ code: string, test: (pattern: string) => boolean }} PatternRule
+ */
+
+/**
+ * The structural rules every route pattern follows, however the manifest was
+ * made (M-2, M-3, S-3), in the order they are checked. `validateManifest` and
+ * the scanner both use them and word their own diagnostics for each code (R14,
+ * N170).
+ * @type {readonly PatternRule[]}
+ */
+export const PATTERN_RULES = Object.freeze([
+  { code: 'leading-slash', test: (p) => !p.startsWith('/') },
+  { code: 'trailing-slash', test: (p) => p.length > 1 && p.endsWith('/') },
+  { code: 'empty-segment', test: (p) => p.includes('//') },
+  { code: 'query-or-hash', test: (p) => /[?#]/.test(p) },
+  { code: 'wildcard', test: (p) => p.includes('*') },
+])
+
+/**
+ * The first rule a pattern breaks, or null when it is valid: the rules in
+ * PATTERN_RULES, then `extra` (a front end's own rules), then the parameter
+ * rules (`param-name`, `param-repeat`, with the offending `segment`).
+ * @param {string} pattern
+ * @param {readonly PatternRule[]} [extra]
+ * @returns {{ code: string, segment: string } | null}
+ */
+export function patternIssue(pattern, extra = []) {
+  for (const rule of [...PATTERN_RULES, ...extra]) {
+    if (rule.test(pattern)) return { code: rule.code, segment: '' }
+  }
+  const names = new Set()
+  for (const segment of pattern.split('/').filter(Boolean)) {
+    if (!segment.startsWith(':')) continue
+    const name = segment.slice(1)
+    if (!PARAM_NAME.test(name)) return { code: 'param-name', segment }
+    if (names.has(name)) return { code: 'param-repeat', segment }
+    names.add(name)
+  }
+  return null
+}
+
+/**
+ * Collision check shared by the manifest and the scanner (M-4, S-4): `add()`
+ * records a pattern for `owner` (a manifest key, a page file) and returns the
+ * earlier owner it collides with, or null. `same` means one route spelled twice
+ * (static segments compared canonically), `shape` means patterns that differ
+ * only in parameter names. A colliding pattern is not recorded.
+ * @template T
+ * @returns {{ add: (pattern: string, owner: T) => { code: 'same' | 'shape', other: T } | null }}
+ */
+export function routeSet() {
+  /** @type {Map<string, T>} canonical route → first owner */
+  const routes = new Map()
+  /** @type {Map<string, T>} shape (params erased) → first owner */
+  const shapes = new Map()
+  return {
+    add(pattern, owner) {
+      const { route, shape } = routeKeys(pattern)
+      if (routes.has(route)) return { code: 'same', other: /** @type {T} */ (routes.get(route)) }
+      if (shapes.has(shape)) return { code: 'shape', other: /** @type {T} */ (shapes.get(shape)) }
+      routes.set(route, owner)
+      shapes.set(shape, owner)
+      return null
+    },
+  }
+}
+
+/** @type {Record<string, (segment: string) => string>} validateManifest's wording per rule */
+const MANIFEST_MESSAGES = {
+  'leading-slash': () => 'must start with "/".',
+  'trailing-slash': () => 'must not end with "/".',
+  'empty-segment': () => 'must not contain an empty segment ("//").',
+  'query-or-hash': () => 'must not contain "?" or "#".',
+  wildcard: () => 'must not contain a wildcard ("*").',
+  'param-name': (segment) => `has an invalid parameter name "${segment}".`,
+  'param-repeat': (segment) => `repeats the parameter "${segment}".`,
+}
+
+/**
  * Validate a route manifest and the notFound loader (M-1…M-5). Throws a
  * TypeError naming the offending key.
  * @param {unknown} routes
@@ -135,37 +216,19 @@ export function validateManifest(routes, notFound) {
     throw new TypeError('initRouter(): routes must be a plain object mapping patterns to loaders.')
   }
 
-  /** @type {Map<string, string>} canonical route → first key spelling it */
-  const same = new Map()
-  /** @type {Map<string, string>} shape (params erased) → first key with that shape */
-  const shapes = new Map()
+  /** @type {ReturnType<typeof routeSet<string>>} */
+  const seen = routeSet()
 
   for (const [key, loader] of Object.entries(routes)) {
     const bad = (/** @type {string} */ why) => new TypeError(`initRouter(): route "${key}" ${why}`)
 
     if (typeof loader !== 'function') throw bad('must map to a loader function.')
-    if (!key.startsWith('/')) throw bad('must start with "/".')
-    if (key.length > 1 && key.endsWith('/')) throw bad('must not end with "/".')
-    if (key.includes('//')) throw bad('must not contain an empty segment ("//").')
-    if (/[?#]/.test(key)) throw bad('must not contain "?" or "#".')
-    if (key.includes('*')) throw bad('must not contain a wildcard ("*").')
+    const issue = patternIssue(key)
+    if (issue) throw bad(MANIFEST_MESSAGES[issue.code](issue.segment))
 
-    const names = new Set()
-    for (const segment of key.split('/').filter(Boolean)) {
-      if (!segment.startsWith(':')) continue
-      const name = segment.slice(1)
-      if (!PARAM_NAME.test(name)) throw bad(`has an invalid parameter name "${segment}".`)
-      if (names.has(name)) throw bad(`repeats the parameter "${segment}".`)
-      names.add(name)
-    }
-
-    const { route, shape } = routeKeys(key)
-    const twin = same.get(route)
-    if (twin !== undefined) throw bad(`is the same route as "${twin}" (static segments are compared decoded), so one could never match.`)
-    same.set(route, key)
-    const other = shapes.get(shape)
-    if (other !== undefined) throw bad(`differs from "${other}" only in parameter names, so one could never match.`)
-    shapes.set(shape, key)
+    const clash = seen.add(key, key)
+    if (clash?.code === 'same') throw bad(`is the same route as "${clash.other}" (static segments are compared decoded), so one could never match.`)
+    if (clash) throw bad(`differs from "${clash.other}" only in parameter names, so one could never match.`)
   }
 
   if (notFound !== undefined && typeof notFound !== 'function') {

@@ -45,6 +45,10 @@ const routes = {
       return html`<h1>Feed</h1>`
     },
   }),
+  '/flaky': () => {
+    if (!flags.flakyLoads) throw new Error('Flaky failed to load')
+    return { default: Page('Flaky') }
+  },
 }
 
 /** @type {string[]} the pages whose onCleanup ran */
@@ -52,20 +56,35 @@ const cleaned = []
 /** @param {unknown} content */
 const Shell = (content) => html`<div data-layout="shell">${content}</div>`
 
-const flags = { denyOverview: false, holdLogin: false }
+const flags = { denyOverview: false, holdLogin: false, flakyLoads: false }
 /** @type {string[]} */
 const log = []
 
-beforeEach(async ({ to }) => {
-  if (to === '/denied') return false
-  if (to === '/' && flags.denyOverview) return false
-  if (to === '/admin') return '/login'
-  if (to === '/login' && flags.holdLogin) await gate('login')
-})
-afterEach(({ to, status }) => { log.push(`${to}:${status}`) })
+/** @type {(() => Promise<void>) | null} the error view's retry, for the tests */
+let retry = null
 
-await initRouter({ routes })
-createApp({ target: '#app', layouts: { shell: Shell } })
+/** The startup sequence; the teardown test runs it again after destroy(). */
+async function start() {
+  beforeEach(async ({ to }) => {
+    if (to === '/denied') return false
+    if (to === '/' && flags.denyOverview) return false
+    if (to === '/admin') return '/login'
+    if (to === '/login' && flags.holdLogin) await gate('login')
+  })
+  afterEach(({ to, status }) => { log.push(`${to}:${status}`) })
+
+  await initRouter({ routes })
+  createApp({
+    target: '#app',
+    layouts: { shell: Shell },
+    error: ({ message, retry: again }) => {
+      retry = again
+      return html`<p role="alert">${message}</p>`
+    },
+  })
+}
+
+await start()
 
 const route = useRoute()
 const router = useRouter()
@@ -81,6 +100,8 @@ Object.assign(window, {
     status: () => route.status(),
     path: () => route.path(),
     cleaned,
+    retry: () => /** @type {() => Promise<void>} */ (retry)(),
     destroy,
+    start,
   },
 })

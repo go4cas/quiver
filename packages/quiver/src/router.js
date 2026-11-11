@@ -22,6 +22,22 @@ import { compareRoutes, matchPath, normalizePath, validateManifest } from './mat
  * @typedef {{ next: SettleableResult | null }} NavOp
  */
 /** @typedef {{ redirects?: number, first?: string, rollback?: boolean, retry?: boolean, op?: NavOp }} NavInfo */
+/**
+ * One run of the pipeline (the initial load or one intercepted navigation). Only
+ * the newest one, `currentNav`, may write state or fire hooks (§2 step 2); a
+ * superseded run sees `nav !== currentNav` after an await and stops. What it
+ * owes is kept on it, so starting a newer run drops it with it (R14, N171).
+ * @typedef {Object} Nav
+ * @property {unknown[]} renderErrors render errors the outlet reported while this run was current
+ * @property {{ to: string, errors: PipelineError[] } | null} report hooks owed for the initial
+ *   navigation until createApp() mounts (C-44)
+ */
+/**
+ * What the guards decided for one navigation, classified once for the initial
+ * load and for in-app navigations (R14, N171).
+ * @typedef {{ kind: 'superseded' } | { kind: 'proceed' } | { kind: 'cancel' }
+ *   | { kind: 'error', error: unknown } | { kind: 'redirect', to: string, href: string }} GuardOutcome
+ */
 
 const MAX_REDIRECTS = 10
 const NO_NAVIGATION_API =
@@ -44,12 +60,8 @@ const errorHooks = []
 let phase = /** @type {'off' | 'starting' | 'ready'} */ ('off')
 // Bumped by destroy(), so an initRouter() still awaiting its first load knows it was torn down.
 let generation = 0
-// Supersession token (§2 step 2): only the newest navigation may write state or fire hooks.
-let navEpoch = 0
-/** @type {unknown[]} render errors reported by the outlet during the current navigation */
-let renderErrors = []
-/** @type {{ to: string, errors: PipelineError[] } | null} hooks owed for the initial navigation (C-44) */
-let initialReport = null
+/** @type {Nav | null} the newest navigation; null before initRouter() and after destroy() */
+let currentNav = null
 /**
  * The last navigation that committed: its history entry and router state. A
  * cancelled navigation goes back to it (N126).
@@ -247,16 +259,16 @@ export function traverse(direction) {
 // ---------------------------------------------------------------- pipeline (§2)
 
 /**
- * @param {number} epoch
+ * @param {Nav} nav
  * @param {string | null} from
  * @param {string} to
  * @returns {Promise<true | false | string | null>} null when a newer navigation took over,
  *   so a superseded navigation calls no further guards (N126)
  */
-async function runGuards(epoch, from, to) {
+async function runGuards(nav, from, to) {
   for (const { fn } of [...guards]) {
     const result = await fn({ from, to })
-    if (epoch !== navEpoch) return null
+    if (nav !== currentNav) return null
     if (result === false || typeof result === 'string') return result
   }
   return true
@@ -280,6 +292,55 @@ function redirectHref(target) {
     throw new Error(`A guard redirected to "${target}". Redirects must be base-relative paths inside the app; use go() for other URLs.`)
   }
   return href
+}
+
+/** @type {GuardOutcome} */
+const SUPERSEDED = { kind: 'superseded' }
+/** @type {GuardOutcome} */
+const PROCEED = { kind: 'proceed' }
+/** @type {GuardOutcome} */
+const CANCEL = { kind: 'cancel' }
+
+/**
+ * Steps 2–3: run the guards for `to` and classify their decision. `false`
+ * cancels back to the last committed route; with none yet (the initial load, or
+ * a navigation during startup) there is no page to stay on, so it goes to '/'
+ * (C-16). A redirect to the path being navigated to proceeds, so the cap only
+ * catches real cycles (N66). A redirect must stay inside the app (N129).
+ * @param {Nav} nav
+ * @param {string | null} from
+ * @param {string} to
+ * @param {number} redirects redirect hops already taken
+ * @param {string} first the path the chain started from, for the cap's message
+ * @returns {Promise<GuardOutcome>}
+ */
+async function decide(nav, from, to, redirects, first) {
+  /** @type {true | false | string | null} */
+  let result
+  try {
+    result = await runGuards(nav, from, to)
+  } catch (error) {
+    return nav === currentNav ? { kind: 'error', error } : SUPERSEDED
+  }
+  if (result === null) return SUPERSEDED
+  if (result === true) return PROCEED
+  if (result === false) {
+    if (settled) return CANCEL
+    result = '/'
+  }
+  const next = normalizePath(result)
+  if (next === to) return PROCEED
+  /** @type {string} */
+  let href
+  try {
+    href = redirectHref(result)
+  } catch (error) {
+    return { kind: 'error', error }
+  }
+  if (redirects >= MAX_REDIRECTS) {
+    return { kind: 'error', error: new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`) }
+  }
+  return { kind: 'redirect', to: next, href }
 }
 
 /** A navigation committed: remember it as the one a cancel goes back to. */
@@ -329,11 +390,11 @@ function commitError(error, phase, to) {
 
 /**
  * Steps 4–6: load the route for `to` and commit it.
- * @param {number} epoch
+ * @param {Nav} nav
  * @param {string} to
  * @returns {Promise<PipelineError[] | null>} errors to report, or null when superseded
  */
-async function load(epoch, to) {
+async function load(nav, to) {
   clearMeta()
   unsettled = true
   Object.assign(routerState, { status: 'loading', path: to, params: {}, meta: {}, page: null, layout: '', error: null })
@@ -360,10 +421,10 @@ async function load(epoch, to) {
         : 'The notFound page must default export a page function.')
     }
   } catch (error) {
-    if (epoch !== navEpoch) return null
+    if (nav !== currentNav) return null
     return commitError(error, 'load', to)
   }
-  if (epoch !== navEpoch) return null
+  if (nav !== currentNav) return null
 
   const meta = module.meta || {}
   Object.assign(routerState, {
@@ -378,28 +439,31 @@ async function load(epoch, to) {
   return []
 }
 
-/** Start a navigation: bump the epoch and drop anything owed to an older one. */
+/**
+ * Start a navigation. It supersedes the previous one, and whatever that one was
+ * still owed (render errors, the initial report) goes with it.
+ * @returns {Nav}
+ */
 function begin() {
-  renderErrors = []
-  initialReport = null
-  return ++navEpoch
+  currentNav = { renderErrors: [], report: null }
+  return currentNav
 }
 
 /**
  * Steps 7–8 for an in-app navigation: let Arrow render, collect render errors,
  * make sure the error view is in the DOM, then fire hooks.
- * @param {number} epoch
+ * @param {Nav} nav
  * @param {string | null} from
  * @param {string} to
  * @param {PipelineError[]} errors
  */
-async function renderAndReport(epoch, from, to, errors) {
+async function renderAndReport(nav, from, to, errors) {
   await nextTick()
-  if (epoch !== navEpoch) return
-  if (renderErrors.length) {
-    for (const error of renderErrors) errors.push({ error, phase: 'render' })
+  if (nav !== currentNav) return
+  if (nav.renderErrors.length) {
+    for (const error of nav.renderErrors) errors.push({ error, phase: 'render' })
     await nextTick() // the outlet re-renders into the error view (C-26)
-    if (epoch !== navEpoch) return
+    if (nav !== currentNav) return
   }
   fireHooks(from, to, errors)
 }
@@ -409,7 +473,7 @@ async function renderAndReport(epoch, from, to, errors) {
  * @param {unknown} error
  */
 export function reportRenderError(error) {
-  renderErrors.push(error)
+  currentNav?.renderErrors.push(error)
   Object.assign(routerState, { status: 'error', error: () => error, page: null, layout: '', meta: {} })
   // Drop what the failed render's useMeta() set, watchers included (N128).
   resetMeta()
@@ -418,9 +482,7 @@ export function reportRenderError(error) {
 
 /** @returns {unknown[]} render errors collected since the current navigation began */
 export function takeRenderErrors() {
-  const errors = renderErrors
-  renderErrors = []
-  return errors
+  return currentNav ? currentNav.renderErrors.splice(0) : []
 }
 
 /**
@@ -430,58 +492,36 @@ export function takeRenderErrors() {
  * @param {NavOp} op
  */
 async function pipeline(from, to, info, op) {
-  const epoch = begin()
+  const nav = begin()
   const redirects = info?.redirects ?? 0
   const first = info?.first ?? to
 
-  /** @type {PipelineError[] | null} */
-  let errors = null
-  /** @type {true | false | string | null} */
-  let result = true
-  try {
-    result = await runGuards(epoch, from, to)
-  } catch (error) {
-    if (epoch !== navEpoch) return
-    errors = commitError(error, 'guard', to)
-  }
-  if (epoch !== navEpoch) return
+  const outcome = await decide(nav, from, to, redirects, first)
+  if (nav !== currentNav) return
 
-  if (!errors && result === false) {
-    // Cancel: go back to the last committed route and entry, query and hash
-    // included, without re-running anything (2.x, N126).
-    if (settled) {
+  /** @type {PipelineError[] | null} */
+  let errors
+  switch (outcome.kind) {
+    case 'superseded':
+      return
+    case 'cancel':
+      // Go back to the last committed route and entry, query and hash
+      // included, without re-running anything (2.x, N126).
       rollback(op)
       return
-    }
-    // Nothing committed yet (a navigation during startup): there is no page
-    // to stay on, so false goes to '/', as on the initial load (C-16).
-    result = '/'
-  }
-  // A redirect to the path being navigated to proceeds, as on the initial load
-  // (C-16), so the redirect cap only catches real cycles (N66).
-  if (!errors && typeof result === 'string' && normalizePath(result) !== to) {
-    /** @type {string | null} */
-    let href = null
-    try {
-      href = redirectHref(result)
-    } catch (error) {
-      errors = commitError(error, 'guard', to)
-    }
-    if (!errors && redirects >= MAX_REDIRECTS) {
-      errors = commitError(new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`), 'guard', to)
-    } else if (!errors) {
+    case 'redirect':
       // The redirect target runs its own pipeline and fires the hooks; the
       // caller's go() waits for it (N127).
-      follow(op, navigation.navigate(/** @type {string} */ (href), { history: 'replace', info: mark({ redirects: redirects + 1, first, op }) }))
+      follow(op, navigation.navigate(outcome.href, { history: 'replace', info: mark({ redirects: redirects + 1, first, op }) }))
       return
-    }
+    case 'error':
+      errors = commitError(outcome.error, 'guard', to)
+      break
+    default:
+      errors = await load(nav, to)
+      if (!errors) return
   }
-
-  if (!errors) {
-    errors = await load(epoch, to)
-    if (!errors) return
-  }
-  await renderAndReport(epoch, from, to, errors)
+  await renderAndReport(nav, from, to, errors)
 }
 
 /** @param {NavigateEvent} event */
@@ -546,47 +586,29 @@ export async function initRouter(options) {
   navigation.addEventListener('navigate', handleNavigate)
 
   // The navigate event doesn't fire for the initial load, so run the guards
-  // here. There is no previous page to stay on: false redirects to '/'.
-  const epoch = begin()
+  // here, following redirects by rewriting the URL in place.
+  const nav = begin()
   let to = normalizePath(relative)
   const first = to
   /** @type {PipelineError[] | null} */
   let errors = null
 
   for (let hops = 0; ; hops++) {
-    /** @type {true | false | string | null} */
-    let result
-    try {
-      result = await runGuards(epoch, null, to)
-    } catch (error) {
-      if (epoch !== navEpoch) break
-      errors = commitError(error, 'guard', to)
-      break
+    const outcome = await decide(nav, null, to, hops, first)
+    if (nav !== currentNav) break
+    if (outcome.kind === 'redirect') {
+      history.replaceState(history.state, '', outcome.href)
+      to = outcome.to
+      continue
     }
-    if (epoch !== navEpoch || result === true || result === null) break
-    const target = result === false ? '/' : result
-    const next = normalizePath(target)
-    if (next === to) break // 2.x: a redirect to the current path proceeds
-    /** @type {string} */
-    let href
-    try {
-      href = redirectHref(target)
-    } catch (error) {
-      errors = commitError(error, 'guard', to)
-      break
-    }
-    if (hops === MAX_REDIRECTS) {
-      errors = commitError(new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`), 'guard', to)
-      break
-    }
-    history.replaceState(history.state, '', href)
-    to = next
+    if (outcome.kind === 'error') errors = commitError(outcome.error, 'guard', to)
+    break
   }
 
-  if (epoch === navEpoch && !errors) errors = await load(epoch, to)
+  if (nav === currentNav && !errors) errors = await load(nav, to)
   if (gen !== generation) return // destroy() ran while loading
 
-  if (epoch === navEpoch && errors) initialReport = { to, errors }
+  if (nav === currentNav && errors) nav.report = { to, errors }
   phase = 'ready'
 }
 
@@ -597,14 +619,14 @@ export function isRouterReady() {
 
 /** @returns {{ to: string, errors: PipelineError[] } | null} the initial navigation's report, once */
 export function takeInitialReport() {
-  const report = initialReport
-  initialReport = null
+  const report = currentNav?.report ?? null
+  if (currentNav) currentNav.report = null
   return report
 }
 
 /** Step 1 of destroy(): drop in-flight loads and hooks. */
 export function bumpEpoch() {
-  navEpoch++
+  currentNav = null
   generation++
 }
 
@@ -622,8 +644,7 @@ export function stopRouter() {
 export function resetRouter() {
   records = []
   notFoundLoader = undefined
-  renderErrors = []
-  initialReport = null
+  currentNav = null
   settled = null
   unsettled = false
   phase = 'off'

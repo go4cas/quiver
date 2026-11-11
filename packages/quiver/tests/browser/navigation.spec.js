@@ -4,7 +4,7 @@
 // WebKit (N155; `bun run test:browsers`).
 import { test, expect } from '@playwright/test'
 
-/** @typedef {{ flags: { denyOverview: boolean, holdLogin: boolean }, log: string[], go: (p: string) => Promise<void>, back: () => Promise<void>, forward: () => Promise<void>, release: (name: string) => void, status: () => string, path: () => string }} Fixture */
+/** @typedef {{ flags: { denyOverview: boolean, holdLogin: boolean, flakyLoads: boolean }, log: string[], go: (p: string) => Promise<void>, back: () => Promise<void>, forward: () => Promise<void>, release: (name: string) => void, status: () => string, path: () => string, retry: () => Promise<void>, destroy: () => void, start: () => Promise<void> }} Fixture */
 
 /** @param {import('@playwright/test').Page} page */
 async function open(page, path = './') {
@@ -82,6 +82,60 @@ test('R09: a page without metadata gets the host title back and no stale descrip
   await expect(page.locator('#app h1')).toHaveText('Details')
   await expect(page).toHaveTitle('Host title')
   await expect(page.locator('meta[name="description"]')).toHaveCount(0)
+})
+
+test('R14 startup: a guard redirect on the initial load rewrites the URL in place', async ({ page }) => {
+  await page.goto('./admin')
+  await expect(page.locator('#app h1')).toHaveText('Login')
+  await expect(page).toHaveURL(/login$/)
+  expect(await page.evaluate(() => [.../** @type {any} */ (window).fixture.log])).toEqual(['/login:ready'])
+  expect(await page.evaluate(() => navigation.entries().map((e) => new URL(/** @type {string} */ (e.url)).pathname)))
+    .not.toContainEqual(expect.stringMatching(/admin$/))
+})
+
+test('R14 startup: a guard returning false on the initial load goes to the root', async ({ page, baseURL }) => {
+  await page.goto('./denied')
+  await expect(page.locator('#app h1')).toHaveText('Overview')
+  expect(new URL(page.url()).pathname).toBe(new URL(/** @type {string} */ (baseURL)).pathname)
+  expect(await page.evaluate(() => [.../** @type {any} */ (window).fixture.log])).toEqual(['/:ready'])
+})
+
+test('R14 retry: retry() reloads a failed route in place, without a new history entry', async ({ page }) => {
+  await open(page)
+  await page.evaluate(() => /** @type {any} */ (window).fixture.go('/flaky'))
+  await expect(page.getByRole('alert')).toHaveText('Flaky failed to load')
+  const entries = await page.evaluate(() => navigation.entries().length)
+  const result = await page.evaluate(async () => {
+    const f = /** @type {any} */ (window).fixture
+    f.flags.flakyLoads = true
+    await f.retry()
+    return { status: f.status(), log: [...f.log] }
+  })
+  await expect(page.locator('#app h1')).toHaveText('Flaky')
+  expect(result.status).toBe('ready')
+  expect(result.log.slice(-2)).toEqual(['/flaky:error', '/flaky:ready'])
+  expect(await page.evaluate(() => navigation.entries().length)).toBe(entries)
+  await expect(page).toHaveURL(/flaky$/)
+})
+
+test('R14 teardown: destroy() during a load drops it, and the app starts again', async ({ page }) => {
+  await open(page)
+  await page.getByRole('link', { name: 'Slow' }).click()
+  await expect(page.locator('#app')).toHaveText('Loading…')
+  await page.evaluate(() => {
+    const f = /** @type {any} */ (window).fixture
+    f.destroy()
+    f.release('slow')
+  })
+  await expect(page.locator('#app')).toBeEmpty()
+  await expect(page).toHaveTitle('Host title')
+  expect(await page.evaluate(() => [.../** @type {any} */ (window).fixture.log])).toEqual(['/:ready'])
+
+  await page.evaluate(() => /** @type {any} */ (window).fixture.start())
+  await expect(page.locator('#app h1')).toHaveText('Slow')
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  expect(await page.evaluate(() => [.../** @type {any} */ (window).fixture.log])).toEqual(['/:ready', '/slow:ready', '/details:ready'])
 })
 
 test('without the Navigation API, initRouter() throws the documented message and renders nothing', async ({ page }) => {
