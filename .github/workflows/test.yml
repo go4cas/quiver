@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read
 
+# Actions are pinned to full commit SHAs and the Playwright image to its digest (audit S05,
+# N151). Dependabot (github-actions) bumps the SHAs with their version comments; bump the
+# image by hand (starter/tests/visual/README.md, "Bumping Playwright").
+
 jobs:
   # R11: the unit job runs on the documented minimums. The workspace (root and
   # starter engines.node) needs Node 22.22.2 for jsdom; Vitest, tsc and Vite run
@@ -22,11 +26,13 @@ jobs:
   unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22.22.2
       - run: node --version && bun --version
@@ -35,16 +41,32 @@ jobs:
       - run: bun run test
       - run: bun run build
       # S-34: the CLI runs on Node, not only on Bun, from its minimum up.
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22.12.0
       - run: node --version && node packages/quiver/bin/quiver.js routes --dir packages/quiver/tests/fixtures/pages --out "$RUNNER_TEMP/routes.gen.js"
 
+  # Audit S01 (N150): every advisory in the full lockfile (dev tooling included) must be
+  # fixed, or listed unexpired and version-scoped, in scripts/audit-exceptions.json.
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.x
+      # bun audit reads bun.lock; no install, so no dependency code runs in this job.
+      - run: bun run audit
+
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.x
       - run: bun install --frozen-lockfile
@@ -58,11 +80,13 @@ jobs:
   pack:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.x
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
       - run: bun install --frozen-lockfile
@@ -78,47 +102,79 @@ jobs:
     if: ${{ !inputs.update-screenshots }}
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
       options: --ipc=host
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.x
       - run: bun install --frozen-lockfile
       - name: Compare with the baseline
         run: bun run test:visual
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() }}
         with:
           name: visual-diffs
           path: starter/test-results/
           retention-days: 7
 
-  # Manual run with update-screenshots: the only job that gets a write token.
-  screenshots-update:
+  # Manual run with update-screenshots, in two jobs (audit S05, N151). The capture job
+  # installs dependencies and runs repository code with a read-only token and uploads
+  # the baseline folder; the commit job installs and runs nothing, checks the artifact
+  # holds only PNGs, and is the only job with a write token.
+  screenshots-capture:
     if: ${{ inputs.update-screenshots && github.ref_name != 'main' }}
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
       options: --ipc=host
     permissions:
-      contents: write
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.x
       - run: bun install --frozen-lockfile
-      - name: Re-capture and commit the baseline
+      - name: Re-capture the baseline
+        # only captures beyond the tolerance, so sub-threshold noise never churns PNGs
+        run: bun run test:visual --update-snapshots=changed
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-baseline
+          path: starter/tests/visual/__screenshots__/
+          if-no-files-found: error
+          retention-days: 1
+
+  screenshots-commit:
+    needs: screenshots-capture
+    if: ${{ inputs.update-screenshots && github.ref_name != 'main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Replace the baseline with the captured one
+        run: rm -rf starter/tests/visual/__screenshots__
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: visual-baseline
+          path: starter/tests/visual/__screenshots__/
+      - name: Commit the baseline
         run: |
-          bun run test:visual --update-snapshots=changed   # only captures beyond the tolerance, so sub-threshold noise never churns PNGs
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          dir=starter/tests/visual/__screenshots__
+          other=$(find "$dir" \( \( -type f ! -name '*.png' \) -o ! \( -type f -o -type d \) \) -print)
+          if [ -n "$other" ]; then echo "::error::Artifact holds more than PNGs:"; echo "$other"; exit 1; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add starter/tests/visual/__screenshots__
+          git add -A -- "$dir"
           if git diff --cached --quiet; then echo "Baseline unchanged"; exit 0; fi
           git commit -m "test(visual): re-capture screenshot baseline on CI (${GITHUB_SHA::7})"
           git push origin "HEAD:$GITHUB_REF_NAME"

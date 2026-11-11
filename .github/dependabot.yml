@@ -11,13 +11,15 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
-    # The `screenshots` job runs in mcr.microsoft.com/playwright:v<version>-noble, which
+    # The `screenshots` job runs in mcr.microsoft.com/playwright:v<version>-noble (pinned by digest), which
     # must match @playwright/test exactly, and a new Chromium means re-capturing the
     # baseline. Dependabot can do neither, so bump Playwright by hand
     # (starter/tests/visual/README.md, "Bumping Playwright").
     ignore:
       - dependency-name: "@playwright/test"
 
+  # Workflows pin actions to full commit SHAs with a `# vX.Y.Z` comment (audit S05);
+  # Dependabot updates both.
   - package-ecosystem: github-actions
     directory: /
     schedule:
