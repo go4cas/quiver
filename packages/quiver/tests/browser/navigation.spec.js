@@ -82,3 +82,29 @@ test('R09: a page without metadata gets the host title back and no stale descrip
   await expect(page).toHaveTitle('Host title')
   await expect(page.locator('meta[name="description"]')).toHaveCount(0)
 })
+
+test('N160: a page inside a layout aborts its request in onCleanup when left, and on destroy()', async ({ page }) => {
+  /** @type {import('@playwright/test').Route[]} */
+  const held = []
+  await page.route('**/feed.json', (route) => { held.push(route) }) // never answered
+  /** @type {string[]} */
+  const failed = []
+  page.on('requestfailed', (r) => { if (r.url().endsWith('/feed.json')) failed.push(r.failure()?.errorText ?? '') })
+
+  await open(page)
+  await page.evaluate(() => /** @type {any} */ (window).fixture.go('/feed'))
+  await expect(page.locator('#app [data-layout="shell"] h1')).toHaveText('Feed')
+  await expect.poll(() => held.length).toBe(1)
+
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await expect.poll(() => failed.length).toBe(1)
+  expect(await page.evaluate(() => /** @type {any} */ (window).fixture.cleaned)).toEqual(['feed'])
+
+  await page.evaluate(() => /** @type {any} */ (window).fixture.go('/feed'))
+  await expect.poll(() => held.length).toBe(2)
+  await page.evaluate(() => /** @type {any} */ (window).fixture.destroy())
+  await expect.poll(() => failed.length).toBe(2)
+  expect(await page.evaluate(() => /** @type {any} */ (window).fixture.cleaned)).toEqual(['feed', 'feed'])
+  await expect(page.locator('#app')).toBeEmpty()
+})
