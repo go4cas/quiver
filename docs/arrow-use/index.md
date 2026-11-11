@@ -58,7 +58,7 @@ Every composable here follows these rules, and so should one you write:
 1. **Arrow only.** `@arrow-js/core` is the only peer dependency, and only its public exports are used. No Quiver imports.
 2. **Getters, not values.** The return value is a plain object of functions. Read state with getters (`data()`, `value()`), so `${() => posts.data()}` stays reactive. Getters return plain values, never `reactive()` proxies.
 3. **Always `stop()`.** Every composable returns `stop()`, which releases its listeners and requests. Calling it twice is fine, and the getters keep their last values (a request in flight is aborted, so `loading()` becomes `false`).
-4. **Inside or outside a component.** Inside `component()`, cleanup runs when the component unmounts. Anywhere else (module scope, a plain function, a test), nothing throws, and you call `stop()` yourself.
+4. **Inside or outside a component.** Inside `component()`, cleanup runs when the component unmounts. In a Quiver 3.1+ page or layout function, cleanup runs when the page is left. Anywhere else (module scope, a plain function, a test), nothing throws, and you call `stop()` yourself.
 5. **Nothing at import.** Importing the package runs no code; browser APIs are checked when a composable is called, so it imports fine on a server or in tests.
 6. **Options last.** `useX(required…, options = {})`, every option optional with a default.
 7. **One file per composable.** `src/useX.js` exports `useX`; `src/index.js` re-exports them and their types.

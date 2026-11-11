@@ -85,10 +85,13 @@ tests/repo/          repo-wide checks; tests/pack/ checks the npm tarballs
 | `bun run build` | Production build of the starter |
 | `bun run typecheck` | Type-check every workspace (JSDoc, `tsc`) |
 | `bun run test` | Repo checks, then every workspace's unit tests |
-| `bun run test:e2e` | Playwright in the starter, the examples, `arrow-use` and the recipes |
+| `bun run test:e2e` | Playwright in the starter, the examples, `arrow-use`, the recipes and core's router suite (Chromium) |
+| `bun run test:browsers` | Core's router suite in Chromium, Firefox and WebKit (`bunx playwright install firefox webkit` first) |
 | `bun run test:visual` | Screenshot parity (only inside the pinned Playwright image) |
 | `bun run pack:check` | `npm pack --dry-run` file lists for both packages |
 | `bun run pack:try` | The examples and the starter, copied out, against the packed tarballs |
+| `bun run pack:types` | The packed `.d.ts` in fresh TypeScript projects, `skipLibCheck` off |
+| `bun run audit` | Dependency advisories in the lockfile, against `scripts/audit-exceptions.json` |
 | `bun run recipes:sync` | Copy `recipes/` into `starter/src/quiver/` after editing a recipe |
 | `bun run docs:dev` / `docs:build` | Docs site |
 

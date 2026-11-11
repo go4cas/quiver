@@ -39,5 +39,5 @@ Prefer CSS `@media` for styling. Use this when the logic changes: rendering a di
 ## Behaviour
 
 - Reads `matchMedia(query)` when called and listens for its `change` event.
-- Inside a `component()` that a slot drops, it stops listening on unmount. Elsewhere, call `stop()` when done, or keep one instance in a module for the whole app (the [theme switcher](/recipes/theme-switcher) does this for `prefers-color-scheme`).
+- Inside a `component()` that a slot drops, it stops listening on unmount, and called in a Quiver 3.1+ page or layout function, when the page is left. Elsewhere, call `stop()` when done, or keep one instance in a module for the whole app (the [theme switcher](/recipes/theme-switcher) does this for `prefers-color-scheme`).
 - Without `matchMedia` (a server, a test without a DOM), `matches()` is `false`.

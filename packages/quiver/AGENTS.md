@@ -33,7 +33,7 @@ The manifest comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the 
 |---|---|
 | `initRouter({ routes, notFound?, base? })` | starts routing; resolves once the first route is ready |
 | `createApp({ target, layouts?, defaultLayout?, loading?, error? })` | mounts the outlet into `target` |
-| `destroy()` | tears down router, guards, hooks, context, meta watchers and the mounted target |
+| `destroy()` | tears down router, guards, hooks, context, meta watchers and the mounted target; runs the page's cleanups and restores the host page's title and description |
 | `go(path)` | navigates; returns a promise that settles when the navigation finishes |
 | `url(path)` | adds the base to a base-relative path, for `href` and `src` |
 | `beforeEach(fn)` | guard `({ from, to })`: return `false` to cancel (the page on screen stays, history unchanged), a base-relative path to redirect (an absolute URL or a path outside the base is a guard error), anything else to proceed; returns an unregister function |
