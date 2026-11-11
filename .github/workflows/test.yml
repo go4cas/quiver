@@ -91,6 +91,8 @@ jobs:
           bun-version: 1.4.x
       - run: bun install --frozen-lockfile
       - run: bun run test:browsers
+        env:
+          HOME: /root   # Firefox refuses to start as root with a HOME owned by another user (pwuser)
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ failure() }}
         with:

@@ -228,6 +228,8 @@ Quiver's router is built on the [Navigation API](https://developer.mozilla.org/e
 | Safari | 26.2 |
 | Firefox | 147 |
 
+CI runs the router's browser tests in Chromium, Firefox and WebKit through Playwright, whose engines are newer than these minimums; the minimums themselves come from where each browser shipped the Navigation API. Playwright's WebKit is close to Safari but is not Safari itself.
+
 There is no fallback to the History API. In a browser without `window.navigation`, `initRouter()` throws:
 
 ```

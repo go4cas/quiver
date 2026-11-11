@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `@go4cas/quiver`: a Playwright suite on the real Navigation API (`packages/quiver/tests/browser/`, ports 5185 and 5195), run by `bun run test:e2e`
+- `@go4cas/quiver`: the router's browser suite also runs in Firefox and WebKit, at `/` and under `/sub/app/`, from `bun run test:browsers` and a CI `browsers` job in the pinned Playwright image; it also checks the error `initRouter()` throws without the Navigation API (N155)
 - `bun run pack:types` uses the Vite plugin inside Vite's `defineConfig()` and the Bun plugin inside a `Bun.build()` call typed by `@types/bun`, with `skipLibCheck: false`
 
 ### Security
