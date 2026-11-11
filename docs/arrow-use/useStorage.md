@@ -58,8 +58,8 @@ const tab = useStorage('last-tab', 'overview', {
 
 ## Behaviour
 
-- **`initial` is not written.** Until `set()` is called, the key stays unset and `value()` returns `initial`, so changing the default later reaches everyone who never chose.
-- **Other tabs.** A write in another tab (or `localStorage.clear()` there) updates `value()` here, through the browser's `storage` event.
+- **Creating it only reads.** `useStorage()` reads the key and writes nothing, not even a test key, so other keys in the same storage are never touched. Until `set()` is called, the key stays unset and `value()` returns `initial`, so changing the default later reaches everyone who never chose.
+- **Other tabs.** A write in another tab (or `localStorage.clear()` there) updates `value()` here, through the browser's `storage` event. For `storage: 'session'` the event comes only from other same-origin frames of the same tab, because each tab (top-level browsing context) has its own `sessionStorage`; other tabs never see it.
 - **Same tab: one instance per key.** The `storage` event never fires in the tab that wrote, so two `useStorage` calls for one key in one tab don't see each other's writes. Create one instance in a module and import it, as above.
-- **Storage that fails.** When storage is missing or throws (a server, private mode, blocked storage, a full quota), the value lives in memory: `set()` and `value()` still work for this page. A stored string the serializer can't read gives `initial`.
+- **Storage that fails.** Reading, writing and removing each fail on their own. When storage is missing or blocked (a server, blocked storage), or the read throws, `value()` starts at `initial`. When only writes fail (private mode, a full quota, read-only storage), a stored value still loads, and `set()` and `remove()` update `value()` in memory for this page. A later write from another tab still replaces that in-memory value. A stored string the serializer can't read gives `initial`.
 - **Plain values.** `value()` returns the value itself, not a reactive proxy. Store a new value with `set()` rather than mutating the old one.

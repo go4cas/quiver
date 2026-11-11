@@ -25,10 +25,13 @@ import { reactive, onCleanup } from '@arrow-js/core'
 
 /**
  * A value kept in `localStorage` or `sessionStorage` under `key`, reactive and synced
- * across tabs through the `storage` event. When the storage is missing or throws
- * (a non-browser runtime, private mode, blocked storage, a full quota), the value
- * lives in memory instead. Inside a `component()`, cross-tab syncing stops when the
- * component unmounts.
+ * through the `storage` event: across tabs for `localStorage`, across same-origin
+ * frames of one tab for `sessionStorage`. Creating it only reads; nothing is
+ * written until `set()` or `remove()`. When the storage is missing or a read or
+ * write throws (a non-browser runtime, private mode, blocked storage, a full
+ * quota), that operation falls back to memory: a failed read gives `initial`, a
+ * failed write still updates `value()` for this page. Inside a `component()`,
+ * syncing stops when the component unmounts.
  *
  * @template T
  * @param {string} key
@@ -67,6 +70,9 @@ export function useStorage(key, initial, options = {}) {
     if (area) safe(() => area.removeItem(key), undefined)
   }
 
+  // An incoming event is what another tab (or, for sessionStorage, another
+  // frame of this tab) stored, so it replaces the value even when this tab's
+  // own last write failed and lives only in memory.
   /** @param {StorageEvent} event */
   function onStorage(event) {
     // key === null means another tab called clear().
@@ -95,20 +101,15 @@ export function useStorage(key, initial, options = {}) {
 const JSON_SERIALIZER = { read: JSON.parse, write: JSON.stringify }
 
 /**
- * The storage area, or null when it is missing or unusable. Reading
- * `window.localStorage` itself throws when storage is blocked.
+ * The storage area, or null when it is missing or blocked. Reading
+ * `window.localStorage` itself throws when storage is blocked. Nothing is
+ * written to test it: getItem, setItem and removeItem each fail on their own,
+ * so a read-only area still loads the stored value (N130).
  * @param {'local' | 'session'} which
  * @returns {Storage | null}
  */
 function storageArea(which) {
-  return safe(() => {
-    const area = /** @type {Storage | undefined} */ (/** @type {any} */ (globalThis)[`${which}Storage`])
-    if (!area) return null
-    const probe = '__arrow-use__'
-    area.setItem(probe, probe)
-    area.removeItem(probe)
-    return area
-  }, null)
+  return safe(() => /** @type {Storage | null} */ (/** @type {any} */ (globalThis)[`${which}Storage`] ?? null), null)
 }
 
 /**
