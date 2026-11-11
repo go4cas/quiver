@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@go4cas/quiver` (3.1): a reactive value read in a page or layout body (outside a `() =>` slot) no longer renders the whole page again; only slots update (N161)
 - Starter: the Posts page drops its `afterEach` workaround; `useFetch` aborts on its own when you leave the page or call `destroy()`
 
+### Security
+
+- Repo tooling, no package change: a `Publish` workflow can stage releases of `@go4cas/quiver` and `arrow-use` on npm from a release tag through trusted publishing (OIDC, no npm token), with provenance; the maintainer still approves each one on npmjs.com. It stays build-only until switched on; `RELEASING.md` has the setup and the release steps
+
 ## [3.0.3] - 2026-11-11
 
 Published as `@go4cas/quiver` 3.0.3 and `arrow-use` 0.1.1. Fixes from the external review and security audit of 3.0.2.
