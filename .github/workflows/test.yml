@@ -104,6 +104,7 @@ jobs:
           bun-version: 1.4.x
       - run: bun install --frozen-lockfile
       - name: Re-capture and commit the baseline
+        shell: bash   # the container's default sh has no ${GITHUB_SHA::7}
         run: |
           bun run test:visual --update-snapshots=changed   # only captures beyond the tolerance, so sub-threshold noise never churns PNGs
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
