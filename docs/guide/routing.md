@@ -29,7 +29,8 @@ You rarely write it by hand. With file-based routing, every file in `src/pages/`
 - `[name]` is a dynamic segment; read it with `useRoute().params().name`.
 - Static segments win over dynamic ones: `/users/new` beats `/users/:id`. The order of files never matters.
 - Files and folders whose name starts with `_` or `.` are skipped, so `src/pages/_parts/Card.js` can hold page partials.
-- These are errors, each naming the files: a `not-found.js` in a subfolder; two files for one route (`users.js` and `users/index.js`); two that differ only in the param name (`[id].js` and `[slug].js` in one folder); an invalid param name (`[1st].js`).
+- Names can hold spaces and other Unicode: `src/pages/release notes.js` is `/release notes`, and the browser's `/release%20notes` matches it. Write the characters themselves; a `%` in a name is an error, since URLs are matched decoded.
+- These are errors, each naming the files: a `not-found.js` in a subfolder; two files for one route (`users.js` and `users/index.js`); two that differ only in the param name (`[id].js` and `[slug].js` in one folder); an invalid param name (`[1st].js`); a `%` or `\` in a name.
 
 Three front-ends share one scanner, so the same folder gives the same manifest everywhere:
 
@@ -57,6 +58,8 @@ export default {
 ```
 
 `initRouter()` checks it before anything else and throws a `TypeError` naming the bad key: a key must start with `/`, have no trailing slash (except `/`), no empty segment, no `?` or `#`; a `:param` name must be a valid identifier, unique in its pattern; and two keys that differ only in param names are rejected, since one could never match.
+
+Static segments are compared decoded and in Unicode NFC, so a key can spell a segment literally (`'/café'`, `'/release notes'`) or percent-encoded (`'/caf%C3%A9'`), and the browser's encoded URL matches either. Two keys that spell the same route both ways are rejected too. Param values are decoded (`/tags/caf%C3%A9` gives `{ tag: 'café' }`) but not normalised.
 
 ## Pages
 
@@ -95,7 +98,7 @@ export default function UserPage() {
 }
 ```
 
-The router stops these watchers on every navigation, so a title never leaks onto the next page. `description` sets `<meta name="description">`, creating it if needed.
+The router stops these watchers on every navigation, so a title never leaks onto the next page. `description` sets `<meta name="description">`, creating it if needed. A page that sets neither gets the host page's own title and description back (those in `index.html`).
 
 ## Reading the route
 
@@ -138,7 +141,7 @@ await router.back()
 await router.forward()
 ```
 
-Each returns a promise that settles when the navigation and its `afterEach` hooks have finished. A navigation that another one interrupts resolves quietly.
+Each returns a promise that settles when the navigation and its `afterEach` hooks have finished, following a guard's redirect to the end. A navigation that an unrelated one interrupts resolves quietly.
 
 ## Base path
 
@@ -176,8 +179,9 @@ beforeEach(({ from, to }) => {
 ```
 
 - Guards may be async. They run in registration order, and the first `false` or path wins.
-- Cancelling puts back the previous URL, query and hash included. On the first load there is no previous page, so `false` redirects to `/`.
+- Cancelling keeps the page that's on screen, with its URL, query and hash, and leaves history as it was: Back after a cancelled click goes where it went before. On the first load there is no previous page, so `false` redirects to `/`.
 - A redirect keeps its query and hash. A redirect to the path being navigated to just proceeds, so a guard without a `to !== '/login'` check still reaches `/login`.
+- A redirect stays inside the app. Returning an absolute URL or a path outside the base is a guard error, so a `?next=` value from the query string can't send users elsewhere. Check such values before using them in a link, too.
 - Redirect chains stop after 10 hops with an error (shown in the error view, reported to `onError` with `phase: 'guard'`).
 - `beforeEach()` returns a function that unregisters the guard.
 

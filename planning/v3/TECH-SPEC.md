@@ -118,7 +118,7 @@ export function afterEach(fn)
 export function onError(fn)
 ```
 
-- **C-30** `go(path)` calls `navigation.navigate(url(path))`. It keeps query and hash (2.x dropped them, N21). It resolves when `finished` settles, swallows `AbortError` (2.x behaviour) and rethrows anything else. *Check:* unit tests with a mocked `navigation`.
+- **C-30** `go(path)` calls `navigation.navigate(url(path))`. It keeps query and hash (2.x dropped them, N21). It resolves when `finished` settles, and then waits for any redirect or rollback the router started for it (N127); it swallows `AbortError` from an unrelated navigation (2.x behaviour) and rethrows anything else. *Check:* unit tests with a mocked `navigation`.
 - **C-31** `go()` before `initRouter()` or after `destroy()` throws `Quiver router is not initialised. Call initRouter() first.` *Check:* unit test.
 - **C-32** Guard contract is unchanged from 2.x except for paths (base-relative, C-21): `({ from, to }) => false | string | void | Promise<…>`. `false` cancels and puts back the previous URL, query and hash included (§2 step 3, N67); a string redirects; anything else proceeds. A redirect string is base-relative and may carry query and hash, which are kept (N21). Guards run in registration order and stop at the first `false` or string.
 - **C-33** Unregister functions are idempotent, and unregistering during a run does not skip the next handler in that run (the run iterates a copy). *Check:* unit test.
@@ -171,7 +171,7 @@ export function destroy()
   1. bumps the navigation epoch, so in-flight loads and hooks are dropped
   2. removes the `navigate` listener
   3. clears guards, `afterEach` and `onError` handlers
-  4. stops `useMeta` watchers (`document.title` is not restored)
+  4. stops `useMeta` watchers and puts back the host page's title and description captured by `initRouter()` (N128)
   5. clears the `provide`/`inject` context
   6. unmounts the outlet: sets the mount's private `mounted` flag to `false` so Arrow drops the page chunk and runs component `onCleanup` callbacks, then `target.replaceChildren()`
   7. replaces router state with a fresh object `{ status: 'idle', path: '', params: {}, meta: {}, … }` and the base with `'/'`
@@ -221,7 +221,7 @@ export function inject(key, fallback)
 
 - **C-60** `useRoute()` getters read the current router state object at call time (so they follow C-50 replacement). `params()` values are decoded with the 2.x `matchPath` fallback for malformed escapes. *Check:* unit test reads each getter inside a `watch()` and sees it update.
 - **C-61** `useRouter().back()` / `forward()` call `navigation.back()` / `forward()`, resolve on `finished`, and swallow `AbortError` like `go()`. *Check:* unit test.
-- **C-62** `useMeta` semantics are unchanged from 2.x (static strings set once, functions become `watch()`ers that core stops on every navigation and on `destroy()`). A page's static `meta.title` is applied by the router after load, before render. *Check:* existing 2.x `meta.test.js` cases, plus one for `destroy()`.
+- **C-62** `useMeta` semantics are unchanged from 2.x (static strings set once, functions become `watch()`ers that core stops on every navigation and on `destroy()`). A page's static `meta.title` is applied by the router after load, before render. Every committed navigation first puts back the title and description the host page had at `initRouter()` (a description tag it didn't have is removed), and so does `destroy()` (N128). *Check:* existing 2.x `meta.test.js` cases, plus one for `destroy()`, plus `router-history.test.js`.
 - **C-63** `provide`/`inject` keep 2.x semantics: one app-global map, last write wins. Core reserves no keys; `'app'` and `'currentUser'` become starter conventions. *Check:* existing `context.test.js`, plus one for `destroy()`.
 
 ---
@@ -236,15 +236,15 @@ One pipeline handles in-app navigations, the initial load (C-15) and `retry()` (
    - `event.downloadRequest !== null`
    - `event.formData !== null` (a form POST is left to the browser, N22)
    - `event.navigationType === 'reload'` without `event.info?.retry` (a script reload such as `location.reload()` or Vite's dev full reload is a real document reload, N73)
-   - `event.info?.rollback` (guard-cancel rollback, 2.x). This one calls `event.intercept()` with no handler before returning, so the URL changes in place without a document load or a pipeline run (N72)
+   - `event.info?.rollback` (guard-cancel rollback, 2.x; only `info` objects Quiver created count, N129). This one calls `event.intercept()` with no handler before returning, so the URL changes in place without a document load or a pipeline run (N72)
    - `stripBase(new URL(event.destination.url).pathname) === null` (outside the base, R3)
    
    Otherwise it calls `event.intercept({ handler })` and steps 2–8 run in the handler.
 2. **Epoch.** `const epoch = ++navEpoch`. After every `await`, a stale epoch returns at once: no state writes, no hooks.
-3. **Guards** with `{ from: currentPath | null, to }`. A throw goes to step 6 with `phase: 'guard'` (N2). `false`: in-app, `navigation.navigate(fromUrl, { history: 'replace', info: { rollback: true } })` and stop, no hooks, where `fromUrl` is `navigation.currentEntry.url` captured in the `navigate` handler before `intercept()` commits the new URL, so the previous query and hash survive (N67); initial load, redirect to `/`. A string whose normalised path equals `to` proceeds to step 4 (C-16, N66). Any other string: `navigation.navigate(url(result), { history: 'replace', info: { redirects: n + 1 } })` (initial load: `history.replaceState`) and stop; the new navigation runs its own pipeline.
+3. **Guards** with `{ from: settledPath | null, to }`, where `settledPath` is the last committed route (N126). After each guard, a stale epoch stops: later guards don't run. A throw goes to step 6 with `phase: 'guard'` (N2). `false`: in-app, go back to the last committed route and stop, no hooks (N126): restore its router state if a superseded navigation had set `'loading'`, then `navigation.traverseTo(settledKey, { info: rollback })` when that entry still exists and isn't current (a push or traversal: no entry added or rewritten), else `navigation.navigate(settledUrl, { history: 'replace', info: rollback })` (a replace); query and hash survive (N67). With nothing committed yet, and on the initial load, `false` redirects to `/`. A string whose normalised path equals `to` proceeds to step 4 (C-16, N66). A string that isn't a same-origin path inside the base after `url()` goes to step 6 with `phase: 'guard'` (N129). Any other string: `navigation.navigate(url(result), { history: 'replace', info: { redirects: n + 1 } })` (initial load: `history.replaceState`) and stop; the new navigation runs its own pipeline, and the caller's `go()` waits for it (N127).
 4. **Load.** Clear meta watchers, set state `{ status: 'loading', path: to, params: {}, meta: {}, error: null }`. Pick the first sorted route (M-6) whose pattern matches; otherwise the `notFound` loader; otherwise not-found without a page. `await loader()`. A rejection, or a module whose `default` isn't a function, goes to step 6 with `phase: 'load'`. The bad-export message names the pattern: `Route "/users/:id" must default export a page function.` (D21).
-5. **Commit.** Set state `{ status: 'ready' | 'not-found', page, params, meta, layout }`, apply a static `meta.title`.
-6. **Error commit** (from 3 or 4). Set state `{ status: 'error', error, page: null, meta: {} }`. Queue `onError({ error, from, to, phase })`.
+5. **Commit.** Set state `{ status: 'ready' | 'not-found', page, params, meta, layout }`, put back the host title and description, then apply a static `meta.title` (N128). Record the current entry and state as the settled route (N126).
+6. **Error commit** (from 3 or 4). Set state `{ status: 'error', error, page: null, meta: {} }`, put back the host title and description, record it as the settled route. Queue `onError({ error, from, to, phase })`.
 7. **Render.** `await nextTick()`. Arrow re-renders the outlet. A synchronous render throw (C-48) sets status `'error'` and queues `onError` with `phase: 'render'`.
 8. **Hooks.** Call queued `onError` handlers, then `afterEach({ from, to, status })` with the final status (`'ready'`, `'not-found'` or `'error'`). For the initial load, step 7 and 8 happen inside `createApp()` (C-44).
 
@@ -286,13 +286,14 @@ Validation (C-12), each failure a `TypeError` naming the key:
 - **M-1** `routes` is a plain object; every value is a function.
 - **M-2** Every key starts with `/`, has no trailing slash (except `/` itself), no empty segment (`//`), no `?` or `#`.
 - **M-3** A segment starting with `:` is a parameter whose name matches `/^[A-Za-z_$][\w$]*$/`, unique within the pattern. No wildcards, no optional segments.
-- **M-4** Two keys that differ only in parameter names (`/u/:id`, `/u/:slug`) are rejected: one could never match.
+- **M-4** Two keys that differ only in parameter names (`/u/:id`, `/u/:slug`) are rejected: one could never match. So are two spellings of one route (`/café`, `/caf%C3%A9`; static segments compared canonical, M-8).
 - **M-5** `notFound`, if given, is a function. There is no reserved 404 key (D21): a literal `/not-found` key is an ordinary route.
 
 Matching:
 
 - **M-6** Routes are sorted once at `initRouter()` by `scoreRoute` descending (2.x: static segment 10, param 1), ties broken by comparing segments left to right with a static segment beating a param, then by key in code-unit order. Key order in the object never affects the result (D21, N20). *Check:* unit test: the same manifest in two key orders gives the same sorted list; `/a/:b` beats `/:a/b` for `/a/b`.
-- **M-7** `matchPath` keeps 2.x semantics: segment counts equal, statics equal, params decoded with the raw-segment fallback. Matching runs on the base-relative normalised path.
+- **M-7** `matchPath` keeps 2.x semantics: segment counts equal, statics equal (canonical, M-8), params decoded with the raw-segment fallback (not normalised). Matching runs on the base-relative normalised path.
+- **M-8** One representation for a static segment (R05, N135): `canonicalSegment(s)` decodes percent-escapes (a malformed one keeps the segment as written), then Unicode NFC. Keys may spell a segment literally (`/release notes`, `/café`) or encoded (`/release%20notes`); the browser's encoded pathname matches either. Paths are split on `/` before decoding, so `%2F` never splits a segment.
 
 *Check for M-1…M-5:* one unit test per rule.
 
@@ -327,10 +328,10 @@ export function fileToRoutePath(file)
 ### 4.2 Rules
 
 - **S-1** Includes every `*.js` file under `dir`, recursively. Skips any file or directory whose name starts with `.` or `_`. No other filter (2.x included every `.js`).
-- **S-2** `fileToRoutePath` keeps 2.x semantics: strip `.js`, `/index` → parent (`index.js` → `/`), `[name]` → `:name`.
+- **S-2** `fileToRoutePath` keeps 2.x semantics: strip `.js`, `/index` → parent (`index.js` → `/`), `[name]` → `:name`. The pattern is Unicode NFC (M-8); the import specifier keeps the name as stored on disk.
 - **S-3** `not-found.js` at the root of `dir` becomes `notFound`. A `not-found.js` anywhere deeper is an error (`Nested not-found.js is not supported: users/not-found.js`); 2.x silently dropped it (N25).
-- **S-4** Two files that map to the same pattern (`users.js` + `users/index.js`), or that differ only in parameter names (M-4), are an error naming both files.
-- **S-5** A pattern that fails M-2/M-3 is an error naming the file.
+- **S-4** Two files that map to the same pattern (`users.js` + `users/index.js`, or `café.js` stored once as NFC and once as NFD), or that differ only in parameter names (M-4), are an error naming both files.
+- **S-5** A pattern that fails M-2/M-3 is an error naming the file. So is a `%` in a name (a file name is the decoded text, so `%` would read as an escape) or a `\` (a browser turns it into `/`) (N135).
 - **S-6** `routes` is sorted by `pattern` in code-unit order (stable diffs; core sorts for matching, M-6). Files are POSIX paths whatever the OS.
 - **S-7** Errors are thrown as `Error` with message prefix `[quiver] `. The scan collects all errors and throws once, listing each on its own line.
 - **S-8** `generateManifest` output, byte for byte except specifiers:
@@ -390,14 +391,14 @@ quiver routes [--dir <pages dir>] [--out <file>] [--watch]
 ```
 
 - **S-30** Writes `generateManifest(scan, f => relative specifier from dirname(out))`. Specifiers always start with `./` or `../`.
-- **S-31** Writes only when the content changed (no mtime churn under `--watch`).
-- **S-32** Exit codes: `0` success; `1` scan error (messages on stderr); `2` usage error (unknown command or flag, or an `--out` `.js` file inside `--dir` that the scanner would pick up as a page, N114; prints usage). `quiver --help` and `quiver routes --help` print usage and exit `0`.
-- **S-33** `--watch` uses `fs.watch(dir, { recursive: true })`, debounced 50 ms, started before the first write (N114). A scan error under `--watch` is printed and the watcher keeps running.
+- **S-31** Writes only when the content changed (no mtime churn under `--watch`), through a sibling temporary file (`.<name>.<pid>.tmp`) renamed over `--out`, so a reader never sees a partial manifest (N136).
+- **S-32** Exit codes: `0` success; `1` scan error (messages on stderr), or under `--watch` a `--dir` that can't be watched (S-33); `2` usage error (unknown command or flag, or an `--out` `.js` file inside `--dir` that the scanner would pick up as a page, N114; prints usage). `quiver --help` and `quiver routes --help` print usage and exit `0`.
+- **S-33** `--watch` uses `fs.watch(dir, { recursive: true })`, debounced 50 ms, started before the first write (N114). Scans run one at a time; changes during a scan queue one more, so the last scan starts after the last change. Events for names S-1 skips are ignored. A scan error under `--watch` is printed, the last good manifest stays, and the watcher keeps running. A missing or unreadable `--dir`, or a watcher error, prints one `[quiver] ` line and exits `1` (N136).
 - **S-34** `bin/quiver.js` starts with `#!/usr/bin/env node` and uses no Bun-only API, so it runs on Node ≥ 22.12 (D20) and on Bun.
 
 ### 4.6 Parity (P4 Done-when)
 
-- **S-40** One fixture `packages/quiver/tests/fixtures/pages/` (static, nested, index, dynamic, nested dynamic, root `not-found.js`, a `_partial.js` and a `.hidden.js` that must be skipped) produces, through each front-end, a module whose source is identical after replacing every import specifier with the fixture-relative file. *Check:* one Vitest test calls the Vite plugin's `load`, the Bun plugin's `onLoad` callback (with a fake `build`), and the CLI (spawned with `node` into a temp dir), normalises specifiers, and compares the three strings with each other and with a committed snapshot. Error rules S-3…S-5 each have a broken fixture.
+- **S-40** One fixture `packages/quiver/tests/fixtures/pages/` (static, nested, index, dynamic, nested dynamic, a name with a space and one with a non-ASCII letter (N135), root `not-found.js`, a `_partial.js` and a `.hidden.js` that must be skipped) produces, through each front-end, a module whose source is identical after replacing every import specifier with the fixture-relative file. *Check:* one Vitest test calls the Vite plugin's `load`, the Bun plugin's `onLoad` callback (with a fake `build`), and the CLI (spawned with `node` into a temp dir), normalises specifiers, and compares the three strings with each other and with a committed snapshot. Error rules S-3…S-5 each have a broken fixture.
 
 ---
 

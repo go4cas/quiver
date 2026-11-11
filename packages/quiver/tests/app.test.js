@@ -317,16 +317,20 @@ describe('destroy (C-49, C-50, C-62, C-63)', () => {
     expect(a).toHaveBeenCalledTimes(0)
   })
 
-  it('stops useMeta watchers and keeps document.title (C-62)', async () => {
+  it('stops useMeta watchers and puts back the host title and description (C-62, N128)', async () => {
+    document.title = 'Host'
+    document.querySelector('meta[name="description"]')?.remove()
     const state = reactive({ n: 1 })
-    const MetaPage = () => { useMeta({ title: () => `n=${state.n}` }); return html`<p>m</p>` }
+    const MetaPage = () => { useMeta({ title: () => `n=${state.n}`, description: 'd' }); return html`<p>m</p>` }
     await boot({ '/': mod(MetaPage) })
     createApp({ target })
     expect(document.title).toBe('n=1')
     destroy()
+    expect(document.title).toBe('Host')
+    expect(document.querySelector('meta[name="description"]')).toBeNull()
     state.n = 2
     await nextTick()
-    expect(document.title).toBe('n=1')
+    expect(document.title).toBe('Host')
   })
 
   it('is idempotent and works when only initRouter() ran', async () => {

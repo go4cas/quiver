@@ -46,6 +46,47 @@ export function compareRoutes(a, b) {
 }
 
 /**
+ * The one representation of a static segment (R05, N135): percent-escapes
+ * decoded, then Unicode NFC. So `release notes` and `release%20notes`, or `café`,
+ * `caf%C3%A9` and a decomposed `cafe\u0301`, are the same segment. A segment
+ * with a malformed escape (`100%`) is kept as written. Takes one segment, never
+ * a path, so a decoded `%2F` can't split it.
+ * @param {string} segment
+ * @returns {string}
+ */
+export function canonicalSegment(segment) {
+  let text = segment
+  if (segment.includes('%')) {
+    try {
+      text = decodeURIComponent(segment)
+    } catch {
+      // Malformed escape: compare the segment as written.
+    }
+  }
+  return text.normalize('NFC')
+}
+
+/**
+ * Two keys for a pattern, with static segments canonical: `route` keeps parameter
+ * names, `shape` erases them. Equal `route`s are one route spelled twice; equal
+ * `shape`s differ only in parameter names (M-4). Shared with the scanner.
+ * @param {string} pattern
+ * @returns {{ route: string, shape: string }}
+ */
+export function routeKeys(pattern) {
+  const segments = pattern.split('/').filter(Boolean)
+  const canonical = segments.map((s) => (s.startsWith(':') ? [s] : ['', canonicalSegment(s)]))
+  return {
+    route: JSON.stringify(canonical),
+    shape: JSON.stringify(canonical.map((c) => (c.length === 1 ? null : c[1]))),
+  }
+}
+
+/**
+ * Static segments match on their canonical form (canonicalSegment), so a key
+ * written literally (`/café`) or percent-encoded (`/caf%C3%A9`) matches the
+ * encoded pathname the browser reports. Parameters are decoded on their own and
+ * not normalised.
  * @param {string} routePath
  * @param {string} urlPath
  * @returns {Record<string, string> | null} matched params, or null if no match
@@ -74,7 +115,7 @@ export function matchPath(routePath, urlPath) {
       continue
     }
 
-    if (routePart !== urlPart) return null
+    if (routePart !== urlPart && canonicalSegment(routePart) !== canonicalSegment(urlPart)) return null
   }
 
   return params
@@ -94,6 +135,8 @@ export function validateManifest(routes, notFound) {
     throw new TypeError('initRouter(): routes must be a plain object mapping patterns to loaders.')
   }
 
+  /** @type {Map<string, string>} canonical route → first key spelling it */
+  const same = new Map()
   /** @type {Map<string, string>} shape (params erased) → first key with that shape */
   const shapes = new Map()
 
@@ -116,7 +159,10 @@ export function validateManifest(routes, notFound) {
       names.add(name)
     }
 
-    const shape = key.split('/').map((s) => (s.startsWith(':') ? ':' : s)).join('/')
+    const { route, shape } = routeKeys(key)
+    const twin = same.get(route)
+    if (twin !== undefined) throw bad(`is the same route as "${twin}" (static segments are compared decoded), so one could never match.`)
+    same.set(route, key)
     const other = shapes.get(shape)
     if (other !== undefined) throw bad(`differs from "${other}" only in parameter names, so one could never match.`)
     shapes.set(shape, key)
