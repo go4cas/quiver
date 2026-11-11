@@ -4,14 +4,12 @@
 // plugin runs under Node as well as Bun.
 import { readdir, stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import { routeKeys } from '../match.js'
+import { patternIssue, routeSet } from '../match.js'
 
 /**
  * @typedef {{ pattern: string, file: string }} ScanRoute  file: POSIX path relative to the pages dir
  * @typedef {{ routes: ScanRoute[], notFound: string | null }} ScanResult
  */
-
-const PARAM_NAME = /^[A-Za-z_$][\w$]*$/
 
 /**
  * Map a page file to its route pattern (2.x semantics, S-2): strip `.js`,
@@ -26,29 +24,26 @@ export function fileToRoutePath(file) {
   return path.replace(/\[([^\]]+)\]/g, ':$1').normalize('NFC')
 }
 
-/**
- * Why a pattern breaks M-2/M-3, or null when it is valid.
- * @param {string} pattern
- * @returns {string | null}
- */
-function patternProblem(pattern) {
-  if (pattern.length > 1 && pattern.endsWith('/')) return 'ends with "/"'
-  if (pattern.includes('//')) return 'has an empty segment ("//")'
-  if (/[?#]/.test(pattern)) return 'contains "?" or "#"'
-  if (pattern.includes('*')) return 'contains a wildcard ("*")'
-  // N135: URLs are matched decoded, so a file name is the decoded text and a "%"
-  // in it would be read as an escape. A backslash becomes "/" in a URL.
-  if (pattern.includes('%')) return 'contains "%"; name the file with the characters themselves (a space, é), not percent-escapes'
-  if (pattern.includes('\\')) return 'contains "\\", which a browser turns into "/"'
-  const names = new Set()
-  for (const segment of pattern.split('/').filter(Boolean)) {
-    if (!segment.startsWith(':')) continue
-    const name = segment.slice(1)
-    if (!PARAM_NAME.test(name)) return `has an invalid parameter name "${segment}"`
-    if (names.has(name)) return `repeats the parameter "${segment}"`
-    names.add(name)
-  }
-  return null
+// N135: URLs are matched decoded, so a file name is the decoded text and a "%"
+// in it would be read as an escape. A backslash becomes "/" in a URL. These are
+// the scanner's own rules, checked after the shared PATTERN_RULES (S-5).
+/** @type {import('../match.js').PatternRule[]} */
+const FILE_RULES = [
+  { code: 'percent', test: (p) => p.includes('%') },
+  { code: 'backslash', test: (p) => p.includes('\\') },
+]
+
+/** @type {Record<string, (segment: string) => string>} the scanner's wording per rule */
+const SCAN_MESSAGES = {
+  'leading-slash': () => 'does not start with "/"',
+  'trailing-slash': () => 'ends with "/"',
+  'empty-segment': () => 'has an empty segment ("//")',
+  'query-or-hash': () => 'contains "?" or "#"',
+  wildcard: () => 'contains a wildcard ("*")',
+  percent: () => 'contains "%"; name the file with the characters themselves (a space, é), not percent-escapes',
+  backslash: () => 'contains "\\", which a browser turns into "/"',
+  'param-name': (segment) => `has an invalid parameter name "${segment}"`,
+  'param-repeat': (segment) => `repeats the parameter "${segment}"`,
 }
 
 /**
@@ -88,10 +83,8 @@ export async function scanPages(dir) {
   const routes = []
   /** @type {string | null} */
   let notFound = null
-  /** @type {Map<string, string>} canonical route → file */
-  const byPattern = new Map()
-  /** @type {Map<string, string>} shape (params erased) → file */
-  const byShape = new Map()
+  /** @type {ReturnType<typeof routeSet<string>>} */
+  const seen = routeSet()
 
   for (const file of files) {
     if (file === 'not-found.js') {
@@ -104,26 +97,22 @@ export async function scanPages(dir) {
     }
 
     const pattern = fileToRoutePath(file)
-    const problem = patternProblem(pattern)
-    if (problem) {
-      errors.push(`Route "${pattern}" from ${file} ${problem}.`)
+    const issue = patternIssue(pattern, FILE_RULES)
+    if (issue) {
+      errors.push(`Route "${pattern}" from ${file} ${SCAN_MESSAGES[issue.code](issue.segment)}.`)
       continue
     }
 
-    const { route, shape } = routeKeys(pattern)
-    const same = byPattern.get(route)
-    if (same !== undefined) {
-      errors.push(`${same} and ${file} both map to "${pattern}".`)
+    const clash = seen.add(pattern, file)
+    if (clash?.code === 'same') {
+      errors.push(`${clash.other} and ${file} both map to "${pattern}".`)
       continue
     }
-    const similar = byShape.get(shape)
-    if (similar !== undefined) {
-      errors.push(`${similar} and ${file} differ only in parameter names ("${fileToRoutePath(similar)}", "${pattern}"), so one could never match.`)
+    if (clash) {
+      errors.push(`${clash.other} and ${file} differ only in parameter names ("${fileToRoutePath(clash.other)}", "${pattern}"), so one could never match.`)
       continue
     }
 
-    byPattern.set(route, file)
-    byShape.set(shape, file)
     routes.push({ pattern, file })
   }
 
