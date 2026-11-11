@@ -105,6 +105,6 @@ export const layouts = {
 
 Style it in `BlankLayout.css` and add an `@import` for it to `src/style.css` ([components](./components#styling-a-component)). `/add-layout <name>` does all of this.
 
-::: warning Cleanup inside layouts
-Arrow 1.0.6 runs `onCleanup` only for a component that is itself the value a slot drops. A page rendered inside a layout is part of the layout's template, so its components never get `onCleanup` when you navigate away. Stop watchers and listeners there yourself, for example with an `arrow-use` composable's `stop()`. See [troubleshooting](./troubleshooting#cleanup-never-runs).
+::: tip Cleanup inside layouts
+Quiver renders each page and its layout inside a cleanup scope, so `onCleanup` and `arrow-use` composables called in the page or layout function are cleaned up when you navigate away and on `destroy()`. A `component()` nested inside the page's template is not (Arrow 1.0.6); see [troubleshooting](./troubleshooting#cleanup-never-runs).
 :::
