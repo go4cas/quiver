@@ -38,13 +38,14 @@ export const notFound = () => import('./pages/not-found.js')
 ```
 
 - Keys are sorted, specifiers are relative to `--out` (`./…` or `../…`), so the file is stable to commit. It is the same manifest the plugins generate.
-- The file is written only when its content changes, so `--watch` doesn't touch it on every event.
-- Under `--watch`, a scan error is printed and the watcher keeps running.
+- The file is written only when its content changes, so `--watch` doesn't touch it on every event. It is written to a temporary file next to it and renamed into place, so nothing ever reads half a manifest.
+- Under `--watch`, scans run one at a time, and changes made during a scan trigger one more, so the file always ends up matching the folder. A scan error is printed, the last good manifest stays, and the watcher keeps running.
+- Under `--watch`, a `--dir` that is missing or can't be read, or a watcher that fails later, prints one `[quiver] ` line and exits `1`.
 - `--out` must not be a `.js` file inside `--dir`, since the scan would pick it up as a page; use a name starting with `_` there (`src/pages/_routes.gen.js`), or a path outside.
 - Runs on Node 22.12+ and on Bun.
 
 | Exit code | Meaning |
 |---|---|
 | `0` | written or unchanged; also `--help` |
-| `1` | scan error; messages on stderr, nothing written |
+| `1` | scan error, messages on stderr, nothing written; with `--watch`, a pages folder that is missing, unreadable or can no longer be watched |
 | `2` | usage error (unknown command or flag, `--out` inside `--dir`); usage on stderr |

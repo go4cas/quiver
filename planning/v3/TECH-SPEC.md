@@ -286,13 +286,14 @@ Validation (C-12), each failure a `TypeError` naming the key:
 - **M-1** `routes` is a plain object; every value is a function.
 - **M-2** Every key starts with `/`, has no trailing slash (except `/` itself), no empty segment (`//`), no `?` or `#`.
 - **M-3** A segment starting with `:` is a parameter whose name matches `/^[A-Za-z_$][\w$]*$/`, unique within the pattern. No wildcards, no optional segments.
-- **M-4** Two keys that differ only in parameter names (`/u/:id`, `/u/:slug`) are rejected: one could never match.
+- **M-4** Two keys that differ only in parameter names (`/u/:id`, `/u/:slug`) are rejected: one could never match. So are two spellings of one route (`/café`, `/caf%C3%A9`; static segments compared canonical, M-8).
 - **M-5** `notFound`, if given, is a function. There is no reserved 404 key (D21): a literal `/not-found` key is an ordinary route.
 
 Matching:
 
 - **M-6** Routes are sorted once at `initRouter()` by `scoreRoute` descending (2.x: static segment 10, param 1), ties broken by comparing segments left to right with a static segment beating a param, then by key in code-unit order. Key order in the object never affects the result (D21, N20). *Check:* unit test: the same manifest in two key orders gives the same sorted list; `/a/:b` beats `/:a/b` for `/a/b`.
-- **M-7** `matchPath` keeps 2.x semantics: segment counts equal, statics equal, params decoded with the raw-segment fallback. Matching runs on the base-relative normalised path.
+- **M-7** `matchPath` keeps 2.x semantics: segment counts equal, statics equal (canonical, M-8), params decoded with the raw-segment fallback (not normalised). Matching runs on the base-relative normalised path.
+- **M-8** One representation for a static segment (R05, N135): `canonicalSegment(s)` decodes percent-escapes (a malformed one keeps the segment as written), then Unicode NFC. Keys may spell a segment literally (`/release notes`, `/café`) or encoded (`/release%20notes`); the browser's encoded pathname matches either. Paths are split on `/` before decoding, so `%2F` never splits a segment.
 
 *Check for M-1…M-5:* one unit test per rule.
 
@@ -327,10 +328,10 @@ export function fileToRoutePath(file)
 ### 4.2 Rules
 
 - **S-1** Includes every `*.js` file under `dir`, recursively. Skips any file or directory whose name starts with `.` or `_`. No other filter (2.x included every `.js`).
-- **S-2** `fileToRoutePath` keeps 2.x semantics: strip `.js`, `/index` → parent (`index.js` → `/`), `[name]` → `:name`.
+- **S-2** `fileToRoutePath` keeps 2.x semantics: strip `.js`, `/index` → parent (`index.js` → `/`), `[name]` → `:name`. The pattern is Unicode NFC (M-8); the import specifier keeps the name as stored on disk.
 - **S-3** `not-found.js` at the root of `dir` becomes `notFound`. A `not-found.js` anywhere deeper is an error (`Nested not-found.js is not supported: users/not-found.js`); 2.x silently dropped it (N25).
-- **S-4** Two files that map to the same pattern (`users.js` + `users/index.js`), or that differ only in parameter names (M-4), are an error naming both files.
-- **S-5** A pattern that fails M-2/M-3 is an error naming the file.
+- **S-4** Two files that map to the same pattern (`users.js` + `users/index.js`, or `café.js` stored once as NFC and once as NFD), or that differ only in parameter names (M-4), are an error naming both files.
+- **S-5** A pattern that fails M-2/M-3 is an error naming the file. So is a `%` in a name (a file name is the decoded text, so `%` would read as an escape) or a `\` (a browser turns it into `/`) (N135).
 - **S-6** `routes` is sorted by `pattern` in code-unit order (stable diffs; core sorts for matching, M-6). Files are POSIX paths whatever the OS.
 - **S-7** Errors are thrown as `Error` with message prefix `[quiver] `. The scan collects all errors and throws once, listing each on its own line.
 - **S-8** `generateManifest` output, byte for byte except specifiers:
@@ -390,14 +391,14 @@ quiver routes [--dir <pages dir>] [--out <file>] [--watch]
 ```
 
 - **S-30** Writes `generateManifest(scan, f => relative specifier from dirname(out))`. Specifiers always start with `./` or `../`.
-- **S-31** Writes only when the content changed (no mtime churn under `--watch`).
-- **S-32** Exit codes: `0` success; `1` scan error (messages on stderr); `2` usage error (unknown command or flag, or an `--out` `.js` file inside `--dir` that the scanner would pick up as a page, N114; prints usage). `quiver --help` and `quiver routes --help` print usage and exit `0`.
-- **S-33** `--watch` uses `fs.watch(dir, { recursive: true })`, debounced 50 ms, started before the first write (N114). A scan error under `--watch` is printed and the watcher keeps running.
+- **S-31** Writes only when the content changed (no mtime churn under `--watch`), through a sibling temporary file (`.<name>.<pid>.tmp`) renamed over `--out`, so a reader never sees a partial manifest (N136).
+- **S-32** Exit codes: `0` success; `1` scan error (messages on stderr), or under `--watch` a `--dir` that can't be watched (S-33); `2` usage error (unknown command or flag, or an `--out` `.js` file inside `--dir` that the scanner would pick up as a page, N114; prints usage). `quiver --help` and `quiver routes --help` print usage and exit `0`.
+- **S-33** `--watch` uses `fs.watch(dir, { recursive: true })`, debounced 50 ms, started before the first write (N114). Scans run one at a time; changes during a scan queue one more, so the last scan starts after the last change. Events for names S-1 skips are ignored. A scan error under `--watch` is printed, the last good manifest stays, and the watcher keeps running. A missing or unreadable `--dir`, or a watcher error, prints one `[quiver] ` line and exits `1` (N136).
 - **S-34** `bin/quiver.js` starts with `#!/usr/bin/env node` and uses no Bun-only API, so it runs on Node ≥ 22.12 (D20) and on Bun.
 
 ### 4.6 Parity (P4 Done-when)
 
-- **S-40** One fixture `packages/quiver/tests/fixtures/pages/` (static, nested, index, dynamic, nested dynamic, root `not-found.js`, a `_partial.js` and a `.hidden.js` that must be skipped) produces, through each front-end, a module whose source is identical after replacing every import specifier with the fixture-relative file. *Check:* one Vitest test calls the Vite plugin's `load`, the Bun plugin's `onLoad` callback (with a fake `build`), and the CLI (spawned with `node` into a temp dir), normalises specifiers, and compares the three strings with each other and with a committed snapshot. Error rules S-3…S-5 each have a broken fixture.
+- **S-40** One fixture `packages/quiver/tests/fixtures/pages/` (static, nested, index, dynamic, nested dynamic, a name with a space and one with a non-ASCII letter (N135), root `not-found.js`, a `_partial.js` and a `.hidden.js` that must be skipped) produces, through each front-end, a module whose source is identical after replacing every import specifier with the fixture-relative file. *Check:* one Vitest test calls the Vite plugin's `load`, the Bun plugin's `onLoad` callback (with a fake `build`), and the CLI (spawned with `node` into a temp dir), normalises specifiers, and compares the three strings with each other and with a committed snapshot. Error rules S-3…S-5 each have a broken fixture.
 
 ---
 

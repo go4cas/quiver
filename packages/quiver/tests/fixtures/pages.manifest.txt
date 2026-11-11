@@ -3,6 +3,8 @@ export default {
   '/': () => import('index.js'),
   '/about': () => import('about.js'),
   '/blog/:slug/comments': () => import('blog/[slug]/comments.js'),
+  '/café': () => import('café.js'),
+  '/release notes': () => import('release notes.js'),
   '/users': () => import('users/index.js'),
   '/users/:id': () => import('users/[id].js'),
 }
