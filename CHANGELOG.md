@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.1.0] - 2026-11-11
 
-Published as `@go4cas/quiver` 3.1.0; `arrow-use` stays 0.1.1 (no code change, N180). Pages and layouts get a cleanup scope, the router is refactored per the audit (R14), and the router's browser suite runs in all three engines.
+Published as `@go4cas/quiver` 3.1.0 and `arrow-use` 0.1.2 (README only, no code change, N180, N181). Pages and layouts get a cleanup scope, the router is refactored per the audit (R14), and the router's browser suite runs in all three engines.
 
 ### Added
 
@@ -29,6 +29,7 @@ Published as `@go4cas/quiver` 3.1.0; `arrow-use` stays 0.1.1 (no code change, N1
 ### Documentation
 
 - Docs match the 3.1 page cleanup: the composables guide and the `useFetch`, `useEventListener`, `useMediaQuery` and arrow-use pages no longer tell you to call `stop()` yourself in a page inside a layout; `destroy()` in the routing guide and the package's `AGENTS.md` runs the page's cleanups and restores the host page's title and description; the `beforeEach` reference says a replaced navigation's guard result is ignored. `README.md` and `CONTRIBUTING.md` list `test:browsers`, `pack:types` and `audit`, and `RELEASING.md` makes CI publishing the default path (N175)
+- `arrow-use` 0.1.2: the package README (shown on npm) says composables called in a Quiver 3.1+ page or layout function are cleaned up when the page is left, and its example follows Arrow rule 5. No code or types change (N181)
 
 ## [3.0.3] - 2026-11-11
 

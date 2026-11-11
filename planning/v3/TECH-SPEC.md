@@ -451,7 +451,7 @@ Common rules for both published packages (D20):
 ```json
 {
   "name": "arrow-use",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "license": "MIT",
   "sideEffects": false,

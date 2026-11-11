@@ -103,9 +103,9 @@ describe('core ships the recipes and the agent docs (SPEC P7, D32, X-10)', () =>
 describe('arrow-use (§5.2, D15)', () => {
   const pkg = pkgOf('packages/arrow-use')
 
-  it('is arrow-use 0.1.1 with one entry point (X-20)', () => {
+  it('is arrow-use 0.1.2 with one entry point (X-20)', () => {
     expect(pkg.name).toBe('arrow-use')
-    expect(pkg.version).toBe('0.1.1')
+    expect(pkg.version).toBe('0.1.2')
     expect(Object.keys(pkg.exports)).toEqual(['.', './package.json'])
     expect(pkg.exports['.']).toEqual({ types: './types/index.d.ts', default: './src/index.js' })
     expect(pkg.files).toEqual(['src', 'types', 'README.md', 'LICENSE'])
