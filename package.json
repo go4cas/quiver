@@ -21,6 +21,7 @@
     "test": "vitest run && bun run --filter '*' test",
     "test:watch": "bun run --filter quiver-starter test:watch",
     "test:e2e": "bun run --filter '*' test:e2e",
+    "test:browsers": "bun run --filter @go4cas/quiver test:browsers",
     "test:visual": "bun run --filter quiver-starter test:visual",
     "recipes:sync": "node scripts/sync-recipes.js",
     "docs:dev": "bun run --filter quiver-docs dev",

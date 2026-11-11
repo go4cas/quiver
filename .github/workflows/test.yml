@@ -73,6 +73,31 @@ jobs:
       - run: bunx playwright install --with-deps chromium
       - run: bun run test:e2e
 
+  # N155: core's router suite (packages/quiver/tests/browser/) in Chromium, Firefox
+  # and WebKit, at / and under /sub/app/. The pinned Playwright image already holds
+  # all three engines and their system libraries for the version in bun.lock.
+  browsers:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.x
+      - run: bun install --frozen-lockfile
+      - run: bun run test:browsers
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ failure() }}
+        with:
+          name: browser-results
+          path: packages/quiver/test-results/
+          retention-days: 7
+
   # TECH-SPEC X-4 (SPEC P8): the tarballs hold the right files, and the examples
   # and the starter, copied out of the repo, pass typecheck and e2e against them.
   # pack:types type-checks the packed .d.ts on TypeScript 5.x and the repo's
