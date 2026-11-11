@@ -42,7 +42,8 @@ recipes/             # Copy-in recipes (private workspace quiver-recipes; shippe
 plugins/quiver/      # The Quiver Claude Code plugin: .claude-plugin/plugin.json + commands/add-*.md
 .claude-plugin/      # marketplace.json: this repo as a plugin marketplace (`/plugin marketplace add go4cas/quiver`)
 scripts/             # sync-recipes.js (`bun run recipes:sync`): copies recipes/ into starter/src/quiver/;
-                     # try-packed.js (`pack:try`) and check-packed-types.js (`pack:types`) test the packed tarballs
+                     # try-packed.js (`pack:try`) and check-packed-types.js (`pack:types`) test the packed tarballs;
+                     # audit.js (`bun run audit`) + audit-exceptions.json: dependency advisories (N150)
 
 starter/             # The starter app (degit target: go4cas/quiver/starter)
 ├── CLAUDE.md        # Imports node_modules/@go4cas/quiver/AGENTS.md and llms.txt
@@ -92,6 +93,7 @@ bun run recipes:sync  # Copy recipes/ into starter/src/quiver/ after editing a r
 bun run pack:check    # npm pack --dry-run for both packages: exact file lists, .d.ts, recipes (X-4)
 bun run pack:try      # Copy the examples and the starter out, install the packed tarballs, typecheck + e2e
 bun run pack:types    # Type-check the packed .d.ts in fresh TypeScript 5.9 and repo-TypeScript projects, skipLibCheck off
+bun run audit         # bun audit on the whole lockfile; fails on advisories not accepted in scripts/audit-exceptions.json
 bun run docs:dev      # Start docs site locally
 bun run docs:build    # Build docs site
 ```
@@ -302,6 +304,8 @@ To add a theme: token blocks (light + dark) in `recipes/theme/tokens.css`, optio
 - Docs: a new export, CLI flag, recipe, composable or example needs its docs page in the same PR, or `docs.test.js` fails. `bun run docs:build` must stay green (VitePress fails on dead links)
 - Packaging: `bun run pack:check` (CI `pack` job) asserts both tarballs' file lists; `prepack` emits `.d.ts` for `src/` and `src/node/` with `tsc -p jsconfig.types.json`. `bun run pack:try` (same job) runs the examples and the starter, copied out of the repo, against the packed tarballs. `bun run pack:types` (same job) installs both tarballs into fresh projects on TypeScript 5.9 and the repo's TypeScript with `skipLibCheck: false` (`bundler`, `nodenext`, and `node10` for the main entry), so the `.d.ts` must not name DOM types that TS 5.x's lib lacks (N125: describe the shape locally, like `SettleableResult` in `router.js`)
 - Visual: Playwright in `starter/tests/visual/` compares every page state in 5 themes × 2 modes with the baseline in `starter/tests/visual/__screenshots__/` (tolerance `threshold: 0.02`, `maxDiffPixelRatio: 0.0001`; never loosen it). The baseline only matches inside `mcr.microsoft.com/playwright:v<version>-noble`, so CI's `screenshots` job runs it there; re-capture an intended visual change by running the `Tests` workflow by hand with `update-screenshots` on your branch (see `starter/tests/visual/README.md`)
+- Dependencies: `bun run audit` (CI `audit` job) runs `bun audit` on the whole lockfile, dev tooling included. An advisory passes only if it is fixed or listed in `scripts/audit-exceptions.json` with its package, the exact locked versions, an owner, an expiry date and an N-entry in NOTES.md; expired or stale entries fail too (`tests/repo/audit.test.js`). Patched transitive versions are forced with root `overrides` (Vue packages aligned on one version, `source-map-js`); ask the maintainer before adding or changing one
+- CI workflows: actions pinned to full commit SHAs with a `# vX.Y.Z` comment, the Playwright container pinned as `v<version>-noble@sha256:…`, `persist-credentials: false` on every checkout that doesn't push, and write permissions only on jobs that install and run nothing (`deploy` in `docs.yml`, `screenshots-commit` in `test.yml`)
 - Unit and E2E must pass before a task is complete; the `screenshots` CI job must pass before merge
 
 ---

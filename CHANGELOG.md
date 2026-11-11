@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `@go4cas/quiver`: `initRouter()` rejects two keys that spell one route two ways (`/café`, `/caf%C3%A9`), and the scanner rejects `%` and `\` in page names, naming the file
 - `quiver routes --watch`: a missing or unreadable pages folder prints one `[quiver] ` line and exits 1, instead of a stack trace; a watcher error does the same. Scans no longer overlap, so a burst of changes ends at the manifest for the folder's final state, and the file is replaced atomically through a temporary file. A scan error still leaves the last good manifest in place
 
+### Security
+
+- Repo tooling only, no package change: the docs toolchain resolves Vue 3.5.45 (was 3.5.33, GHSA-g2v6-rqmx-r4w6) and a single `source-map-js` 1.2.2 (was also 1.2.1, GHSA-68fv-2mgg-jv7q) through root `overrides`. VitePress 1.6.4's Vite 5.4.21 and esbuild 0.21.5 dev-server advisories are accepted until 2027-02-11 (NOTES N150)
+- `bun run audit` and a CI `audit` job fail on any lockfile advisory not listed, unexpired and version-scoped, in `scripts/audit-exceptions.json`
+- CI: the Pages deploy permissions are on the deploy job only; actions are pinned to commit SHAs and the Playwright image to its digest; checkouts don't persist credentials; the screenshot re-capture renders with a read-only token and a separate job, which installs and runs nothing, commits the PNGs (NOTES N151)
+
 ## [3.0.2] - 2026-11-10
 
 ### Fixed
