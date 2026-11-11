@@ -1,6 +1,6 @@
 // TECH-SPEC W-13: the published packages follow X-1, X-2 and the engines rules
 // (D20: only core, which ships the CLI, sets engines.node), and arrow-use is the
-// 0.1.0 package of §5.2 (D15, U-1).
+// 0.1.x package of §5.2 (D15, U-1).
 import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -103,9 +103,9 @@ describe('core ships the recipes and the agent docs (SPEC P7, D32, X-10)', () =>
 describe('arrow-use (§5.2, D15)', () => {
   const pkg = pkgOf('packages/arrow-use')
 
-  it('is arrow-use 0.1.0 with one entry point (X-20)', () => {
+  it('is arrow-use 0.1.1 with one entry point (X-20)', () => {
     expect(pkg.name).toBe('arrow-use')
-    expect(pkg.version).toBe('0.1.0')
+    expect(pkg.version).toBe('0.1.1')
     expect(Object.keys(pkg.exports)).toEqual(['.', './package.json'])
     expect(pkg.exports['.']).toEqual({ types: './types/index.d.ts', default: './src/index.js' })
     expect(pkg.files).toEqual(['src', 'types', 'README.md', 'LICENSE'])

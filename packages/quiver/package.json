@@ -1,6 +1,6 @@
 {
   "name": "@go4cas/quiver",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "A small drop-in router, context and meta layer for Arrow.js apps.",
   "type": "module",
   "license": "MIT",

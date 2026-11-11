@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Repo tooling, no package change: a `Publish` workflow can stage releases of `@go4cas/quiver` and `arrow-use` on npm from a release tag through trusted publishing (OIDC, no npm token), with provenance; the maintainer still approves each one on npmjs.com. It stays build-only until switched on; `RELEASING.md` has the setup and the release steps
+
+## [3.0.3] - 2026-11-11
+
+Published as `@go4cas/quiver` 3.0.3 and `arrow-use` 0.1.1. Fixes from the external review and security audit of 3.0.2.
+
 ### Fixed
 
 - `@go4cas/quiver`: a guard that cancels while another route is still loading no longer leaves the app stuck on the loading view; the page on screen, its URL and status come back. Guards get that page as `from`, and a superseded navigation calls no further guards (N126)
@@ -38,7 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Repo tooling only, no package change: the docs toolchain resolves Vue 3.5.45 (was 3.5.33, GHSA-g2v6-rqmx-r4w6) and a single `source-map-js` 1.2.2 (was also 1.2.1, GHSA-68fv-2mgg-jv7q) through root `overrides`. VitePress 1.6.4's Vite 5.4.21 and esbuild 0.21.5 dev-server advisories are accepted until 2027-02-11 (NOTES N150)
 - `bun run audit` and a CI `audit` job fail on any lockfile advisory not listed, unexpired and version-scoped, in `scripts/audit-exceptions.json`
-- Repo tooling, no package change: a `Publish` workflow can stage releases of `@go4cas/quiver` and `arrow-use` on npm from a release tag through trusted publishing (OIDC, no npm token), with provenance; the maintainer still approves each one on npmjs.com. It stays build-only until switched on; `RELEASING.md` has the setup and the release steps
 - CI: the Pages deploy permissions are on the deploy job only; actions are pinned to commit SHAs and the Playwright image to its digest; checkouts don't persist credentials; the screenshot re-capture renders with a read-only token and a separate job, which installs and runs nothing, commits the PNGs (NOTES N151)
 - `Link` recipe: `to` may be a path or an `http(s):`, `mailto:` or `tel:` URL; any other scheme (`javascript:`, `data:`…) and `//host` render without an `href`
 - Starter: the sign-in page says it is a demo with no password check and no session; the layouts recipe documents what a real `signOut` must do (end the server session, clear client user state)
@@ -263,6 +270,8 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
+[Unreleased]: https://github.com/go4cas/quiver/compare/v3.0.3...HEAD
+[3.0.3]: https://github.com/go4cas/quiver/releases/tag/v3.0.3
 [3.0.2]: https://github.com/go4cas/quiver/releases/tag/v3.0.2
 [3.0.1]: https://github.com/go4cas/quiver/releases/tag/v3.0.1
 [3.0.0]: https://github.com/go4cas/quiver/releases/tag/v3.0.0
