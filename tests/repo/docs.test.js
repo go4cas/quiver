@@ -181,3 +181,31 @@ describe('no 2.x leftovers in the docs (D36, NOTES N115)', () => {
     for (const needle of ['src/framework/', 'routerState', 'uiState', 'degit go4cas/quiver my-app']) expect(guide).toContain(needle)
   })
 })
+
+// S02 (2026-11-11 audit): without a local install, a bare `bunx quiver` or
+// `npx quiver` fetches the unrelated npm package `quiver`. The no-install paths
+// (the no-bundler quickstart, the no-build README's CDN section, the CLI page)
+// must name the scoped package, and the quickstart must not use the bare form.
+describe('the CLI is run by its scoped package where nothing is installed (S02)', () => {
+  const BUNX = 'bunx --bun --package @go4cas/quiver@3 quiver routes'
+  const NPM = 'npm exec --package=@go4cas/quiver@3 -- quiver routes'
+
+  it.each(['docs/guide/getting-started.md', 'docs/api/cli.md', 'examples/no-build/README.md', 'packages/quiver/AGENTS.md'])(
+    '%s gives both scoped commands',
+    (path) => {
+      const text = read(path)
+      expect(text).toContain(BUNX)
+      expect(text).toContain(NPM)
+    },
+  )
+
+  it('the getting-started guide never uses a bare `bunx quiver` or `npx quiver`', () => {
+    expect(read('docs/guide/getting-started.md')).not.toMatch(/\b(?:bunx|npx) quiver\b/)
+  })
+
+  it('the no-build README uses the bare form only for the copy with node_modules', () => {
+    const readme = read('examples/no-build/README.md')
+    const cdn = readme.slice(readme.indexOf('## From a CDN'))
+    expect(cdn).not.toMatch(/\b(?:bunx|npx) quiver\b/)
+  })
+})

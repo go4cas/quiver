@@ -34,10 +34,10 @@ bun run test:e2e                     # dev server at /, production build under /
 
 ## Bun
 
-[`examples/bun`](https://github.com/go4cas/quiver/tree/main/examples/bun): `build.js` runs `Bun.build` with `@go4cas/quiver/bun` and `splitting: true`, so each page is its own chunk. `serve.js` is a tiny static server with an SPA fallback.
+[`examples/bun`](https://github.com/go4cas/quiver/tree/main/examples/bun): `build.js` runs `Bun.build` with `@go4cas/quiver/bun` and `splitting: true`, so each page is its own chunk. `serve.js` is a tiny local static server with an SPA fallback; it listens on `127.0.0.1` only and serves only `dist/`.
 
 ```bash
-bun run dev                                     # build to dist/, serve at http://localhost:3000/
+bun run dev                                     # build to dist/, serve at http://127.0.0.1:3000/
 QUIVER_BASE=/sub/app/ PORT=3000 bun run start   # serve the same dist/ under /sub/app/
 bun run test:e2e
 ```
@@ -46,10 +46,10 @@ The base lives only in `<base href="%BASE%">` in `index.html`: `%BASE%` is a pla
 
 ## No build
 
-[`examples/no-build`](https://github.com/go4cas/quiver/tree/main/examples/no-build): the browser loads `src/` as it is. An import map maps exactly `@arrow-js/core` and `@go4cas/quiver`, so the app and Quiver share one Arrow copy (the e2e test checks it), and `src/routes.js` is the manifest, written by hand (or generated with `bunx quiver routes --watch`).
+[`examples/no-build`](https://github.com/go4cas/quiver/tree/main/examples/no-build): the browser loads `src/` as it is. An import map maps exactly `@arrow-js/core` and `@go4cas/quiver`, so the app and Quiver share one Arrow copy (the e2e test checks it), and `src/routes.js` is the manifest, written by hand (or generated with `bunx quiver routes --watch`, which writes `src/routes.gen.js`; then import that file in `src/main.js`).
 
 ```bash
-bun run dev                                   # http://localhost:3000/
+bun run dev                                   # http://127.0.0.1:3000/
 QUIVER_BASE=/sub/app/ PORT=3000 bun run dev   # under /sub/app/
 bun run test:e2e
 ```
@@ -61,7 +61,7 @@ Its README shows the CDN import map to use instead of `node_modules`.
 [`packages/arrow-use/example`](https://github.com/go4cas/quiver/tree/main/packages/arrow-use/example): a vanilla Arrow app, no Quiver, no bundler, using `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` through an import map. From `packages/arrow-use/`:
 
 ```bash
-bun example/serve.js    # http://localhost:3000/
+bun example/serve.js    # http://127.0.0.1:3000/
 bun run test:e2e
 ```
 

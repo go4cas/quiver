@@ -4,7 +4,17 @@
 quiver routes [--dir <pages dir>] [--out <file>] [--watch]
 ```
 
-Writes the route manifest for a pages folder to a JavaScript module, for setups without the Vite or Bun plugin: an import-map app, another bundler, a test. The `quiver` binary comes with `@go4cas/quiver`; run it with `bunx quiver`, `npx quiver` or from a `package.json` script.
+Writes the route manifest for a pages folder to a JavaScript module, for setups without the Vite or Bun plugin: an import-map app, another bundler, a test. The `quiver` binary comes with `@go4cas/quiver`.
+
+How you run it depends on whether the package is installed:
+
+| Setup | Command |
+|---|---|
+| `@go4cas/quiver` in `package.json` (after `bun install` / `npm install`) | `bunx quiver routes`, `npx quiver routes`, or `quiver routes` in a `package.json` script |
+| no `node_modules` (a CDN/import-map app), Bun | `bunx --bun --package @go4cas/quiver@3 quiver routes` |
+| no `node_modules`, npm | `npm exec --package=@go4cas/quiver@3 -- quiver routes` |
+
+Without a local install, always name the scoped package: a bare `bunx quiver` or `npx quiver` downloads the unrelated npm package called `quiver`.
 
 | Flag | Default | |
 |---|---|---|
@@ -14,6 +24,7 @@ Writes the route manifest for a pages folder to a JavaScript module, for setups 
 | `--help` | | print usage |
 
 ```bash
+# with @go4cas/quiver installed
 bunx quiver routes                     # src/pages → src/routes.gen.js
 bunx quiver routes --watch             # and keep it up to date
 bunx quiver routes --dir app/pages --out app/routes.gen.js
@@ -42,7 +53,7 @@ export const notFound = () => import('./pages/not-found.js')
 - Under `--watch`, scans run one at a time, and changes made during a scan trigger one more, so the file always ends up matching the folder. A scan error is printed, the last good manifest stays, and the watcher keeps running.
 - Under `--watch`, a `--dir` that is missing or can't be read, or a watcher that fails later, prints one `[quiver] ` line and exits `1`.
 - `--out` must not be a `.js` file inside `--dir`, since the scan would pick it up as a page; use a name starting with `_` there (`src/pages/_routes.gen.js`), or a path outside.
-- Runs on Node 22.12+ and on Bun.
+- Runs on Node 22.12+ and on Bun 1.4.4+.
 
 | Exit code | Meaning |
 |---|---|

@@ -50,6 +50,14 @@ describe('engines (D20, §5.1, §5.2)', () => {
     expect(pkgOf('packages/quiver').engines).toEqual({ node: '>=22.12' })
   })
 
+  // R11 (2026-11-11 audit): the workspace and the starter run Vitest with jsdom, whose
+  // engines are narrower than the CLI's, so they advertise jsdom's range, not core's.
+  it('the workspace root and the starter require the Node their test stack (jsdom) needs', () => {
+    const jsdom = JSON.parse(readFileSync(join(ROOT, 'node_modules/jsdom/package.json'), 'utf8'))
+    expect(pkgOf('.').engines.node).toBe(jsdom.engines.node)
+    expect(pkgOf('starter').engines.node).toBe(jsdom.engines.node)
+  })
+
   it('arrow-use sets no engines: it is browser code with no CLI', () => {
     expect(pkgOf('packages/arrow-use')).not.toHaveProperty('engines')
   })

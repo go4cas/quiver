@@ -39,6 +39,7 @@ await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
 - In dev, adding or removing a page under `dir` rebuilds the module and reloads the page. Files the scanner skips (a name or folder starting with `_` or `.`) don't trigger a reload. Editing a page is normal HMR.
 - A scan error (duplicate routes, a nested `not-found.js`, an invalid param name) shows in Vite's error overlay in dev and fails `vite build`. Each message starts with `[quiver] ` and names the files.
 - It works in Vitest too: add it to `vitest.config.js` and tests can import `quiver:routes`.
-- The return type is a small structural type, not Vite's `Plugin`, so the package has no `vite` dependency or peer. Any Vite version that runs on Node 22.12 works.
+- The return type is a small structural type, not Vite's `Plugin`, so the package has no `vite` dependency or peer.
+- Tested with Vite 8 (`^8.3.6`, the range the starter and the example declare): the starter and [`examples/vite`](/examples#vite) build and run their e2e suites on it, and the packed types are checked inside Vite 8's `defineConfig()`. Earlier Vite versions are not tested.
 
 For types on the `quiver:routes` import, see [`@go4cas/quiver/client`](./client).

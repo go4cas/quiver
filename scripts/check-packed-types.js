@@ -6,8 +6,12 @@
 //
 //   bun run pack:types
 //
-// Needs network access to the npm registry (for typescript@5 and @arrow-js/core).
-// TypeScript 5 is installed into the temporary project only, not into the repo.
+// The full cases use each plugin where a consumer does: the Vite plugin inside
+// Vite's own defineConfig(), and the Bun plugin inside a Bun.build() call typed by
+// @types/bun, so a plugin return type that stops being assignable fails here (R13).
+//
+// Needs network access to the npm registry (for typescript@5, vite, @types/bun and
+// @arrow-js/core). They are installed into the temporary projects only, not into the repo.
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -18,6 +22,10 @@ const ROOT = join(import.meta.dirname, '..')
 const require = createRequire(join(ROOT, 'package.json'))
 const TS_REPO = require('typescript/package.json').version
 const TS_5 = '~5.9.3'
+// The Vite the repo builds and tests with (docs/api/vite.md names it as the tested
+// range), and the Bun types for the Bun the repo pins (engines.bun).
+const VITE = require('vite/package.json').version
+const BUN_TYPES = `^${JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).engines.bun.replace('>=', '')}`
 
 /** @param {string} cmd @param {string[]} args @param {string} cwd @returns {string} */
 function run(cmd, args, cwd) {
@@ -43,11 +51,17 @@ import quiver from '@go4cas/quiver/vite'
 import quiverBun from '@go4cas/quiver/bun'
 import routes, { notFound } from 'quiver:routes'
 import { useFetch, useStorage, useMediaQuery, useEventListener } from 'arrow-use'
+import { defineConfig } from 'vite'
 
 const manifest: RouteManifest = routes
 const guard: NavigationGuard = ({ to }) => (to === '/x' ? '/' : undefined)
 export const used = [createApp, initRouter, url('/'), useRoute, useRouter, beforeEach(guard), manifest, notFound,
-  quiver, quiverBun, useFetch, useStorage, useMediaQuery, useEventListener]
+  useFetch, useStorage, useMediaQuery, useEventListener]
+
+// The plugins where consumers put them, so their return types must be assignable.
+export const viteConfig = defineConfig({ base: '/sub/app/', plugins: [quiver(), quiver({ dir: 'src/pages' })] })
+export const bunBuild = () =>
+  Bun.build({ entrypoints: ['src/main.js'], outdir: 'dist', splitting: true, plugins: [quiverBun({ dir: 'src/pages' })] })
 `
 // node10 ignores `exports`, so only the main entry resolves there (3.0.1, N124).
 const MAIN = `import { url, useRouter } from '@go4cas/quiver'
@@ -74,7 +88,12 @@ for (const c of CASES) {
     name: `quiver-types-${c.name}`,
     private: true,
     type: c.compilerOptions.module === 'commonjs' ? 'commonjs' : 'module',
-    devDependencies: { ...tarballs, '@arrow-js/core': arrow, typescript: c.ts },
+    devDependencies: {
+      ...tarballs,
+      '@arrow-js/core': arrow,
+      typescript: c.ts,
+      ...(c.source === ALL ? { vite: VITE, '@types/bun': BUN_TYPES } : {}),
+    },
     overrides: { ...tarballs },
   }
   writeFileSync(join(dest, 'package.json'), `${JSON.stringify(pkg, null, 2)}\n`)
@@ -84,7 +103,7 @@ for (const c of CASES) {
       noEmit: true,
       target: 'es2022',
       lib: ['es2022', 'dom', 'dom.iterable'],
-      types: c.source === ALL ? ['@go4cas/quiver/client'] : [],
+      types: c.source === ALL ? ['@go4cas/quiver/client', 'bun'] : [],
       skipLibCheck: false,
       ...c.compilerOptions,
     },
