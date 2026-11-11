@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `@go4cas/quiver`: the router's browser suite also runs in Firefox and WebKit, at `/` and under `/sub/app/`, from `bun run test:browsers` and a CI `browsers` job in the pinned Playwright image; it also checks the error `initRouter()` throws without the Navigation API (N155)
+
 ## [3.0.3] - 2026-11-11
 
 Published as `@go4cas/quiver` 3.0.3 and `arrow-use` 0.1.1. Fixes from the external review and security audit of 3.0.2.
