@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `@go4cas/quiver`: the router's browser suite also runs in Firefox and WebKit, at `/` and under `/sub/app/`, from `bun run test:browsers` and a CI `browsers` job in the pinned Playwright image; it also checks the error `initRouter()` throws without the Navigation API (N155)
 
+### Changed
+
+- `@go4cas/quiver`, internal only: the manifest check and the page scanner share one set of route-pattern rules and collision checks (each keeps its own messages), and the router classifies guard results in one place for the initial load and in-app navigations, with each navigation's pending render errors and initial report kept on the navigation itself (audit R14, N170, N171). No API or behaviour change; new tests run one rule table against manual and scanned manifests, and the browser suite now covers startup redirects, `retry()` and `destroy()` during a load in all three engines
+
 ### Security
 
 - Repo tooling, no package change: a `Publish` workflow can stage releases of `@go4cas/quiver` and `arrow-use` on npm from a release tag through trusted publishing (OIDC, no npm token), with provenance; the maintainer still approves each one on npmjs.com. It stays build-only until switched on; `RELEASING.md` has the setup and the release steps

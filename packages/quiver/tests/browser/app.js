@@ -2,7 +2,7 @@
 // Quiver app with a gated loader and guards the tests switch on and off.
 // It runs unbundled from src/, behind an import map, like examples/no-build.
 import { html } from '@arrow-js/core'
-import { afterEach, beforeEach, createApp, go, initRouter, useMeta, useRoute, useRouter } from '@go4cas/quiver'
+import { afterEach, beforeEach, createApp, destroy, go, initRouter, useMeta, useRoute, useRouter } from '@go4cas/quiver'
 
 /** A promise the test resolves with window.fixture.release(name). */
 const gates = /** @type {Record<string, { promise: Promise<void>, open: () => void }>} */ ({})
@@ -35,22 +35,40 @@ const routes = {
   '/denied': () => ({ default: Page('Denied') }),
   '/admin': () => ({ default: Page('Admin') }),
   '/login': () => ({ default: Page('Login') }),
+  '/flaky': () => {
+    if (!flags.flakyLoads) throw new Error('Flaky failed to load')
+    return { default: Page('Flaky') }
+  },
 }
 
-const flags = { denyOverview: false, holdLogin: false }
+const flags = { denyOverview: false, holdLogin: false, flakyLoads: false }
 /** @type {string[]} */
 const log = []
 
-beforeEach(async ({ to }) => {
-  if (to === '/denied') return false
-  if (to === '/' && flags.denyOverview) return false
-  if (to === '/admin') return '/login'
-  if (to === '/login' && flags.holdLogin) await gate('login')
-})
-afterEach(({ to, status }) => { log.push(`${to}:${status}`) })
+/** @type {(() => Promise<void>) | null} the error view's retry, for the tests */
+let retry = null
 
-await initRouter({ routes })
-createApp({ target: '#app' })
+/** The startup sequence; the teardown test runs it again after destroy(). */
+async function start() {
+  beforeEach(async ({ to }) => {
+    if (to === '/denied') return false
+    if (to === '/' && flags.denyOverview) return false
+    if (to === '/admin') return '/login'
+    if (to === '/login' && flags.holdLogin) await gate('login')
+  })
+  afterEach(({ to, status }) => { log.push(`${to}:${status}`) })
+
+  await initRouter({ routes })
+  createApp({
+    target: '#app',
+    error: ({ message, retry: again }) => {
+      retry = again
+      return html`<p role="alert">${message}</p>`
+    },
+  })
+}
+
+await start()
 
 const route = useRoute()
 const router = useRouter()
@@ -65,5 +83,8 @@ Object.assign(window, {
     release: (name) => { gate(name); gates[name].open() },
     status: () => route.status(),
     path: () => route.path(),
+    retry: () => /** @type {() => Promise<void>} */ (retry)(),
+    destroy,
+    start,
   },
 })
