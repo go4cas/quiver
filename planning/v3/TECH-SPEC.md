@@ -416,7 +416,7 @@ Common rules for both published packages (D20):
 ```json
 {
   "name": "@go4cas/quiver",
-  "version": "3.0.1",
+  "version": "3.0.3",
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
@@ -444,14 +444,14 @@ Common rules for both published packages (D20):
 - **X-10** `recipes/` lives at the repo root (D19) and is copied into `packages/quiver/recipes/` by `prepack`, because npm's `files` can't reach outside the package folder (N24). The copy excludes each recipe's tests and the recipes workspace's `package.json`/`jsconfig.json`. Recipes are not in `exports` (D32).
 - **X-11** `prepack` emits `.d.ts` into `types/` with `tsc -p jsconfig.types.json` (`declaration`, `emitDeclarationOnly`, `outDir: types`, includes `src`). TS 7.0.2 emits declarations from the 2.x JSDoc cleanly (N26). The emitted `.d.ts` name no DOM type that TypeScript 5.x's lib lacks (such as `NavigationResult`), so consumers on TS 5.x or 7 with `skipLibCheck: false` check cleanly under `bundler`, `nodenext` and (main entry) `node10`. *Check:* `bun run pack:types` (N125).
 - **X-13** `./client` is a types-only entry: the hand-written `client.d.ts` declares the virtual module `quiver:routes` (default `RouteManifest`, `notFound: RouteLoader | undefined`). Apps add `"@go4cas/quiver/client"` to `compilerOptions.types` (N74, agreed with P4).
-- **X-12** The version is `3.0.0` from P2 on (`3.0.1` since the first patch), not a prerelease. Bun links the starter's `^3.0.0` to the workspace only when the workspace version satisfies the range; `3.0.0-alpha.0` makes `bun install` go to npm and fail (N18).
+- **X-12** The version is `3.0.0` from P2 on (`3.0.1` since the first patch, `3.0.3` since the audit fixes), not a prerelease. Bun links the starter's `^3.0.0` to the workspace only when the workspace version satisfies the range; `3.0.0-alpha.0` makes `bun install` go to npm and fail (N18).
 
 ### 5.2 `arrow-use` (`packages/arrow-use/package.json`)
 
 ```json
 {
   "name": "arrow-use",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "license": "MIT",
   "sideEffects": false,
