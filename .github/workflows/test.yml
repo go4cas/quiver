@@ -14,140 +14,21 @@ on:
 permissions:
   contents: read
 
-# Actions are pinned to full commit SHAs and the Playwright image to its digest (audit S05,
-# N151). Dependabot (github-actions) bumps the SHAs with their version comments; bump the
-# image by hand (starter/tests/visual/README.md, "Bumping Playwright").
+# The checks themselves live in checks.yml, a reusable workflow that publish.yml also runs
+# on each release tag (audit S32-05, N230). This file adds the triggers and the manual
+# baseline re-capture. Actions are pinned to full commit SHAs and the Playwright image to
+# its digest (audit S05, N151); bump the image by hand in both files
+# (starter/tests/visual/README.md, "Bumping Playwright").
 
 jobs:
-  # R11: the unit job runs on the documented minimums. The workspace (root and
-  # starter engines.node) needs Node 22.22.2 for jsdom; Vitest, tsc and Vite run
-  # on Node through their shebangs, so they use the setup-node version. The
-  # published CLI (core engines.node) only needs Node 22.12.0, checked last.
-  unit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.4.4
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22.22.2
-      - run: node --version && bun --version
-      - run: bun install --frozen-lockfile
-      - run: bun run typecheck
-      - run: bun run test
-      - run: bun run build
-      # S-34: the CLI runs on Node, not only on Bun, from its minimum up.
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22.12.0
-      - run: node --version && node packages/quiver/bin/quiver.js routes --dir packages/quiver/tests/fixtures/pages --out "$RUNNER_TEMP/routes.gen.js"
-
-  # Audit S01 (N150): every advisory in the full lockfile (dev tooling included) must be
-  # fixed, or listed unexpired and version-scoped, in scripts/audit-exceptions.json.
-  audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.4.x
-      # bun audit reads bun.lock; no install, so no dependency code runs in this job.
-      - run: bun run audit
-
-  e2e:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.4.x
-      - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
-      - run: bun run test:e2e
-
-  # N155: core's router suite (packages/quiver/tests/browser/) in Chromium, Firefox
-  # and WebKit, at / and under /sub/app/. The pinned Playwright image already holds
-  # all three engines and their system libraries for the version in bun.lock.
-  browsers:
-    runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
-      options: --ipc=host
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.4.x
-      - run: bun install --frozen-lockfile
-      - run: bun run test:browsers
-        env:
-          HOME: /root   # Firefox refuses to start as root with a HOME owned by another user (pwuser)
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: ${{ failure() }}
-        with:
-          name: browser-results
-          path: packages/quiver/test-results/
-          retention-days: 7
-
-  # TECH-SPEC X-4 (SPEC P8): the tarballs hold the right files, and the examples
-  # and the starter, copied out of the repo, pass typecheck and e2e against them.
-  # pack:types type-checks the packed .d.ts on TypeScript 5.x and the repo's
-  # TypeScript with skipLibCheck off (N124).
-  pack:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.4.x
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 22
-      - run: bun install --frozen-lockfile
-      - run: bun run pack:check
-      - run: bun run pack:types
-      - run: bunx playwright install --with-deps chromium
-      - run: bun run pack:try
-
-  # Visual parity (planning/v3/DESIGN.md §8). Runs in the official Playwright image
-  # for the version in bun.lock, which pins Chromium and the fallback system fonts.
-  # Bump the tag with Playwright and re-capture the baseline in the same PR.
-  screenshots:
-    if: ${{ !inputs.update-screenshots }}
-    runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
-      options: --ipc=host
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - run: apt-get update && apt-get install -y --no-install-recommends unzip   # setup-bun needs it
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version: 1.4.x
-      - run: bun install --frozen-lockfile
-      - name: Compare with the baseline
-        run: bun run test:visual
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: ${{ failure() }}
-        with:
-          name: visual-diffs
-          path: starter/test-results/
-          retention-days: 7
+  # Unit, audit, e2e, browsers, pack and screenshots (checks.yml). A manual run with
+  # update-screenshots skips the comparison, since the capture below replaces the baseline.
+  checks:
+    uses: ./.github/workflows/checks.yml
+    permissions:
+      contents: read
+    with:
+      screenshots: ${{ !inputs.update-screenshots }}
 
   # Manual run with update-screenshots, in two jobs (audit S05, N151). The capture job
   # installs dependencies and runs repository code with a read-only token and uploads
