@@ -11,7 +11,7 @@ Add a composable to this app: $ARGUMENTS
 
 ## Step 1: does it already exist?
 
-- **A recipe?** Compare the argument, case-insensitively, with the keys and `aliases` in `recipes/index.json` (`useForm`, `form`, `hmrState`, `useToast` → `toasts`, …). If it matches, install that recipe as "Installing a recipe" in `recipes/README.md` describes (copy each path in its `files` to the place under `src/` it maps to, `src/composables/` for `useForm` and `hmrState`), show the **Use** example from its README, and stop.
+- **A recipe?** Compare the argument, case-insensitively, with the keys and `aliases` in `recipes/index.json` (`useForm`, `form`, `hmrState`, `useToast` → `toasts`, …). If it matches, install that recipe as "Installing a recipe" in `recipes/README.md` describes (copy each path in its `files` to the place under `src/` it maps to, `src/composables/` for `useForm` and `hmrState`, keeping any file that already exists there, as "Existing files" says), show the **Use** example from its README, and stop.
 - **In `arrow-use`?** For HTTP requests use `useFetch`, for persisted values `useStorage`, for media queries `useMediaQuery`, for DOM listeners `useEventListener`, all from `arrow-use`. Add `arrow-use` to the dependencies if missing, show the import, and stop instead of hand-rolling them.
 - **In `@go4cas/quiver`?** `useRoute()` and `useRouter()` (and `useMeta()`) come from core.
 

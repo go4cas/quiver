@@ -253,3 +253,62 @@ describe('useForm — validator failures (audit R07, N140)', () => {
     expect(form.errors.x).toBe('Required.')
   })
 })
+
+describe('useForm — deep snapshot (audit R32-09, N221)', () => {
+  it('validate() and onSubmit() see the same nested values when a nested field changes mid-validate', async () => {
+    /** @type {(errs: object) => void} */
+    let resolveValidate = () => {}
+    /** @type {any} */
+    let validated
+    const validate = vi.fn((v) => {
+      validated = v
+      return new Promise((r) => { resolveValidate = r })
+    })
+    const onSubmit = vi.fn()
+    const { form, handleSubmit } = useForm(
+      { address: { city: 'Cape Town', lines: ['1 Main Rd'] } },
+      { validate, onSubmit }
+    )
+
+    const pending = handleSubmit(fakeSubmitEvent())
+    form.values.address.city = 'Durban'
+    form.values.address.lines.push('Unvalidated')
+    resolveValidate({})
+    await pending
+
+    const expected = { address: { city: 'Cape Town', lines: ['1 Main Rd'] } }
+    expect(validated).toEqual(expected)
+    expect(onSubmit.mock.calls[0][0]).toEqual(expected)
+    expect(onSubmit.mock.calls[0][0]).toBe(validated)
+    // The edit is kept for the next submit.
+    expect(form.values.address.city).toBe('Durban')
+    const second = handleSubmit(fakeSubmitEvent())
+    resolveValidate({})
+    await second
+    expect(onSubmit.mock.calls[1][0]).toEqual({ address: { city: 'Durban', lines: ['1 Main Rd', 'Unvalidated'] } })
+  })
+
+  it('hands out plain copies: changing them does not touch form.values', async () => {
+    const onSubmit = vi.fn((v) => { v.tags.push('x'); v.profile.name = 'changed' })
+    const { form, handleSubmit } = useForm({ tags: ['a'], profile: { name: 'Ada' }, count: 2n, note: null }, { onSubmit })
+    await handleSubmit(fakeSubmitEvent())
+    expect(form.values.tags).toEqual(['a'])
+    expect(form.values.profile.name).toBe('Ada')
+    expect(form.submitted).toBe(true)
+  })
+
+  it.each([
+    ['a Date', () => new Date(0)],
+    ['a Map', () => new Map()],
+    ['a function', () => () => {}],
+  ])('puts %s in form.message, releases submitting, and calls neither callback', async (_, make) => {
+    const validate = vi.fn(() => ({}))
+    const onSubmit = vi.fn()
+    const { form, handleSubmit } = useForm({ nested: { value: make() } }, { validate, onSubmit })
+    await handleSubmit(fakeSubmitEvent())
+    expect(form.message).toMatch(/useForm: form values must be/)
+    expect(form.submitting).toBe(false)
+    expect(validate).not.toHaveBeenCalled()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+})

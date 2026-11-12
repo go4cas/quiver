@@ -15,6 +15,42 @@ import { reactive } from '@arrow-js/core'
  * @typedef {{ values: FormValues, errors: FormErrors, submitting: boolean, submitted: boolean, message: string }} FormState
  */
 /**
+ * A deep copy of the form's values that shares nothing with `form` (audit R32-09,
+ * N221). Arrow wraps every nested object of a reactive() in a proxy, which
+ * structuredClone() refuses, so plain objects and arrays are copied out first;
+ * structuredClone() then copies that and throws on anything else. Supported
+ * values: strings, numbers, booleans, bigint, null, undefined, and plain objects
+ * and arrays of them. A Date, Map, Set, File, class instance or function throws.
+ * @param {FormValues} values
+ * @returns {FormValues}
+ */
+function snapshot(values) {
+  const seen = new Map()
+  /** @param {any} value @returns {any} */
+  const unwrap = (value) => {
+    if (value === null || typeof value !== 'object') return value
+    if (seen.has(value)) return seen.get(value)
+    if (Array.isArray(value)) {
+      const copy = /** @type {any[]} */ ([])
+      seen.set(value, copy)
+      for (const item of value) copy.push(unwrap(item))
+      return copy
+    }
+    const proto = Object.getPrototypeOf(value)
+    if (proto !== Object.prototype && proto !== null) return value
+    const copy = /** @type {Record<string, any>} */ ({})
+    seen.set(value, copy)
+    for (const key of Object.keys(value)) copy[key] = unwrap(value[key])
+    return copy
+  }
+  try {
+    return structuredClone(unwrap(values))
+  } catch {
+    throw new TypeError('useForm: form values must be strings, numbers, booleans, null, or plain objects and arrays of them')
+  }
+}
+
+/**
  * @param {FormValues} [initialValues]
  * @param {{
  *   onSubmit?: (values: FormValues, form: FormState) => any,
@@ -40,13 +76,15 @@ export function useForm(initialValues = {}, { onSubmit, validate } = {}) {
     // A new attempt starts clean: no stale success flag or message.
     form.submitted = false
     form.message = ''
-    // validate() and onSubmit() see the same snapshot, so a value typed while an
-    // async validator runs isn't submitted unvalidated.
-    const values = { ...form.values }
-
     // validate() and onSubmit() share one try/finally, so a throwing or rejecting
-    // validator can't leave the form stuck in submitting (audit R07, N140).
+    // validator, or a value the snapshot can't copy, can't leave the form stuck in
+    // submitting (audit R07, N140).
     try {
+      // validate() and onSubmit() see the same deep snapshot, so a value typed
+      // while an async validator runs, even in a nested field, isn't submitted
+      // unvalidated; it stays in form.values for the next submit (R32-09).
+      const values = snapshot(form.values)
+
       if (validate) {
         // validate may be sync or async — await handles both.
         const errs = await validate(values)

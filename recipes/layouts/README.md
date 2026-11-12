@@ -59,4 +59,4 @@ Navigation guards only decide what the app shows; they protect nothing on the se
 
 ## Styling
 
-Classes `q-basic`, `q-basic__card`, `q-menu`, `q-menu__*` (`sidebar`, `brand`, `logo`, `name`, `tagline`, `nav`, `nav-link`, `footer`, `body`, `header`, `path`, `actions`, `content`) and `q-user-menu`, `q-user-menu__*`; the hook classes `q-panel`, `q-sidebar`, `q-header` and `q-accent` let theme effects reach them. The active nav link has `aria-current="page"`; the open user menu is `<details open>`.
+Classes `q-basic`, `q-basic__card`, `q-menu`, `q-menu__*` (`sidebar`, `brand`, `logo`, `name`, `tagline`, `nav`, `nav-link`, `footer`, `body`, `header`, `path`, `actions`, `content`) and `q-user-menu`, `q-user-menu__*`; the hook classes `q-panel`, `q-sidebar`, `q-header` and `q-accent` let theme effects reach them. The current page's nav link has `aria-current="page"`, and it and a link to the section above it (`/users` on `/users/42`) have `data-active`, which the CSS styles; the open user menu is `<details open>`.

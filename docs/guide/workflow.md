@@ -110,7 +110,7 @@ export default function TicketsPage() {
 
 ## 5. Check the nav link
 
-The `meta.nav` from step 1 put **Tickets** in the menu layout's sidebar, after the links with a lower `order`. The active link gets `aria-current="page"`, on `/tickets` and on any path below it. To put links in an order of your own, or to add one that isn't a page, set `nav` in `src/app.config.js` instead.
+The `meta.nav` from step 1 put **Tickets** in the menu layout's sidebar, after the links with a lower `order`. The link gets `aria-current="page"` on `/tickets`, and `data-active` there and on any path below it. To put links in an order of your own, or to add one that isn't a page, set `nav` in `src/app.config.js` instead.
 
 ## 6. Test it
 
