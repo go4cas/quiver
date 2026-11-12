@@ -46,7 +46,7 @@ const arrow = JSON.parse(readFileSync(join(ROOT, 'packages/quiver/package.json')
 
 // Every public entry point, with a use of each so the types are really read.
 const ALL = `import { createApp, initRouter, url, useRoute, useRouter, beforeEach } from '@go4cas/quiver'
-import type { RouteManifest, NavigationGuard, AppManifest, MiddlewareManifest, NavItem } from '@go4cas/quiver'
+import type { RouteManifest, NavigationGuard, AppManifest, MiddlewareManifest, NavItem, App, AppOptions } from '@go4cas/quiver'
 import quiver from '@go4cas/quiver/vite'
 import quiverBun from '@go4cas/quiver/bun'
 import routes, { notFound } from 'quiver:routes'
@@ -59,6 +59,11 @@ const guard: NavigationGuard = ({ to }) => (to === '/x' ? '/' : undefined)
 const appManifest: AppManifest = app
 const middleware: MiddlewareManifest = appManifest.middleware
 const nav: NavItem[] = appManifest.nav
+// Both createApp forms (C-75): one argument returns App, two return Promise<App>.
+const options: AppOptions = { target: '#app', base: '/sub/app/', defaultLayout: 'default' }
+export const mount = (): App => createApp({ target: '#app' })
+export const start = (): Promise<App> => createApp(appManifest, options)
+export const startRouter = () => initRouter({ routes: manifest, notFound, middleware })
 export const used = [createApp, initRouter, url('/'), useRoute, useRouter, beforeEach(guard), manifest, notFound,
   appManifest.routes, middleware.global, nav, useFetch, useStorage, useMediaQuery, useEventListener]
 

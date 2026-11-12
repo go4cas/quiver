@@ -31,8 +31,8 @@ The manifest comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the 
 
 | Name | Use |
 |---|---|
-| `initRouter({ routes, notFound?, base? })` | starts routing; resolves once the first route is ready |
-| `createApp({ target, layouts?, defaultLayout?, loading?, error? })` | mounts the outlet into `target` |
+| `initRouter({ routes, notFound?, base?, middleware? })` | starts routing; resolves once the first route is ready. `middleware: { global?, sections? }` (3.2) adds guards that run after `beforeEach` |
+| `createApp({ target, layouts?, defaultLayout?, loading?, error? })` | mounts the outlet into `target`. `createApp(app, { target, base?, … })` (3.2) takes the `quiver:app` manifest, provides its config and nav, starts the router and mounts; it returns a promise |
 | `destroy()` | tears down router, guards, hooks, context, meta watchers and the mounted target; runs the page's cleanups and restores the host page's title and description |
 | `go(path)` | navigates; returns a promise that settles when the navigation finishes |
 | `url(path)` | adds the base to a base-relative path, for `href` and `src` |

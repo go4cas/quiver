@@ -15,6 +15,17 @@ Every path below is **base-relative** (`/users/42`, not `/app/users/42`), except
 
 ## Startup
 
+With the [`quiver:app`](./vite#quiver-app) module (3.2), one call does steps 1, 3 and 4:
+
+```js
+import app from 'quiver:app'
+
+beforeEach(fn); afterEach(fn); onError(fn)           // guards and hooks, optional
+await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
+```
+
+The manual order, for apps that wire things themselves:
+
 ```js
 provide(key, value)                                  // 1. context
 beforeEach(fn); afterEach(fn); onError(fn)           // 2. guards and hooks
@@ -22,7 +33,7 @@ await initRouter({ routes, notFound, base })         // 3. router
 const app = createApp({ target, layouts, ... })      // 4. mount
 ```
 
-Guards and hooks registered after `initRouter()` still run, but miss the first navigation.
+Guards and hooks registered after `initRouter()` (or after `createApp(app, options)` was called) still run, but miss the first navigation.
 
 ### initRouter
 
@@ -37,6 +48,7 @@ Starts the router: checks the manifest, works out the base, listens for navigati
 | `routes` | `RouteManifest` | required | pattern → loader, e.g. from `quiver:routes` |
 | `notFound` | `RouteLoader` | none | page for unmatched paths |
 | `base` | `string` | `<base href>` folder, else `'/'` | absolute pathname the app lives under; a missing trailing slash is added |
+| `middleware` | `MiddlewareManifest` | none | global and section guards (3.2), see [Middleware](#middleware) |
 
 ```js
 import routes, { notFound } from 'quiver:routes'
@@ -49,13 +61,65 @@ await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
 - Manifest rules: keys start with `/`, no trailing slash (except `/`), no `//`, `?` or `#`; `:param` names are identifiers, unique per pattern; no two keys that differ only in param names, or that spell one route two ways (`/café`, `/caf%C3%A9`). Values are functions. Static segments match decoded and NFC-normalised, so a literal or an encoded key matches the browser's URL.
 - Matching: the most specific pattern wins (a static segment beats a param, leftmost first), whatever the key order.
 
+#### Middleware
+
+`middleware: { global?, sections? }` adds guards that run after the `beforeEach` guards, on every navigation including the first page. `quiver:app` builds it from `src/middleware/` (global, in file-name order) and each `pages/**/_middleware.js` (a section); it can also be written by hand:
+
+```js
+await initRouter({
+  routes,
+  middleware: {
+    global: [logVisit],                       // every navigation
+    sections: { '/admin': [requireAdmin] },   // /admin and every route under it
+  },
+})
+```
+
+- Order: `beforeEach` guards, then `global` in array order, then each section that covers the route, outermost first (`/` before `/admin` before `/admin/users`). The first `false` or path string stops the rest.
+- A section covers a route when its segments are a prefix of the route pattern's: `/admin` covers `/admin` and `/admin/users/:id`, not `/administrator`. Static segments compare decoded, and any two params are equal, so `/users/:id` covers `/users/:slug/edit`.
+- The route is matched without loading it, so a section guard runs before the page's chunk loads. A path that matches no route (the not-found page) runs global middleware only.
+- Each guard gets `{ from, to }` and behaves like a `beforeEach` guard: cancel, redirect (capped at 10 hops), or throw for an `onError` with `phase: 'guard'`.
+- Rejects with a `TypeError` naming the key or index when `global` or a section isn't an array of functions, or a section key isn't a valid pattern. `destroy()` clears middleware; there is no way to add it later.
+
 ### createApp
 
 ```ts
-createApp(options: CreateAppOptions): App   // App = { destroy(): void }
+createApp(app: AppManifest, options: AppOptions): Promise<App>   // 3.2
+createApp(options: CreateAppOptions): App                        // App = { destroy(): void }
 ```
 
-Mounts the current route into `target`, inside its layout, and keeps it in sync. Fires the first navigation's `onError` and `afterEach` once mounted.
+#### With an app manifest
+
+Called with two arguments, `createApp` takes the `quiver:app` module (or a hand-written `AppManifest`) and starts everything:
+
+1. `provide(key, value)` for each key of `app.config` (the `app.config.js` default export);
+2. `provide('nav', app.nav)`, unless `app.config` has its own `nav`;
+3. `await initRouter({ routes, notFound, base, middleware })` from the manifest and `options.base`;
+4. the one-argument `createApp` below, with `app.layouts` and `options.layouts` merged (the option wins per name) and `options.loading` / `options.error` winning over `app.views`.
+
+It resolves to the `App`.
+
+| Option | Type | Default | |
+|---|---|---|---|
+| `target` | `Element \| string` | required | element or CSS selector |
+| `base` | `string` | as `initRouter` | the app's base path |
+| `layouts` | `Record<string, Layout>` | none | merged over `app.layouts` |
+| `defaultLayout` | `string` | `'default'` | layout for pages without `meta.layout` |
+| `loading` | `LoadingView` | `app.views.loading` | |
+| `error` | `ErrorView` | `app.views.error` | |
+
+```js
+import { createApp } from '@go4cas/quiver'
+import app from 'quiver:app'
+
+await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
+```
+
+It rejects with the error `initRouter` or the mount would throw. Before rejecting it puts back every key it provided, so you can fix the options and call it again without `destroy()`. Guards, hooks and `provide()` calls made before it still count.
+
+#### Manual form
+
+Called with one argument, it mounts the current route into `target`, inside its layout, and keeps it in sync. Fires the first navigation's `onError` and `afterEach` once mounted.
 
 | Option | Type | Default | |
 |---|---|---|---|
@@ -92,7 +156,7 @@ const app = createApp({ target: '#app', layouts, defaultLayout: 'basic', loading
 destroy(): void
 ```
 
-Tears everything down, in order: drops in-flight navigations, removes the navigation listener, clears guards and hooks, stops `useMeta` watchers, clears the `provide` context, unmounts and empties the target, and resets router state and the base. `app.destroy` is the same function. Idempotent, and works when only `initRouter()` ran. Afterwards `initRouter()` and `createApp()` can run again.
+Tears everything down, in order: drops in-flight navigations, removes the navigation listener, clears guards, middleware and hooks, stops `useMeta` watchers, clears the `provide` context, unmounts and empties the target, and resets router state and the base. `app.destroy` is the same function. Idempotent, and works when only `initRouter()` ran. Afterwards `initRouter()` and `createApp()` can run again.
 
 ```js
 import { afterEach } from 'vitest'
@@ -270,7 +334,7 @@ All importable from the package in JSDoc or TypeScript, e.g. `/** @typedef {impo
 | `LoadingView` | `() => ArrowRenderable` |
 | `ErrorView` | `(props: ErrorViewProps) => ArrowRenderable` |
 | `ErrorViewProps` | `{ message: string, error: unknown, retry: () => Promise<void> }` |
-| `InitRouterOptions` | `{ routes, notFound?, base? }` |
+| `InitRouterOptions` | `{ routes, notFound?, base?, middleware? }` |
 | `CreateAppOptions` | `{ target, layouts?, defaultLayout?, loading?, error? }` |
 | `App` | `{ destroy: () => void }` |
 | `NavigationGuard` | `(ctx: GuardContext) => false \| string \| void \| … \| Promise<…>` |
@@ -283,3 +347,4 @@ All importable from the package in JSDoc or TypeScript, e.g. `/** @typedef {impo
 | `AppManifest` (3.2) | `{ routes, notFound?, layouts, middleware, views, nav, config }`, what [`quiver:app`](./vite#quiver-app) exports |
 | `MiddlewareManifest` (3.2) | `{ global?: NavigationGuard[], sections?: Record<string, NavigationGuard[]> }` |
 | `NavItem` (3.2) | `{ to: string, label: string }` |
+| `AppOptions` (3.2) | `{ target, base?, layouts?, defaultLayout?, loading?, error? }`, the second argument of `createApp(app, options)` |

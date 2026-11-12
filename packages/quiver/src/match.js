@@ -235,3 +235,77 @@ export function validateManifest(routes, notFound) {
     throw new TypeError('initRouter(): notFound must be a loader function.')
   }
 }
+
+/**
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+const isPlainObject = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value) &&
+  (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null)
+
+/**
+ * Validate `initRouter`'s middleware (C-70): `global` an array of functions,
+ * `sections` a plain object whose keys are valid patterns (M-21) mapping to
+ * arrays of functions. Throws a TypeError naming the key or index.
+ * @param {unknown} middleware
+ */
+export function validateMiddleware(middleware) {
+  if (middleware === undefined) return
+  if (!isPlainObject(middleware)) {
+    throw new TypeError('initRouter(): middleware must be a plain object { global?, sections? }.')
+  }
+  /**
+   * @param {unknown} list
+   * @param {string} name
+   */
+  const checkList = (list, name) => {
+    if (!Array.isArray(list)) throw new TypeError(`initRouter(): ${name} must be an array of guard functions.`)
+    list.forEach((fn, i) => {
+      if (typeof fn !== 'function') throw new TypeError(`initRouter(): ${name}[${i}] must be a function.`)
+    })
+  }
+  if (middleware.global !== undefined) checkList(middleware.global, 'middleware.global')
+  const { sections } = middleware
+  if (sections === undefined) return
+  if (!isPlainObject(sections)) {
+    throw new TypeError('initRouter(): middleware.sections must be a plain object mapping patterns to guard arrays.')
+  }
+  for (const [key, list] of Object.entries(sections)) {
+    const issue = patternIssue(key)
+    if (issue) throw new TypeError(`initRouter(): middleware section "${key}" ${MANIFEST_MESSAGES[issue.code](issue.segment)}`)
+    checkList(list, `middleware.sections["${key}"]`)
+  }
+}
+
+/**
+ * Whether the section pattern `section` covers the route pattern `route` (M-21):
+ * the section's segments are a prefix of the route's, static segments compared
+ * canonically and any two parameter segments equal. `'/'` covers every route.
+ * @param {string} section
+ * @param {string} route
+ * @returns {boolean}
+ */
+export function sectionCovers(section, route) {
+  const outer = section.split('/').filter(Boolean)
+  const inner = route.split('/').filter(Boolean)
+  if (outer.length > inner.length) return false
+  return outer.every((seg, i) => {
+    const other = inner[i]
+    if (seg.startsWith(':') || other.startsWith(':')) return seg.startsWith(':') && other.startsWith(':')
+    return seg === other || canonicalSegment(seg) === canonicalSegment(other)
+  })
+}
+
+/**
+ * Sort order for sections (M-21): fewer segments first (outermost), then by key
+ * in code-unit order.
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+export function compareSections(a, b) {
+  const depth = a.split('/').filter(Boolean).length - b.split('/').filter(Boolean).length
+  if (depth) return depth
+  return a < b ? -1 : a > b ? 1 : 0
+}
