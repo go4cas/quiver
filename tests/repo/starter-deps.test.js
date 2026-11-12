@@ -16,7 +16,7 @@ describe('W-11: starter dependencies', () => {
     expect(bad).toEqual([])
   })
 
-  it('depends on the core package by its 3.x range, from 3.1 (page cleanup, N180)', () => {
-    expect(pkg.dependencies['@go4cas/quiver']).toBe('^3.1.0')
+  it('depends on the core package by its 3.x range, from 3.2 (quiver:app and createApp(app, options), N199)', () => {
+    expect(pkg.dependencies['@go4cas/quiver']).toBe('^3.2.0')
   })
 })

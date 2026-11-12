@@ -41,6 +41,8 @@ Three front-ends share one scanner, so the same folder gives the same manifest e
 | `Bun.build` | `plugins: [quiver()]` from [`@go4cas/quiver/bun`](/api/bun) | `import routes, { notFound } from 'quiver:routes'` |
 | anything else | [`quiver routes --watch`](/api/cli) writes `src/routes.gen.js` | `import routes, { notFound } from './routes.gen.js'` |
 
+With [`createApp(app, options)`](./app-config) you don't import the routes at all: `quiver:app` (or `quiver app`'s `src/app.gen.js`) carries the same manifest as its `routes` and `notFound`. The imports above are for a [manual setup](./manual-setup).
+
 With Vite, adding or removing a page reloads the browser with the new manifest, a scan error shows in the error overlay, and `vite build` fails on it. Editing a page uses normal HMR. For types on `quiver:routes`, add [`@go4cas/quiver/client`](/api/client) to `compilerOptions.types`.
 
 ### A hand-written manifest

@@ -38,6 +38,8 @@ import routes, { notFound } from 'quiver:routes'
 await initRouter({ routes, notFound })   // base from <base href>
 ```
 
+That is the [manual setup](/guide/manual-setup) [`examples/bun`](/examples#bun) uses. With the folder conventions, `import app from 'quiver:app'` and `await createApp(app, { target: '#app' })` work the same way under Bun.
+
 - Generates the same module as the [Vite plugin](./vite): pages as dynamic imports, `notFound` or `undefined`.
 - With `splitting: true`, each page becomes its own chunk, loaded on first visit. Chunk imports are relative, so one build serves at any base path when `index.html` has the right `<base href>`.
 - It also serves [`quiver:app`](./vite#quiver-app) (3.2), the app manifest for `srcDir`, with the same rules; its warnings go to `console.warn`.

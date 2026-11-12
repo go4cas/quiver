@@ -37,15 +37,23 @@ The default Sign out only navigates to `/login`: it ends nothing, because the re
 3. Then navigate, typically `go('/login')`.
 
 ```js
-provide('currentUser', {
-  ...user,
-  signOut: async () => {
-    await fetch('/logout', { method: 'POST', credentials: 'same-origin' })
-    authState.clear()
-    await go('/login')
+// src/app.config.js
+import { go } from '@go4cas/quiver'
+import { authState } from './state/authState.js'
+
+export default {
+  currentUser: {
+    ...authState.user,
+    signOut: async () => {
+      await fetch('/logout', { method: 'POST', credentials: 'same-origin' })
+      authState.clear()
+      await go('/login')
+    },
   },
-})
+}
 ```
+
+A user known only after startup is provided the same way at runtime: `provide('currentUser', { ...user, signOut })`.
 
 Navigation guards only decide what the app shows; they protect nothing on the server. The starter's sign-in page is a demo with a fixed user and no session.
 

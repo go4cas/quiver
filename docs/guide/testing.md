@@ -12,7 +12,7 @@ Run `bun run typecheck` with them: the JSDoc types are checked by `tsc`, and a t
 
 ## Unit tests
 
-`vitest.config.js` adds the `quiver()` Vite plugin, so tests can import `quiver:routes` like the app does. The starter's own test checks the route manifest:
+`vitest.config.js` adds the `quiver()` Vite plugin, so tests can import `quiver:app` and `quiver:routes` like the app does. The starter's `tests/unit/app.test.js` checks the app manifest (layouts, views, the `meta.nav` order, the `app.config.js` keys), and `routes.test.js` the route manifest:
 
 ```js
 import { describe, it, expect } from 'vitest'

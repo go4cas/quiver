@@ -1,6 +1,6 @@
 # @go4cas/quiver
 
-A drop-in router, context and meta layer for [Arrow.js](https://arrow-js.com) apps: routing on the Navigation API with layouts, guards, `afterEach`/`onError` hooks and base paths, `provide`/`inject`, and `useMeta`. File-based routes come from a Vite plugin, a `Bun.build` plugin or the `quiver routes` CLI. Plain JavaScript with generated `.d.ts` types; `@arrow-js/core` is the only peer dependency, and no CSS ships with it.
+A drop-in router, context and meta layer for [Arrow.js](https://arrow-js.com) apps: routing on the Navigation API with layouts, guards, `afterEach`/`onError` hooks and base paths, `provide`/`inject`, and `useMeta`. Since 3.2 it also reads your app's folders (`pages/`, `layouts/`, `middleware/`, `views/`, `app.config.js`) into one `quiver:app` module, through a Vite plugin, a `Bun.build` plugin or the `quiver` CLI. Plain JavaScript with generated `.d.ts` types; `@arrow-js/core` is the only peer dependency, and no CSS ships with it.
 
 ```bash
 bun add @go4cas/quiver @arrow-js/core
@@ -28,10 +28,10 @@ mounted.destroy()    // tear down; createApp() works again
 | Entry | |
 |---|---|
 | `@go4cas/quiver` | `initRouter`, `createApp`, `destroy`, `go`, `beforeEach`, `afterEach`, `onError`, `useRoute`, `useRouter`, `useMeta`, `url`, `provide`, `inject`, and the shared types |
-| `@go4cas/quiver/vite` | Vite plugin for `quiver:routes` |
-| `@go4cas/quiver/bun` | `Bun.build` plugin for `quiver:routes` |
-| `@go4cas/quiver/client` | types for `quiver:routes` (add to `compilerOptions.types`) |
-| `quiver routes [--dir] [--out] [--watch]` | CLI that writes the manifest to `src/routes.gen.js` |
+| `@go4cas/quiver/vite` | Vite plugin for `quiver:app` and `quiver:routes` |
+| `@go4cas/quiver/bun` | `Bun.build` plugin for `quiver:app` and `quiver:routes` |
+| `@go4cas/quiver/client` | types for `quiver:app` and `quiver:routes` (add to `compilerOptions.types`) |
+| `quiver app [--src] [--out] [--watch]`, `quiver routes [--dir] [--out] [--watch]` | CLI that writes `src/app.gen.js` or `src/routes.gen.js` |
 
 The package also carries `recipes/` (toasts, layouts, theme tokens, views and more, to copy into your app), `AGENTS.md` and `llms.txt` for AI assistants.
 
