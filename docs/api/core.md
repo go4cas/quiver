@@ -115,7 +115,9 @@ import app from 'quiver:app'
 await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
 ```
 
-It rejects with the error `initRouter` or the mount would throw. Before rejecting it puts back every key it provided, so you can fix the options and call it again without `destroy()`. Guards, hooks and `provide()` calls made before it still count.
+It rejects with the error `initRouter` or the mount would throw. Before rejecting it undoes what it did itself: it puts back every key it provided (unless something has written that key since), and if the router had started, it stops it again and empties the target. You can fix the options and call it again on the same target without `destroy()`. Guards, hooks and `provide()` calls made before it still count.
+
+If `destroy()` runs while it is still waiting for the first page, it rejects with `createApp(): destroy() was called before this app mounted, so it was abandoned.` and leaves alone whatever a newer `createApp()` has set up since.
 
 #### Manual form
 
@@ -209,7 +211,7 @@ beforeEach(guard: NavigationGuard): () => void
 Registers a guard and returns its unregister function. Guards run in registration order before every navigation, the first page load included (`from: null`), and the first `false` or string wins:
 
 - `false` cancels: the last page that finished loading stays (or comes back, if another navigation had started loading), with its URL, query and hash. A cancelled link click or Back/Forward adds and rewrites no history entry; a cancelled replace puts the old URL back in place. Where the browser has precommit handlers, a cancelled click, `go()` or replace never commits, so the Forward entries stay too ([Browser support](../guide/routing.md#guards-before-commit)). On the first load, `false` redirects to `/`.
-- a string redirects (base-relative, may carry a query and hash). A redirect to the path already being navigated to proceeds. More than 10 redirects in a row is an error (`Too many redirects (10) from "<path>".`). A redirect must stay inside the app: an absolute URL (`https:`, `javascript:`, `//host`) or a path outside the base is a guard error (`A guard redirected to "…". Redirects must be base-relative paths inside the app; use go() for other URLs.`); call `go()` in the guard's place for an external URL.
+- a string redirects (base-relative, may carry a query and hash). A redirect to the path already being navigated to proceeds. More than 10 redirects in a row is an error (`Too many redirects (10) from "<path>".`). A redirect must stay inside the app. Quiver parses it once, as the browser would against the document's base URL, and checks and navigates to that parsed URL: an absolute URL (`https:`, `javascript:`, `//host`, or anything a browser reads as one, like `/\host` at the root base) or a path outside the base is a guard error (`A guard redirected to "…". Redirects must be base-relative paths inside the app; use go() for other URLs.`); call `go()` in the guard's place for an external URL.
 - `from` is the page on screen, never one still loading for a navigation that was superseded. Once a newer navigation starts, the older one's remaining guards don't run, and its guards' result (cancel, redirect or error) is ignored.
 - anything else continues.
 

@@ -456,6 +456,39 @@ describe('page scope: onCleanup in pages and layouts (N160–N163)', () => {
     expect(cleanup).toHaveBeenCalledTimes(2)
   })
 
+  it('R32-04: a page that returns a component() gets the props and events Arrow gives it, with and without a layout', async () => {
+    const Picker = component((/** @type {any} */ props, /** @type {any} */ emit) =>
+      html`<button @click="${() => emit('picked', props.id)}">${() => props.label}</button>`)
+    /** @param {Element} root */
+    const click = (root) => /** @type {HTMLButtonElement} */ (root.querySelector('button')).click()
+
+    // Plain Arrow, for reference.
+    const arrowPicked = vi.fn()
+    const plain = document.createElement('div')
+    html`${Picker({ id: 7, label: 'Pick' }, { picked: arrowPicked })}`(plain)
+    await nextTick()
+    click(plain)
+    expect(arrowPicked).toHaveBeenCalledWith(7)
+
+    const picked = vi.fn()
+    const nav = await boot({
+      '/': mod(() => Picker({ id: 7, label: 'Pick' }, { picked })),
+      '/menu': mod(() => Picker({ id: 8, label: 'Menu pick' }, { picked }), { layout: 'menu' }),
+    })
+    createApp({ target, layouts })
+    await nextTick()
+    expect(target.textContent).toBe(plain.textContent)
+    click(target)
+    expect(picked).toHaveBeenLastCalledWith(7)
+
+    await go('/menu')
+    await nav.idle()
+    expect(target.querySelector('[data-layout="menu"] button')?.textContent).toBe('Menu pick')
+    click(target)
+    expect(picked).toHaveBeenLastCalledWith(8)
+    expect(picked).toHaveBeenCalledTimes(2)
+  })
+
   it('a page that returns a component() gets its cleanup inside a layout too (N162)', async () => {
     const cleanup = vi.fn()
     const PageComponent = component(() => {

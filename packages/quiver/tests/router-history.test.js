@@ -370,6 +370,42 @@ describe('guard redirects stay inside the app (N129)', () => {
     expect(window.location.pathname + window.location.search + window.location.hash).toBe('/app/login?next=admin#f')
   })
 
+  it.each([
+    ['/\\evil.example/x', 'backslash host'],
+    ['\t//evil.example/x', 'tab before //'],
+    ['/\t/evil.example/x', 'tab inside //'],
+    ['\\\\evil.example', 'double backslash'],
+  ])('S32-02: at the root base, %j is checked as the browser parses it (%s)', async (to) => {
+    const nav = await boot({ '/': mod(Page('home')), '/admin': mod(Page('admin')) })
+    const errors = vi.fn()
+    onError(errors)
+    guard(({ to: dest }) => (dest === '/admin' ? to : undefined))
+    await go('/admin')
+    expect(nav.documentLoads).toEqual([])
+    expect(useRoute().status()).toBe('error')
+    expect(String(errors.mock.calls[0][0].error.message)).toContain('base-relative')
+  })
+
+  it('S32-02: the URL navigated to is the parsed one, and its path is what the next guards see', async () => {
+    const nav = await boot({ '/': mod(Page('home')), '/admin': mod(Page('admin')), '/release notes': mod(Page('notes')) })
+    /** @type {string[]} */
+    const seen = []
+    guard(({ to }) => { seen.push(to); return to === '/admin' ? '/release notes?x=1' : undefined })
+    await go('/admin')
+    expect(seen).toEqual(['/admin', '/release%20notes'])
+    expect(nav.navigate).toHaveBeenLastCalledWith(`${window.location.origin}/release%20notes?x=1`, expect.anything())
+    expect(target.textContent).toBe('notes')
+  })
+
+  it('S32-02: on the initial load, a redirect is parsed once and rewrites the URL in place', async () => {
+    installNavigation()
+    setLocation('/admin')
+    guard(({ to }) => (to === '/admin' ? '/\\evil.example/' : undefined))
+    await initRouter({ routes: { '/': mod(Page('home')), '/admin': mod(Page('admin')) } })
+    expect(useRoute().status()).toBe('error')
+    expect(window.location.pathname).toBe('/admin')
+  })
+
   it('go() still takes an external URL', async () => {
     const nav = await boot({ '/': mod(Page('home')) })
     await go('https://example.com/')

@@ -175,6 +175,82 @@ describe('C-74: failure undoes its own provide() calls', () => {
     expect(g).toHaveBeenCalledWith({ from: null, to: '/' })
   })
 
+  it('R32-02: a mount that throws after the router started can be retried on the same target', async () => {
+    provide('theme', 'mine')
+    const errors = vi.fn()
+    after(errors)
+    const g = vi.fn()
+    guard(g)
+    const failing = manifest({
+      routes: { '/': () => { throw new Error('load failed') } },
+      config: { theme: 'theirs' },
+      views: { error: () => { throw new Error('error view broke') } },
+    })
+    await expect(createApp(failing, { target })).rejects.toThrow('error view broke')
+    expect(target.childNodes.length).toBe(0)
+    expect(inject('theme')).toBe('mine')
+    expect(useRoute().status()).toBe('idle')
+
+    const nav = /** @type {any} */ (globalThis).navigation
+    await createApp(manifest(), { target })
+    expect(target.querySelector('[data-page]')?.textContent).toBe('home')
+    expect(nav.listenerCount()).toBe(1)
+    expect(g).toHaveBeenCalledTimes(2)
+    expect(errors).toHaveBeenLastCalledWith({ from: null, to: '/', status: 'ready' })
+    await go('/admin')
+    expect(target.querySelector('[data-layout="menu"] [data-page]')?.textContent).toBe('admin')
+  })
+
+  it('R32-03: destroy() during a startup supersedes it; when it settles it leaves the newer app alone', async () => {
+    /** @type {() => void} */
+    let release = () => {}
+    const held = new Promise((resolve) => { release = () => resolve(undefined) })
+    const shared = { name: 'shared' }
+    const a = createApp(manifest({
+      routes: { '/': async () => { await held; throw new Error('A failed late') } },
+      config: { app: shared, flag: true, count: 1 },
+    }), { target })
+    for (let i = 0; i < 20; i++) await Promise.resolve()
+    destroy()
+
+    const bGuard = vi.fn()
+    guard(bGuard)
+    const b = await createApp(manifest({ config: { app: shared, flag: true, count: 1 } }), { target })
+    release()
+    await expect(a).rejects.toThrow('createApp(): destroy() was called before this app mounted, so it was abandoned.')
+
+    expect(inject('app')).toBe(shared)
+    expect(inject('flag')).toBe(true)
+    expect(inject('count')).toBe(1)
+    expect(target.querySelector('[data-page]')?.textContent).toBe('home')
+    expect(/** @type {any} */ (globalThis).navigation.listenerCount()).toBe(1)
+    await go('/admin')
+    expect(bGuard).toHaveBeenLastCalledWith({ from: '/', to: '/admin' })
+    expect(target.querySelector('[data-page]')?.textContent).toBe('admin')
+    b.destroy()
+  })
+
+  it('R32-03: an older startup settling while a newer one awaits its own loader changes nothing of the newer one', async () => {
+    /** @type {Record<string, () => void>} */
+    const open = {}
+    /** @param {string} name */
+    const gate = (name) => new Promise((resolve) => { open[name] = () => resolve(undefined) })
+    const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve() }
+    const a = createApp(manifest({ routes: { '/': async () => { await gate('a'); return { default: Page('A') } } }, config: { app: 'same' } }), { target })
+    await flush()
+    destroy()
+    const b = createApp(manifest({ routes: { '/': async () => { await gate('b'); return { default: Page('B') } } }, config: { app: 'same' } }), { target })
+    await flush()
+    open.a()
+    await expect(a).rejects.toThrow('abandoned')
+    expect(inject('app')).toBe('same')
+    open.b()
+    await b
+    expect(target.querySelector('[data-page]')?.textContent).toBe('B')
+    expect(inject('app')).toBe('same')
+    expect(/** @type {any} */ (globalThis).navigation.listenerCount()).toBe(1)
+  })
+
   it('a non-object app or options rejects with a TypeError', async () => {
     await expect(createApp(/** @type {any} */ (null), { target })).rejects.toThrow(TypeError)
     await expect(createApp(manifest(), /** @type {any} */ (undefined))).rejects.toThrow(TypeError)

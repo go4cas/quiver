@@ -305,23 +305,24 @@ async function runGuards(nav, from, to) {
 }
 
 /**
- * The href for a guard's redirect. It must stay a base-relative path in this
- * app: an absolute URL, `//host`, or a path that leaves the base is a guard
- * error, not a navigation (N129).
+ * Parse a guard's redirect once (S32-02): the URL the browser will go to is
+ * the one checked, and its path is the one the guards run for next. It must
+ * stay a base-relative path in this app: an absolute URL, `//host`, or a path
+ * that leaves the base is a guard error, not a navigation (N129).
  * @param {string} target
- * @returns {string}
+ * @returns {{ href: string, to: string }} the absolute URL to navigate to and its base-relative path
  */
-function redirectHref(target) {
-  const href = url(target)
+function parseRedirect(target) {
   /** @type {URL | null} */
   let dest = null
   try {
-    dest = new URL(href, window.location.href)
+    dest = new URL(url(target), document.baseURI)
   } catch {}
-  if (!dest || dest.origin !== window.location.origin || stripBase(dest.pathname) === null) {
+  const relative = dest && dest.origin === window.location.origin ? stripBase(dest.pathname) : null
+  if (!dest || relative === null) {
     throw new Error(`A guard redirected to "${target}". Redirects must be base-relative paths inside the app; use go() for other URLs.`)
   }
-  return href
+  return { href: dest.href, to: normalizePath(relative) }
 }
 
 /** @type {GuardOutcome} */
@@ -358,19 +359,18 @@ async function decide(nav, from, to, redirects, first) {
     if (settled) return CANCEL
     result = '/'
   }
-  const next = normalizePath(result)
-  if (next === to) return PROCEED
-  /** @type {string} */
-  let href
+  /** @type {{ href: string, to: string }} */
+  let next
   try {
-    href = redirectHref(result)
+    next = parseRedirect(result)
   } catch (error) {
     return { kind: 'error', error }
   }
+  if (next.to === to) return PROCEED
   if (redirects >= MAX_REDIRECTS) {
     return { kind: 'error', error: new Error(`Too many redirects (${MAX_REDIRECTS}) from "${first}".`) }
   }
-  return { kind: 'redirect', to: next, href }
+  return { kind: 'redirect', to: next.to, href: next.href }
 }
 
 /** A navigation committed: remember it as the one a cancel goes back to. */
@@ -781,15 +781,34 @@ export function bumpEpoch() {
 
 /** Steps 2–3 of destroy(): stop listening, clear guards, middleware (C-72) and hooks. */
 export function stopRouter() {
+  releaseRouter()
+  guards.length = 0
+  afterHooks.length = 0
+  errorHooks.length = 0
+}
+
+/**
+ * What initRouter() itself set up: its listeners and its middleware. A failed
+ * createApp(app, options) releases these and keeps the caller's guards and
+ * hooks (C-74, R32-02).
+ */
+export function releaseRouter() {
   if (phase !== 'off' && typeof navigation !== 'undefined') {
     navigation.removeEventListener('navigate', handleNavigate)
     navigation.removeEventListener('currententrychange', onEntryChange)
   }
-  guards.length = 0
   globalMiddleware = []
   sections = []
-  afterHooks.length = 0
-  errorHooks.length = 0
+}
+
+/** @returns {boolean} true before initRouter() and after destroy() */
+export function isRouterOff() {
+  return phase === 'off'
+}
+
+/** @returns {number} bumped by every destroy(), so a startup can tell it was superseded (R32-03) */
+export function routerGeneration() {
+  return generation
 }
 
 /** Step 8 of destroy(): forget the manifest and mark the router as not initialised. */
