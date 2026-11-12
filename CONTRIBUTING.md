@@ -96,7 +96,7 @@ All three must pass before opening a PR — CI runs them on every push, along wi
 | `bun run test:browsers` | Core's router suite in Chromium, Firefox and WebKit |
 | `bun run typecheck` | Type-check every workspace via JSDoc (tsc, checkJs) |
 | `bun run pack:check` | Check the file lists of both npm tarballs |
-| `bun run pack:try` | Run the examples and the starter against the packed tarballs |
+| `bun run pack:try` | Run the examples, `tests/packed/bun-app` and the starter against the packed tarballs |
 | `bun run pack:types` | Type-check the packed `.d.ts` in fresh TypeScript projects |
 | `bun run audit` | Check the lockfile for dependency advisories |
 | `bun run recipes:sync` | Install `recipes/` into `starter/src/` by role |

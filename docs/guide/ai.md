@@ -37,7 +37,7 @@ Plugin commands are namespaced, so they also answer to `/quiver:add-page` and so
 |---|---|
 | `/add-page <path>` | Creates a page in `src/pages/` (`users/[id]` → `/users/:id`) |
 | `/add-component <Name>` | Installs a recipe when the name matches one (`toast`, `ThemeToggle`, `LoadingView`, `Link`), otherwise scaffolds a component and its CSS |
-| `/add-layout <name>` | Installs the layouts recipe (`menu`, `basic`), otherwise scaffolds a layout and registers it |
+| `/add-layout <name>` | Installs the layouts recipe (`menu`, `basic`), otherwise scaffolds a layout in `src/layouts/` (the file name is the layout name, so there is nothing to register) |
 | `/add-composable <name>` | Installs `useForm` or `hmrState`, points at `arrow-use` for fetch, storage, media queries and listeners, otherwise scaffolds a composable with a test |
 | `/add-theme <id — description>` | Adds a theme: token blocks, optional effects, a theme switcher entry (installs the theme recipes first if needed) |
 | `/add-state <name>` | Creates a `reactive()` store in `src/state/` |

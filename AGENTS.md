@@ -65,6 +65,8 @@ starter/             # The starter app (degit target: go4cas/quiver/starter)
 │   ├── components/  # App components (Counter, UserCard) plus the link, toasts, theme-switcher recipes
 │   ├── composables/ # useForm, hmrState (recipes)
 │   ├── styles/      # tokens.css, base.css, effects.css, fonts/ (theme recipe)
+│   ├── fonts/       # Audiowide, the display font app.css uses (not a recipe)
+│   ├── assets/      # images imported from JS (avatars)
 │   ├── state/       # Global reactive state modules — add stores here
 │   ├── app.css      # Starter page styles (plus Counter.css, UserCard.css beside their components)
 │   ├── style.css    # CSS entry: layer order + @imports — add each new stylesheet here

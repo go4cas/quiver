@@ -48,6 +48,7 @@ my-app/
 │   ├── styles/          # the theme: tokens.css, base.css, effects.css, fonts
 │   ├── state/           # your global reactive() stores
 │   ├── assets/          # images imported from JS (hashed on build)
+│   ├── fonts/           # the display font app.css uses
 │   ├── style.css        # CSS entry: layer order, then every stylesheet
 │   └── app.css          # the app's own page styles
 └── tests/

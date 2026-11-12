@@ -44,7 +44,7 @@ It does four things, in this order:
 3. It starts the router with the routes and middleware, at `options.base`.
 4. It mounts into `options.target`, with the layouts and views.
 
-It resolves once the first page is on screen. Guards and hooks you register before it (`beforeEach`, `afterEach`, `onError`) see the first navigation. If a step fails (a missing target, a bad base), it rejects and takes back what it provided, so you can fix the call and run it again. All options are on the [API page](/api/core#createapp).
+It resolves once the first page is on screen. Guards and hooks you register before it (`beforeEach`, `afterEach`, `onError`) see the first navigation. If a step fails (a missing target, a bad base, a view that throws while mounting), it rejects after taking back the keys it provided, stopping the router it started and emptying the target, so you can fix the call and run it again on the same target. All options are on the [API page](/api/core#createapp).
 
 ## `app.config.js`
 
