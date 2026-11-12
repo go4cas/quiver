@@ -1,6 +1,6 @@
 # @go4cas/quiver/client
 
-A types-only entry: it declares the virtual module `quiver:routes` that the [Vite](./vite) and [Bun](./bun) plugins serve, so `checkJs` and TypeScript accept the import.
+A types-only entry: it declares the virtual modules `quiver:routes` and `quiver:app` (3.2) that the [Vite](./vite) and [Bun](./bun) plugins serve, so `checkJs` and TypeScript accept the import.
 
 ```json
 // jsconfig.json (or tsconfig.json)
@@ -31,6 +31,11 @@ declare module 'quiver:routes' {
   export default routes
   export const notFound: import('@go4cas/quiver').RouteLoader | undefined
 }
+
+declare module 'quiver:app' {
+  const app: import('@go4cas/quiver').AppManifest
+  export default app
+}
 ```
 
-With the [`quiver routes` CLI](./cli) you import a real file (`./routes.gen.js`) instead, and need no client types.
+With the [`quiver routes` and `quiver app` CLI](./cli) you import a real file (`./routes.gen.js`, `./app.gen.js`) instead, and need no client types.

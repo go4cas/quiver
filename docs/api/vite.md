@@ -4,17 +4,18 @@
 import quiver from '@go4cas/quiver/vite'
 ```
 
-A Vite plugin that scans a pages folder and serves the route manifest as the virtual module `quiver:routes`.
+A Vite plugin that scans a pages folder and serves the route manifest as the virtual module `quiver:routes`. Since 3.2 it also serves `quiver:app`, the [app manifest](#quiver-app) for a whole source folder.
 
 ## quiver
 
 ```ts
-quiver(options?: { dir?: string }): VitePluginLike
+quiver(options?: { dir?: string, srcDir?: string }): VitePluginLike
 ```
 
 | Option | Type | Default | |
 |---|---|---|---|
-| `dir` | `string` | `'src/pages'` | pages folder, relative to Vite's `root` |
+| `srcDir` | `string` | `'src'` | source folder for `quiver:app` (layouts, middleware, views, `app.config.js`), relative to Vite's `root` (3.2) |
+| `dir` | `string` | `'<srcDir>/pages'` | pages folder, relative to Vite's `root` |
 
 ```js
 // vite.config.js
@@ -42,4 +43,22 @@ await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
 - The return type is a small structural type, not Vite's `Plugin`, so the package has no `vite` dependency or peer.
 - Tested with Vite 8 (`^8.3.6`, the range the starter and the example declare): the starter and [`examples/vite`](/examples#vite) build and run their e2e suites on it, and the packed types are checked inside Vite 8's `defineConfig()`. Earlier Vite versions are not tested.
 
-For types on the `quiver:routes` import, see [`@go4cas/quiver/client`](./client).
+## quiver:app
+
+New in 3.2. `import app from 'quiver:app'` gives the app manifest for `srcDir`: one object with everything the folder conventions describe.
+
+| Key | From | |
+|---|---|---|
+| `routes`, `notFound` | `pages/` | the same manifest as `quiver:routes` |
+| `layouts` | `layouts/<name>.js` | `{ <name>: Layout }`; `default.js` is the layout for pages that name none |
+| `middleware` | `middleware/*.js`, `pages/**/_middleware.js` | `{ global: [guard, …], sections: { '/admin': [guard], … } }`; global middleware in file-name order |
+| `views` | `views/loading.js`, `views/error.js` | `{ loading?, error? }` |
+| `nav` | each page's `meta.nav: { label, order? }` | `[{ to, label }]`, sorted by `order`, then path |
+| `config` | `app.config.js` | its default export, or `{}` |
+
+- `layouts/`, `middleware/` and `views/` are read one level deep. Names starting with `_` or `.` are skipped, so `layouts/_parts/` can hold helpers, and other file types (a layout's CSS) are ignored. Any other subfolder, a layout name other than letters, digits and `-`, or a file in `views/` other than `loading.js` and `error.js` is a scan error.
+- `meta.nav` and `meta.layout` are read at build time, without running the page, so `meta` must be a plain literal (strings, numbers, booleans, objects, arrays). The plugin warns, and never fails the build, when it can't read a `meta` that mentions them, when `meta.nav` has the wrong shape or sits on a route with a parameter or on `not-found.js`, and when `meta.layout` names no file in `layouts/`.
+- In dev, adding or removing any of those files rebuilds the module and reloads the page. Editing a page reloads only when its `meta.nav` or `meta.layout` changed the module.
+- Without Vite or Bun, [`quiver app`](./cli#quiver-app) writes the same module to a file.
+
+For types on the `quiver:routes` and `quiver:app` imports, see [`@go4cas/quiver/client`](./client).

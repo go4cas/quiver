@@ -2,9 +2,10 @@
 
 ```
 quiver routes [--dir <pages dir>] [--out <file>] [--watch]
+quiver app [--src <source dir>] [--out <file>] [--watch]
 ```
 
-Writes the route manifest for a pages folder to a JavaScript module, for setups without the Vite or Bun plugin: an import-map app, another bundler, a test. The `quiver` binary comes with `@go4cas/quiver`.
+`quiver routes` writes the route manifest for a pages folder to a JavaScript module, for setups without the Vite or Bun plugin: an import-map app, another bundler, a test. The `quiver` binary comes with `@go4cas/quiver`.
 
 How you run it depends on whether the package is installed:
 
@@ -60,3 +61,30 @@ export const notFound = () => import('./pages/not-found.js')
 | `0` | written or unchanged; also `--help` |
 | `1` | scan error, messages on stderr, nothing written; with `--watch`, a pages folder that is missing, unreadable or can no longer be watched |
 | `2` | usage error (unknown command or flag, `--out` inside `--dir`); usage on stderr |
+
+## quiver app
+
+```
+quiver app [--src <source dir>] [--out <file>] [--watch]
+```
+
+New in 3.2. Writes the [app manifest](./vite#quiver-app) for a source folder: routes from `<src>/pages`, plus `layouts/`, `middleware/` and `pages/**/_middleware.js`, `views/`, each page's `meta.nav`, and `app.config.js`. It is the module the plugins serve as `quiver:app`, for apps without Vite or Bun. Run it the same way as `quiver routes` (the table above).
+
+| Flag | Default | |
+|---|---|---|
+| `--src` | `src` | source folder, relative to the current directory; pages are read from `<src>/pages` |
+| `--out` | `<src>/app.gen.js` | file to write, relative to the current directory; not inside `pages/`, `layouts/`, `middleware/` or `views/` |
+| `--watch` | off | keep running and rewrite the file when an app file is added, removed, renamed or edited (an edit can change a page's `meta.nav`) |
+
+```bash
+bunx quiver app                        # src → src/app.gen.js
+bunx quiver app --watch
+```
+
+```js
+import app from './app.gen.js'
+```
+
+- Specifiers are relative to `--out`, writes are atomic and only on change, and `--watch` keeps the last good file on a scan error, as for `quiver routes`.
+- Warnings (a `meta` it can't read, a misplaced `meta.nav`, an unknown `meta.layout`) go to stderr and the exit code stays `0`. Scan errors exit `1`, and usage errors `2`.
+- `--dir` belongs to `quiver routes` and `--src` to `quiver app`; passing one to the other is a usage error.

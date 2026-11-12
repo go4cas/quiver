@@ -206,3 +206,62 @@ describe('quiver routes', () => {
     }
   })
 })
+
+describe('quiver app', () => {
+  /** A temp project with a copy of the fixture app at src. */
+  function appProject() {
+    const cwd = mkdtempSync(join(tmpdir(), 'quiver-cli-'))
+    cpSync(join(FIXTURES, 'app'), join(cwd, 'src'), { recursive: true })
+    return cwd
+  }
+
+  it('S-63: defaults to src → src/app.gen.js with ./ specifiers; warnings on stderr, exit 0', () => {
+    const cwd = appProject()
+    const { status, stdout, stderr } = runCli(['app'], cwd)
+    expect(status).toBe(0)
+    expect(stdout).toContain('Wrote src/app.gen.js')
+    expect(stderr).toContain('[quiver] typo.js: unknown layout "menuu"')
+    const source = readFileSync(join(cwd, 'src', 'app.gen.js'), 'utf8')
+    expect(source).toContain("import layout0 from './layouts/default.js'")
+    expect(source).toContain("    '/about': () => import('./pages/about.js'),")
+    expect(runCli(['app'], cwd).stdout).toContain('Unchanged src/app.gen.js')
+  })
+
+  it('S-63: --out defaults inside --src; specifiers climb with ../', () => {
+    const cwd = appProject()
+    expect(runCli(['app', '--src', 'src', '--out', 'gen/app.js'], cwd).status).toBe(0)
+    expect(readFileSync(join(cwd, 'gen', 'app.js'), 'utf8')).toContain("import config from '../src/app.config.js'")
+  })
+
+  it.each(['src/pages/app.gen.js', 'src/layouts/app.js', 'src/middleware/x.js', 'src/views/app.js'])('S-63: --out %s is a usage error', (out) => {
+    const cwd = appProject()
+    const { status, stderr } = runCli(['app', '--out', out], cwd)
+    expect(status).toBe(2)
+    expect(stderr).toContain('which quiver app scans')
+  })
+
+  it('S-63: --dir belongs to quiver routes and --src to quiver app', () => {
+    const cwd = appProject()
+    expect(runCli(['app', '--dir', 'src/pages'], cwd).status).toBe(2)
+    expect(runCli(['routes', '--src', 'src'], cwd).status).toBe(2)
+    expect(runCli(['app', '--help'], cwd).stdout).toContain('quiver app [--src <source dir>] [--out <file>] [--watch]')
+  })
+
+  it('S-63: --watch rewrites on a new layout and on a page’s meta.nav edit', async () => {
+    const cwd = appProject()
+    const out = join(cwd, 'src', 'app.gen.js')
+    const read = () => { try { return readFileSync(out, 'utf8') } catch { return '' } }
+    const child = spawn('node', [CLI, 'app', '--watch'], { cwd })
+    let stdout = ''
+    child.stdout.on('data', (d) => { stdout += d })
+    try {
+      await until(() => stdout.includes('Watching'))
+      writeFileSync(join(cwd, 'src', 'layouts', 'wide.js'), 'export default (c) => c\n')
+      await until(() => read().includes("'wide': layout2"))
+      writeFileSync(join(cwd, 'src', 'pages', 'about.js'), "export const meta = { nav: { label: 'About us', order: 2 } }\nexport default () => ''\n")
+      await until(() => read().includes("label: 'About us'"))
+    } finally {
+      child.kill()
+    }
+  })
+})

@@ -28,3 +28,6 @@ export { createApp, destroy } from './app.js'
 /** @typedef {import('./types.js').ErrorPhase} ErrorPhase */
 /** @typedef {import('./types.js').RouteStatus} RouteStatus */
 /** @typedef {import('./types.js').MetaValue} MetaValue */
+/** @typedef {import('./types.js').AppManifest} AppManifest */
+/** @typedef {import('./types.js').MiddlewareManifest} MiddlewareManifest */
+/** @typedef {import('./types.js').NavItem} NavItem */
