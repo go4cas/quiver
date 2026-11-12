@@ -31,8 +31,8 @@ describe('core package config', () => {
     expect(readFileSync(join(CORE, 'client.d.ts'), 'utf8')).toMatch(/declare module 'quiver:routes'/)
   })
 
-  it('is version 3.2.0, not a prerelease', () => {
-    expect(json('package.json').version).toBe('3.2.0')
+  it('is version 3.2.1, not a prerelease', () => {
+    expect(json('package.json').version).toBe('3.2.1')
   })
 
   it('has @arrow-js/core as its only peer and no dependencies', () => {

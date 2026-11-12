@@ -32,7 +32,7 @@
       "name": "quiver-example-no-build",
       "dependencies": {
         "@arrow-js/core": "^1.0.6",
-        "@go4cas/quiver": "^3.2.0",
+        "@go4cas/quiver": "^3.2.1",
       },
       "devDependencies": {
         "@playwright/test": "^1.63.0",
@@ -43,7 +43,7 @@
       "name": "quiver-example-vite",
       "dependencies": {
         "@arrow-js/core": "^1.0.6",
-        "@go4cas/quiver": "^3.2.0",
+        "@go4cas/quiver": "^3.2.1",
       },
       "devDependencies": {
         "@playwright/test": "^1.63.0",
@@ -63,7 +63,7 @@
     },
     "packages/quiver": {
       "name": "@go4cas/quiver",
-      "version": "3.2.0",
+      "version": "3.2.1",
       "bin": {
         "quiver": "bin/quiver.js",
       },
@@ -93,7 +93,7 @@
       "name": "quiver-starter",
       "dependencies": {
         "@arrow-js/core": "^1.0.6",
-        "@go4cas/quiver": "^3.2.0",
+        "@go4cas/quiver": "^3.2.1",
         "arrow-use": "^0.1.0",
       },
       "devDependencies": {
