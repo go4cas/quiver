@@ -39,6 +39,12 @@ export default function adminOnly() {
 
 A `_middleware.js` covers its folder's routes, including the folder's `index.js`. Folders nest: with `pages/_middleware.js` and `pages/admin/_middleware.js`, a visit to `/admin/users/7` runs the outer one first, then the inner one. A folder with a parameter in its name (`pages/users/[id]/_middleware.js`) covers every user's routes. `_middleware.js` is never a route itself.
 
+The build fails, rather than run only some guards, when it can't be sure it found them all:
+
+- Two folders that are the same section, such as `pages/[id]/` and `pages/[slug]/` (they differ only in the parameter name), or `café` spelled two ways in Unicode, can't both hold a `_middleware.js`. The error names both files; keep one folder.
+- A `middleware/` folder, or a folder under `pages/`, that exists but can't be read is an error. A missing `middleware/` is fine.
+- Quiver doesn't follow symbolic links inside `pages/`, `layouts/`, `middleware/` or `views/`. A linked `.js` file in `layouts/`, `middleware/` or `views/`, or a linked `_middleware.js`, is an error; put the file itself there. A linked page or folder under `pages/` is not read, like any other file that isn't a page.
+
 ## Order
 
 On every navigation, guards run in this order. The first one that cancels or redirects stops the rest.

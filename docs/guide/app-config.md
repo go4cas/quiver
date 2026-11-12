@@ -78,7 +78,7 @@ A page joins the menu with `meta.nav`:
 export const meta = { layout: 'menu', title: 'Team', nav: { label: 'Team', order: 2 } }
 ```
 
-The build collects them into `[{ to, label }]`, sorted by `order` (pages without one come last) and then by path. It reads `meta` without running the page, so `meta` must be a plain literal: strings, numbers, booleans, objects and arrays, with no variables, calls or template literals. When the build can't read a `meta` that mentions `nav` or `layout`, it warns, and that page gets no menu link. A route with a parameter (`/users/:id`) and the not-found page can't be menu links, and get a warning.
+The build collects them into `[{ to, label }]`, sorted by `order` (pages without one come last) and then by path. It reads `meta` without running the page, so `meta` must be a top-level `export const meta =` whose whole value is a plain literal: strings, numbers, booleans, objects and arrays, with no variables, calls, spreads or template literals. Comments are fine, and a commented-out `meta` is ignored. When the build can't read a `meta` that mentions `nav` or `layout`, it warns, and that page gets no menu link. A route with a parameter (`/users/:id`) and the not-found page can't be menu links, and get a warning.
 
 For links that don't come from pages (an external link, a different order), set `nav` in `app.config.js`. It replaces the generated list:
 
@@ -106,4 +106,4 @@ export default function ErrorView({ message, retry }) {
 
 ## When something changes
 
-In dev, the Vite plugin reloads the page when you add or remove a page, layout, middleware file, view or `app.config.js`. It also reloads when an edit to a page changes the menu links. Editing what's inside one of these files is a normal hot update. With the CLI, keep `quiver app --watch` running.
+In dev, the Vite plugin reloads the page when you add or remove a page, layout, middleware file, view or `app.config.js`. It also reloads when an edit to a page changes the menu links, and prints a new warning (an unknown layout) as soon as an edit causes it. Editing what's inside one of these files is a normal hot update. With the CLI, keep `quiver app --watch` running.
