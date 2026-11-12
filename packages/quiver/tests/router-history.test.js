@@ -214,7 +214,9 @@ describe('guards before commit, where the browser has precommit handlers (N201)'
     guard(({ to }) => (to === '/denied' ? false : undefined))
     await settleAll(nav, nav.navigate('/denied', { history: 'replace' }))
     expect(nav.stack()).toEqual({ urls: ['/?q=1'], index: 0 })
-    expect(nav.navigate).toHaveBeenCalledTimes(1)
+    // The cancel aborts it with a URL-only replace of the settled entry.
+    expect(nav.navigate).toHaveBeenLastCalledWith(expect.stringMatching(/\/\?q=1$/), expect.objectContaining({ history: 'replace' }))
+    expect(useRoute().path()).toBe('/')
   })
 
   it('a redirect chain commits once, at its target, as one entry', async () => {

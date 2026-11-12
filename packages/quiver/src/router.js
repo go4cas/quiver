@@ -401,15 +401,16 @@ const withoutHash = (href) => href.split('#')[0]
 
 /**
  * A guard cancelled: put back the last committed route and its history entry.
- * With a precommit handler a cancelled push or replace never committed, so
- * there is nothing to put back unless an earlier navigation had started
- * loading (N201). Without one, a traversal or a push goes back to that entry,
+ * With a precommit handler a cancelled push or replace never commits: a
+ * URL-only replace of the settled entry aborts it (N201). Without one, a traversal or a push goes back to that entry,
  * so no history entry is added or rewritten; a replace puts its URL back in
  * place (N126). The browser has already dropped the Forward entries of a
  * committed push (N201).
  * @param {NavOp} op
+ * @param {boolean} [pending] a precommit handler is holding a navigation that
+ *   hasn't committed: always start a URL-only navigation, which aborts it (N201)
  */
-function rollback(op) {
+function rollback(op, pending = false) {
   const target = /** @type {NonNullable<typeof settled>} */ (settled)
   if (unsettled) {
     // A superseded navigation had started loading: show the committed route again.
@@ -422,7 +423,7 @@ function rollback(op) {
   if (target.key !== undefined && current?.key !== target.key &&
       navigation.entries().some((entry) => entry.key === target.key)) {
     follow(op, navigation.traverseTo(target.key, { info }))
-  } else if (current?.url !== target.url) {
+  } else if (pending || current?.url !== target.url) {
     follow(op, navigation.navigate(target.url, { history: 'replace', info }))
   }
 }
@@ -615,7 +616,11 @@ async function guardBeforeCommit(nav, from, to, info, op, controller) {
     const outcome = await decide(nav, from, to, hops, first)
     if (nav !== currentNav || outcome.kind === 'superseded') throw aborted()
     if (outcome.kind === 'cancel') {
-      rollback(op)
+      // Throwing alone aborts the navigation in Chromium, but WebKit then
+      // leaves a blank page (N201). A URL-only replace of the settled entry
+      // aborts it everywhere without committing it; it keeps the Forward
+      // entries and runs nothing.
+      rollback(op, true)
       throw aborted()
     }
     if (outcome.kind === 'redirect') {
