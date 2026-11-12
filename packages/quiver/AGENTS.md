@@ -63,7 +63,7 @@ createApp({ target: '#app', layouts: { default: DefaultLayout }, loading, error 
 | `destroy()` | tears down router, guards, hooks, context, meta watchers and the mounted target; runs the page's cleanups and restores the host page's title and description |
 | `go(path)` | navigates; returns a promise that settles when the navigation finishes |
 | `url(path)` | adds the base to a base-relative path, for `href` and `src` |
-| `beforeEach(fn)` | guard `({ from, to })`: return `false` to cancel (the page on screen stays, history unchanged), a base-relative path to redirect (an absolute URL or a path outside the base is a guard error), anything else to proceed; returns an unregister function |
+| `beforeEach(fn)` | guard `({ from, to })`: return `false` to cancel (the page on screen stays, history unchanged; without the browser's precommit handlers a cancelled click after Back drops the Forward entries), a base-relative path to redirect (an absolute URL or a path outside the base is a guard error), anything else to proceed; returns an unregister function |
 | `afterEach(fn)` | `({ from, to, status })` after each committed navigation |
 | `onError(fn)` | `({ error, from, to, phase })` for `'guard'`, `'load'` and `'render'` errors |
 | `useRoute()` | `{ path(), params(), status(), meta() }`, reactive |

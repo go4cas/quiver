@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bun run audit` (S32-04, N231): an accepted advisory that matches no locked version, or an exception naming a version the advisory doesn't match, now fails with a diagnostic instead of passing. The VitePress dev-server exceptions stay accepted until 2027-02-11
 - Docs (S32-06, N232): the app-config and middleware guides say that `app.config.js`, layouts, views and middleware ship to the browser, and show a session checked on the server
 
+### Fixed
+
+- Router (R32-01, N201): a navigation a guard cancels no longer loses history. Where the browser has the Navigation API's precommit handlers (Chromium), the guards for a link click, `go()` or a replace run before the navigation commits, so a cancel leaves the URL, every history entry and the current position as they were (after going Back, the Forward entries stay), and a guard redirect commits once, at its target. Elsewhere, and for Back/Forward, the entry commits first and a cancel moves back, as before. In every browser, a cancel now keeps a fragment the browser set itself (`#top`, `location.hash`) instead of going back to the entry before it
+
 ### Changed
 
 - Recipes (D45, N200): component recipe files are PascalCase, like the app's own components: `link.js` → `Link.js`, `toasts.js`/`toasts.css` → `Toasts.js`/`Toasts.css`, `theme-switcher.js`/`theme-switcher.css` → `ThemeSwitcher.js`/`ThemeSwitcher.css`, in `recipes/` and where they install (`src/components/`). Recipe names, `/add-*` names and every export are unchanged. An app that already copied a recipe keeps working; to match, rename the files and fix the imports and the `@import` lines in `style.css`
