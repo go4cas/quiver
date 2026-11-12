@@ -18,7 +18,9 @@ const guide = [
   {
     text: 'Building an app',
     items: [
+      { text: 'App structure', link: '/guide/app-config' },
       { text: 'Routing', link: '/guide/routing' },
+      { text: 'Middleware', link: '/guide/middleware' },
       { text: 'Layouts', link: '/guide/layouts' },
       { text: 'Components', link: '/guide/components' },
       { text: 'State', link: '/guide/state' },
@@ -29,6 +31,7 @@ const guide = [
       { text: 'Feature Workflow', link: '/guide/workflow' },
       { text: 'AI Tooling', link: '/guide/ai' },
       { text: 'Troubleshooting', link: '/guide/troubleshooting' },
+      { text: 'Manual setup', link: '/guide/manual-setup' },
     ],
   },
   {
@@ -49,7 +52,7 @@ const api = [
       { text: '@go4cas/quiver/vite', link: '/api/vite' },
       { text: '@go4cas/quiver/bun', link: '/api/bun' },
       { text: '@go4cas/quiver/client', link: '/api/client' },
-      { text: 'quiver routes (CLI)', link: '/api/cli' },
+      { text: 'quiver CLI', link: '/api/cli' },
       { text: 'arrow-use', link: '/api/arrow-use' },
     ],
   },

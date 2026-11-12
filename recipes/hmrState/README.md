@@ -4,12 +4,12 @@
 
 ## Install
 
-Copy `hmrState.js` to `src/quiver/hmrState/` (or `/add-composable hmrState`).
+Copy `hmrState.js` to `src/composables/` (or `/add-composable hmrState`).
 
 ## Use
 
 ```js
-import { hmrState } from '../quiver/hmrState/hmrState.js'
+import { hmrState } from '../composables/hmrState.js'
 
 export function Counter({ label }) {
   const state = hmrState(`counter-${label}`, { count: 0 })

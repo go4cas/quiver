@@ -9,23 +9,48 @@ Quiver is a small router, context and meta layer for [Arrow.js](https://arrow-js
 - **Recipes**: UI and helpers you copy into the app and own, shipped in this package under `recipes/` (see below).
 - Plain JavaScript typed with JSDoc, checked by `tsc` with `checkJs` + `strict`. Don't convert files to TypeScript.
 
-## Startup
+## App structure and startup
 
-The order is fixed:
+Quiver reads the app's `src/` folder and builds one module, `quiver:app`:
+
+| Path | Becomes |
+|---|---|
+| `pages/**/*.js` | routes (`users/[id].js` → `/users/:id`; `not-found.js` at the root handles 404) |
+| `pages/**/_middleware.js` | a guard for every route in that folder and below, outermost first |
+| `layouts/<name>.js` (default export) | the layout `<name>`; `default.js` wraps pages without `meta.layout` |
+| `middleware/*.js` (default export) | global guards, run on every navigation in file-name order (`01.auth.js` first) |
+| `views/loading.js`, `views/error.js` | the loading view and the error view (`{ message, error, retry }`) |
+| `app.config.js` (default export, a plain object) | each key provided under its own name, for `inject(key)` |
+| a page's literal `meta.nav: { label, order? }` | the `'nav'` list `[{ to, label }]`; a `nav` key in `app.config.js` replaces it |
+
+```js
+// src/main.js
+import { beforeEach, createApp } from '@go4cas/quiver'
+import app from 'quiver:app'                  // Vite: quiver() from '@go4cas/quiver/vite'
+
+beforeEach(({ to }) => { /* optional: guards and hooks before createApp */ })
+await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
+```
+
+`createApp(app, options)` provides the config and nav, starts the router with the routes and middleware, and mounts. It resolves to the `App` and rejects (after taking back what it provided) on a bad target or base. Guards run in this order: `beforeEach` guards, global middleware, then section middleware. Middleware has the `beforeEach` signature (`false` cancels, a path redirects) and runs before the page's code loads.
+
+`quiver:app` comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the Bun plugin (`@go4cas/quiver/bun`, for `Bun.build`), or `quiver app [--src src] [--out src/app.gen.js] [--watch]` for apps without a bundler (commit the file). `meta` is read at build time, so `meta.nav` and `meta.layout` must be plain literals; an unreadable `meta`, a misplaced `meta.nav` or an unknown `meta.layout` is a build warning. Page names may hold spaces and Unicode (`release notes.js` → `/release notes`); a `%` or `\` in a name is a scan error. With `@go4cas/quiver` installed, run the CLI as `bunx quiver app` or `npx quiver app`; without a local install, name the scoped package (`bunx --bun --package @go4cas/quiver@3 quiver app`, `npm exec --package=@go4cas/quiver@3 -- quiver app`), since a bare `quiver` resolves to an unrelated npm package. Never hand-edit a generated module. For types of `quiver:app`, add `"@go4cas/quiver/client"` to `compilerOptions.types`.
+
+### Manual setup
+
+The step-by-step order still works, and `quiver:routes` (or `quiver routes [--dir] [--out] [--watch]`, writing `src/routes.gen.js`) gives the route manifest alone:
 
 ```js
 import { provide, beforeEach, initRouter, createApp } from '@go4cas/quiver'
-import routes, { notFound } from 'quiver:routes'      // Vite: quiver() from '@go4cas/quiver/vite'
+import routes, { notFound } from 'quiver:routes'
 
-provide('app', { name: 'My app' })                     // 1. context
+provide('app', { name: 'My app' })                                      // 1. context
 beforeEach(({ to }) => (to.startsWith('/admin') && !auth.ok ? '/login' : undefined))  // 2. guards, afterEach, onError
-await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })  // 3. router
-createApp({ target: '#app', layouts, defaultLayout: 'basic', loading, error })   // 4. mount
+await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })   // 3. router (also takes middleware: { global, sections })
+createApp({ target: '#app', layouts: { default: DefaultLayout }, loading, error })   // 4. mount, returns the App
 ```
 
 `createApp()` before `initRouter()` resolves throws, as does a second `initRouter()` or `createApp()` before `destroy()`. `destroy()` (or `app.destroy()`) tears everything down so the sequence can run again.
-
-The manifest comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the Bun plugin (`@go4cas/quiver/bun`, for `Bun.build`), or the `quiver routes [--dir src/pages] [--out src/routes.gen.js] [--watch]` CLI for apps without a bundler (keep `--out` outside `--dir`, or name it `_routes.gen.js`). Page names may hold spaces and Unicode (`release notes.js` → `/release notes`); a `%` or `\` in a name is a scan error. With `@go4cas/quiver` installed, run it as `bunx quiver routes` or `npx quiver routes`; without a local install, name the scoped package (`bunx --bun --package @go4cas/quiver@3 quiver routes`, `npm exec --package=@go4cas/quiver@3 -- quiver routes`), since a bare `quiver` resolves to an unrelated npm package. Never hand-edit a generated manifest. For types of `quiver:routes`, add `"@go4cas/quiver/client"` to `compilerOptions.types`.
 
 ## The 13 exports
 
@@ -65,7 +90,7 @@ function UserPage() {
 export default UserPage
 ```
 
-`meta.layout` names a layout passed to `createApp({ layouts })`; pages without it get `defaultLayout`. An unknown name renders the page bare with a `console.warn`.
+`meta.layout` names a file in `src/layouts/`; pages without it get `default`. An unknown name is a build warning and renders the page bare with a `console.warn`. `meta.nav: { label, order }` adds the page to the menu layout's sidebar (not on a `[param]` route).
 
 Navigation: a plain `<a href="${url('/users')}">` or the `Link` recipe. Never add an `@click` that calls `go()` to a link: the Navigation API already intercepts the click, and the handler breaks Cmd/Ctrl/middle-click. Use `go()` for programmatic navigation (after a form submits).
 
@@ -93,15 +118,15 @@ These are easy to get wrong and fail silently:
 
 ## Recipes
 
-Recipes ship in this package under `recipes/`: `index.json` is the registry, `README.md` explains how to install one, and each `recipes/<name>/README.md` says how to use it. Install a recipe by copying the paths in its `files` to the app's `src/quiver/<name>/`, plus the recipes in its `requires`, then loading its CSS and wiring it as its README says. The `/add-*` commands of the Quiver Claude Code plugin do this (`/add-component toast`).
+Recipes ship in this package under `recipes/`: `index.json` is the registry, `README.md` explains how to install one, and each `recipes/<name>/README.md` says how to use it. Install a recipe by copying each path in its `files` to the place under the app's `src/` it maps to (`components/`, `composables/`, `layouts/`, `views/`, `styles/`), plus the recipes in its `requires`. Rewrite the imports between recipes (`../<recipe>/<file>.js` in `recipes/`) to the installed places, load its CSS and wire it as its README says. The `/add-*` commands of the Quiver Claude Code plugin do this (`/add-component toast`).
 
 | Recipe | Gives | Needs |
 |---|---|---|
 | `theme` | `tokens.css` (the `--q-*` contract), `base.css` (reset), optional `effects.css` | – |
 | `toasts` | `useToast()`, `toastState`, `ToastContainer` | `theme` |
 | `theme-switcher` | `themeState`, `ThemeSelector`, `ThemeToggle` (persisted, follows the system mode) | `theme`, `arrow-use` |
-| `layouts` | `BasicLayout`, `MenuLayout`, the `layouts` map; read `provide('app' / 'nav' / 'currentUser')`; a real `currentUser.signOut` ends the server session and clears user state (README "Sign-out") | `theme`, `link`, `toasts`, `theme-switcher` |
-| `views` | `LoadingView`, `ErrorView` (with `retry`) for `createApp()` | `theme` |
+| `layouts` | `layouts/default.js` (centred card), `layouts/menu.js` (sidebar + header), which read `inject('app' / 'nav' / 'currentUser')`, from `app.config.js` and `meta.nav`; a real `currentUser.signOut` ends the server session and clears user state (README "Sign-out") | `theme`, `link`, `toasts`, `theme-switcher` |
+| `views` | `views/loading.js`, `views/error.js` (with `retry`) | `theme` |
 | `link` | `Link({ to, children, class })` with `aria-current="page"`; `to` is a path or an `http(s):`/`mailto:`/`tel:` URL, anything else gets no `href` | – |
 | `useForm` | `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` | – |
 | `hmrState` | `hmrState(key, initial)`: state kept across Vite hot reloads | – |
@@ -114,10 +139,10 @@ Recipe JS never imports CSS. The app's CSS entry imports, in order:
 
 ```css
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
-@import "./quiver/theme/tokens.css";
-@import "./quiver/theme/base.css";
-@import "./quiver/toasts/toasts.css";        /* each component recipe */
-@import "./quiver/theme/effects.css";
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./components/toasts.css";        /* each component recipe */
+@import "./styles/effects.css";
 @import "./app.css";                          /* the app's own CSS last */
 ```
 

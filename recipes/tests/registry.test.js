@@ -6,11 +6,14 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const ROOT = join(import.meta.dirname, '..')
-/** @type {Record<string, { description: string, kind: string, files: string[], css: string[], requires: string[], packages: string[], aliases: string[] }>} */
+/** @type {Record<string, { description: string, kind: string, files: Record<string, string>, css: string[], requires: string[], packages: string[], aliases: string[] }>} */
 const INDEX = JSON.parse(readFileSync(join(ROOT, 'index.json'), 'utf8'))
 const NAMES = Object.keys(INDEX)
 const NOT_RECIPES = new Set(['node_modules', 'tests', 'e2e', 'test-results', 'playwright-report'])
 const LAYERS = '@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;'
+// Where each kind installs in an app's src/ (D44).
+/** @type {Record<string, string>} */
+const ROLE = { styles: 'styles/', component: 'components/', composable: 'composables/', layout: 'layouts/', view: 'views/' }
 const SPECIFIER = /(?:\bfrom\s*|\bimport\s*\(?\s*)(['"])([^'"]+)\1/g
 
 /** @param {string} dir @returns {string[]} paths relative to dir, tests/ excluded */
@@ -29,6 +32,11 @@ describe('recipe registry', () => {
     expect(NAMES.sort()).toEqual(dirs.sort())
   })
 
+  it('no two recipe files install to the same path', () => {
+    const all = NAMES.flatMap((n) => Object.values(INDEX[n].files))
+    expect(new Set(all).size).toBe(all.length)
+  })
+
   it('aliases are unique across recipes, so /add-* resolves one recipe per name', () => {
     const all = NAMES.flatMap((n) => [n, ...INDEX[n].aliases].map((a) => a.toLowerCase()))
     expect(new Set(all).size).toBe(all.length)
@@ -45,29 +53,41 @@ describe('recipe registry', () => {
     })
 
     it('lists exactly the files it ships (plus README.md)', () => {
-      const listed = recipe.files.flatMap((f) =>
+      const sources = Object.keys(recipe.files)
+      const listed = sources.flatMap((f) =>
         f.endsWith('/') ? readdirSync(join(dir, f)).map((x) => f + x) : [f],
       )
-      for (const f of recipe.files) expect(existsSync(join(dir, f)), f).toBe(true)
+      for (const f of sources) expect(existsSync(join(dir, f)), f).toBe(true)
       expect(filesIn(dir).sort()).toEqual([...listed, 'README.md'].sort())
-      for (const css of recipe.css) expect(recipe.files).toContain(css)
+      for (const css of recipe.css) expect(sources).toContain(css)
     })
 
-    it('JS follows the <name>/<name>.js layout (theme is CSS only, DESIGN §3.2)', () => {
-      if (recipe.kind === 'styles') expect(recipe.files.some((f) => f.endsWith('.js'))).toBe(false)
-      else expect(recipe.files).toContain(`${name}.js`)
+    it('installs into the folder of its kind, keeping each file name (D44)', () => {
+      expect(Object.keys(ROLE)).toContain(recipe.kind)
+      for (const [from, to] of Object.entries(recipe.files)) {
+        expect(to, from).toBe(ROLE[recipe.kind] + from)
+      }
+      if (recipe.kind === 'styles') expect(Object.keys(recipe.files).some((f) => f.endsWith('.js'))).toBe(false)
+    })
+
+    it.skipIf(recipe.kind !== 'layout' && recipe.kind !== 'view')('each layout or view file default-exports it, for quiver:app (S-51, S-54)', () => {
+      for (const f of Object.keys(recipe.files).filter((x) => x.endsWith('.js'))) {
+        expect(readFileSync(join(dir, f), 'utf8'), f).toMatch(/^export default function /m)
+      }
     })
 
     it('imports only the packages and recipes index.json declares', () => {
-      const specs = recipe.files
+      const specs = Object.keys(recipe.files)
         .filter((f) => f.endsWith('.js'))
         .flatMap((f) => [...readFileSync(join(dir, f), 'utf8').matchAll(SPECIFIER)].map((m) => m[2]))
       const packages = [...new Set(specs.filter((s) => !s.startsWith('.')))].sort()
       expect(packages).toEqual([...recipe.packages].sort())
       for (const s of specs.filter((x) => x.startsWith('.'))) {
-        const m = /^\.\.\/([^/]+)\/[^/]+\.js$/.exec(s)
+        const m = /^\.\.\/([^/]+)\/([^/]+\.js)$/.exec(s)
         expect(m, `${s} must be ../<recipe>/<file>.js`).not.toBeNull()
-        expect(recipe.requires, `${name} imports ${s}`).toContain(/** @type {RegExpExecArray} */ (m)[1])
+        const [, other, file] = /** @type {RegExpExecArray} */ (m)
+        expect(recipe.requires, `${name} imports ${s}`).toContain(other)
+        expect(Object.keys(INDEX[other]?.files ?? {}), `${s} is not in ${other}'s files`).toContain(file)
       }
     })
 

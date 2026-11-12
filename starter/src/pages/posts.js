@@ -3,6 +3,7 @@ import { useFetch } from 'arrow-use'
 
 export const meta = {
   layout: 'menu',
+  nav: { label: 'Posts', order: 3 },
   title: 'Posts',
 }
 

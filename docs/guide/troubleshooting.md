@@ -78,15 +78,15 @@ In 3.0, pages inside a layout got no cleanup at all; the 3.0 workaround of stopp
 
 ## `Quiver needs the Navigation API`
 
-`initRouter()` throws this in browsers without `window.navigation`: before Chrome/Edge 102, Safari 26.2 or Firefox 147. There is no fallback; see [browser support](./routing#browser-support) for how to show your own message.
+Starting the router throws this in browsers without `window.navigation`: before Chrome/Edge 102, Safari 26.2 or Firefox 147. There is no fallback; see [browser support](./routing#browser-support) for how to show your own message.
 
 ## `createApp() needs a router`
 
-`createApp()` ran before `await initRouter()` resolved. Keep the order: `provide()` → guards and hooks → `await initRouter()` → `createApp()`. The other startup errors (`initRouter() was already called`, `createApp() was already called`) mean the code ran twice, often from hot reload of `main.js`: call `destroy()` first.
+In a [manual setup](./manual-setup), `createApp({ target })` ran before `await initRouter()` resolved. Keep the order: `provide()` → guards and hooks → `await initRouter()` → `createApp()`, or use `await createApp(app, options)`, which does it for you. The other startup errors (`initRouter() was already called`, `createApp() was already called`) mean the code ran twice, often from hot reload of `main.js`: call `destroy()` first.
 
 ## `Current URL "…" is outside base "…"`
 
-The page loaded at a path the base doesn't cover. Check the `base` you pass to `initRouter()` (with Vite, `base` in `vite.config.js`) or the page's `<base href>`.
+The page loaded at a path the base doesn't cover. Check the `base` you pass to `createApp(app, options)` or `initRouter()` (with Vite, `base` in `vite.config.js`) or the page's `<base href>`.
 
 ## Links lose the base path, or open the wrong page under a sub-path
 

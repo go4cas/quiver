@@ -4,14 +4,14 @@ Form state, validation and submit handling on one `reactive()` object. Only `@ar
 
 ## Install
 
-Copy `useForm.js` to `src/quiver/useForm/` (or `/add-composable useForm`).
+Copy `useForm.js` to `src/composables/` (or `/add-composable useForm`).
 
 ## Use
 
 Call it inside a page or component function, so each render gets fresh state:
 
 ```js
-import { useForm } from '../quiver/useForm/useForm.js'
+import { useForm } from '../composables/useForm.js'
 
 const { form, handleSubmit, field } = useForm({ email: '' }, {
   validate: (v) => (v.email.includes('@') ? {} : { email: 'Enter an email address' }),

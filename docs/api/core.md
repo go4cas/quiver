@@ -119,7 +119,7 @@ It rejects with the error `initRouter` or the mount would throw. Before rejectin
 
 #### Manual form
 
-Called with one argument, it mounts the current route into `target`, inside its layout, and keeps it in sync. Fires the first navigation's `onError` and `afterEach` once mounted.
+The [manual setup](/guide/manual-setup). Called with one argument, it mounts the current route into `target`, inside its layout, and keeps it in sync. Fires the first navigation's `onError` and `afterEach` once mounted.
 
 | Option | Type | Default | |
 |---|---|---|---|
@@ -130,10 +130,12 @@ Called with one argument, it mounts the current route into `target`, inside its 
 | `error` | `ErrorView` | `` html`<p role="alert">${message}</p>` `` | shown for errors, gets `{ message, error, retry }` |
 
 ```js
-import { layouts } from './quiver/layouts/layouts.js'
-import { LoadingView, ErrorView } from './quiver/views/views.js'
+import DefaultLayout from './layouts/default.js'
+import MenuLayout from './layouts/menu.js'
+import LoadingView from './views/loading.js'
+import ErrorView from './views/error.js'
 
-const app = createApp({ target: '#app', layouts, defaultLayout: 'basic', loading: LoadingView, error: ErrorView })
+const app = createApp({ target: '#app', layouts: { default: DefaultLayout, menu: MenuLayout }, loading: LoadingView, error: ErrorView })
 ```
 
 | Route status | Renders |
@@ -301,7 +303,7 @@ useMeta({ title: () => `Team (${userState.users.length})`, description: 'Everyon
 provide(key: string, value: unknown): void
 ```
 
-Stores a value in the app-wide context. The last `provide()` for a key wins; `destroy()` clears them all. Core reserves no keys; the [layouts recipe](/recipes/layouts) reads `'app'`, `'nav'` and `'currentUser'`.
+Stores a value in the app-wide context. The last `provide()` for a key wins; `destroy()` clears them all. Core reserves no keys; the [layouts recipe](/recipes/layouts) reads `'app'`, `'nav'` and `'currentUser'`. With `createApp(app, options)`, each key of `app.config.js` and the generated `'nav'` are provided for you.
 
 ```js
 provide('app', { name: 'Acme' })

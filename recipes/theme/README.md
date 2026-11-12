@@ -10,14 +10,14 @@ Everything sits in the `quiver.tokens`, `quiver.base` and `quiver.effects` casca
 
 ## Install
 
-`/add-theme` (or `/add-component theme`) copies `tokens.css`, `base.css`, `effects.css` and `fonts/` to `src/quiver/theme/`. Load them in this order (see "Installing a recipe" in the recipes README, `node_modules/@go4cas/quiver/recipes/README.md`):
+`/add-theme` (or `/add-component theme`) copies `tokens.css`, `base.css`, `effects.css` and `fonts/` to `src/styles/`. Load them in this order (see "Installing a recipe" in the recipes README, `node_modules/@go4cas/quiver/recipes/README.md`):
 
 ```css
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
-@import "./quiver/theme/tokens.css";
-@import "./quiver/theme/base.css";
+@import "./styles/tokens.css";
+@import "./styles/base.css";
 /* component recipes here */
-@import "./quiver/theme/effects.css";
+@import "./styles/effects.css";
 ```
 
 Apps with their own reset skip `base.css`; recipes still render, but spacing and button chrome then follow the app's reset. Apps that use cascade layers of their own declare the order once, with `quiver` before their component and utility layers, e.g. `@layer theme, base, quiver, components, utilities;`.

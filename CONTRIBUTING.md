@@ -99,7 +99,7 @@ All three must pass before opening a PR — CI runs them on every push, along wi
 | `bun run pack:try` | Run the examples and the starter against the packed tarballs |
 | `bun run pack:types` | Type-check the packed `.d.ts` in fresh TypeScript projects |
 | `bun run audit` | Check the lockfile for dependency advisories |
-| `bun run recipes:sync` | Copy `recipes/` into `starter/src/quiver/` |
+| `bun run recipes:sync` | Install `recipes/` into `starter/src/` by role |
 | `bun run docs:dev` | Start the documentation site locally |
 
 ---

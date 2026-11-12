@@ -6,12 +6,12 @@ The choice is kept in `localStorage` (`ui-theme`, `ui-mode`, plain strings) thro
 
 ## Install
 
-Copy `theme-switcher.js` and `theme-switcher.css` to `src/quiver/theme-switcher/`, plus the `theme` recipe (with `effects.css` for the per-theme effects). Needs `arrow-use`.
+Copy `theme-switcher.js` and `theme-switcher.css` to `src/components/`, plus the `theme` recipe (with `effects.css` for the per-theme effects). Needs `arrow-use`.
 
 ## Use
 
 ```js
-import { ThemeSelector, ThemeToggle, themeState } from '../quiver/theme-switcher/theme-switcher.js'
+import { ThemeSelector, ThemeToggle, themeState } from '../components/theme-switcher.js'
 
 html`<header>${ThemeSelector()} ${ThemeToggle()}</header>`
 

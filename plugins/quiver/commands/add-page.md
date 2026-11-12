@@ -4,7 +4,7 @@ argument-hint: <route path, e.g. contact, users/profile, posts/[id]>
 ---
 Create a page for the route path: $ARGUMENTS
 
-The app is the folder with the app's `package.json`; in the Quiver repository itself it is `starter/`. Pages live in `src/pages/` (the folder the `quiver()` Vite plugin, the Bun plugin or `quiver routes` scans).
+The app is the folder with the app's `package.json`; in the Quiver repository itself it is `starter/`. Pages live in `src/pages/` (the folder the `quiver()` Vite plugin, the Bun plugin, `quiver app` or `quiver routes` scans).
 
 1. Map the path to a file under `src/pages/`, creating folders as needed:
    - `contact` → `src/pages/contact.js` (route `/contact`)
@@ -43,6 +43,6 @@ export default <Name>Page
    - For API calls use `useFetch` from `arrow-use`; for notifications `useToast()` from the toasts recipe.
    - Arrow.js rules: `() =>` around values that change, no `<!-- -->` inside template literals, `aria-disabled` instead of `.disabled`, `.key(id)` in loops; JSDoc on helpers.
 
-3. If the app has a sidebar nav (the layouts recipe), offer to add the page to the `'nav'` list in `main.js`.
+3. If the app has a sidebar nav (the layouts recipe), offer to add `nav: { label: '<Label>', order: <n> }` to the page's literal `meta`, with an `order` after the existing links (a page with a `[param]` can't be a menu link). If `src/app.config.js` sets its own `nav`, add the link there instead.
 
 4. Run the app's checks and fix failures (in the Quiver repository: `bun run typecheck && bun run test && bun run test:e2e`). Report the file, the URL it maps to, and follow-ups (a nav entry, a state module, an e2e test).

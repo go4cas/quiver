@@ -1,39 +1,36 @@
 # layouts
 
-`BasicLayout` (a centred card) and `MenuLayout` (sidebar with brand and nav, header with the current path, theme controls and a user menu), plus the `layouts` map for `createApp()`. Both mount the toast container, so `useToast()` works on every page.
+Two layouts. `default.js` is a centred card, used by every page that names no layout. `menu.js` is a sidebar with the brand and nav links, and a header with the current path, the theme controls and a user menu. Both mount the toast container, so `useToast()` works on every page.
 
 ## Install
 
-`/add-layout menu` (or `basic`) copies `layouts.js` and `layouts.css` to `src/quiver/layouts/`, with the recipes it imports: `theme`, `link`, `toasts` and `theme-switcher`. Needs `@go4cas/quiver` and `arrow-use`.
+`/add-layout menu` installs `default.js`, `menu.js` and `layouts.css` into `src/layouts/`, plus the recipes they import: `theme`, `link`, `toasts` and `theme-switcher`. In `menu.js`, the imports of those recipes point at where they are installed (`'../components/link.js'`). Needs `@go4cas/quiver` and `arrow-use`.
 
 ## Use
 
+`quiver:app` picks the layouts up from `src/layouts/` by file name, so there is nothing to register. A page picks the menu with `export const meta = { layout: 'menu' }`, and pages without `meta.layout` get `default`. Add your own as more files in `src/layouts/`.
+
+The menu layout reads everything it shows from context keys. `createApp(app, options)` provides them from `app.config.js` and the pages' `meta.nav`, so you rarely edit it:
+
 ```js
-// main.js
-import { provide, initRouter, createApp } from '@go4cas/quiver'
-import { layouts } from './quiver/layouts/layouts.js'
-
-provide('app', { name: 'Acme', tagline: 'Internal tools', logo: '/logo.svg', footer: 'v1.2' })
-provide('nav', [{ to: '/', label: 'Dashboard' }, { to: '/users', label: 'Team' }])
-provide('currentUser', { name: 'Ada', email: 'ada@example.com', avatar: '/ada.svg', signOut: () => auth.signOut() })
-
-await initRouter({ routes })
-createApp({ target: '#app', layouts, defaultLayout: 'basic' })
+// src/app.config.js
+export default {
+  app: { name: 'Acme', tagline: 'Internal tools', logo: '/logo.svg', footer: 'v1.2' },
+  currentUser: { name: 'Ada', email: 'ada@example.com', avatar: '/ada.svg', signOut: () => auth.signOut() },
+}
 ```
-
-A page picks its layout with `export const meta = { layout: 'menu' }`. To add your own, register it next to these: `createApp({ layouts: { ...layouts, wide: WideLayout } })`.
-
-`MenuLayout` reads everything it shows from `provide()` keys, so you rarely edit it:
 
 | Key | Shape | Default |
 |---|---|---|
 | `'app'` | `{ name, tagline?, logo?, footer? }`; `logo` is a base-relative path | `{ name: 'Quiver' }`: the name as text, no footer |
-| `'nav'` | `[{ to, label }]` | no links |
+| `'nav'` | `[{ to, label }]`, built from each page's `meta: { nav: { label, order } }`; a `nav` key in `app.config.js` replaces it | no links |
 | `'currentUser'` | `{ name, email, avatar, signOut? }` | a guest; Sign out calls `go('/login')` |
+
+In a manual setup (`provide()`, `initRouter()`, `createApp({ target })`), provide these keys yourself and pass `layouts: { default: DefaultLayout, menu: MenuLayout }`, importing each file's default export.
 
 ## Sign-out
 
-The default Sign out only navigates to `/login`: it ends nothing, because the recipe knows nothing about your sessions. A real app passes `signOut` on `'currentUser'`, and it must:
+The default Sign out only navigates to `/login`: it ends nothing, because the recipe knows nothing about your sessions. A real app gives `currentUser` a `signOut`, and it must:
 
 1. End the session on the server (for example `POST /logout`, which clears the HttpOnly session cookie or revokes the token), since the server is what protects data.
 2. Clear the client's identity: the user store, cached user data, anything in `localStorage` tied to the user.

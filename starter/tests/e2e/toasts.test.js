@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-// The toasts recipe in the starter (src/quiver/toasts/). Exit timing follows the
+// The toasts recipe in the starter (src/components/toasts.js). Exit timing follows the
 // CSS animation (D31), so the tests wait on the DOM, never on a fixed delay.
 
 test('a toast shows, and its dismiss button removes it after the exit animation', async ({ page }) => {

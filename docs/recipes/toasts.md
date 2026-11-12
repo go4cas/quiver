@@ -5,7 +5,7 @@ Toast notifications: `useToast()` shows them, `ToastContainer` renders them bott
 | | |
 |---|---|
 | Command | `/add-component toast` (aliases: `toasts`, `useToast`, `ToastContainer`, `notifications`) |
-| Copies | `toasts.js`, `toasts.css` → `src/quiver/toasts/` |
+| Installs | `src/components/toasts.js`, `src/components/toasts.css` |
 | CSS order | after `tokens.css` and `base.css` |
 | Needs | `theme` |
 | Tokens | `--q-color-{success,error,warning,info}` and their `-tint`, `--q-radius-panel`, `--q-shadow-float` |
@@ -16,7 +16,7 @@ Mount the container once, near the root. The [layouts](./layouts) recipe already
 
 ```js
 import { html } from '@arrow-js/core'
-import { ToastContainer } from './quiver/toasts/toasts.js'
+import { ToastContainer } from './components/toasts.js'
 
 html`${App()}${ToastContainer()}`(document.getElementById('app'))
 ```
@@ -24,7 +24,7 @@ html`${App()}${ToastContainer()}`(document.getElementById('app'))
 Then from any page, component or handler:
 
 ```js
-import { useToast } from '../quiver/toasts/toasts.js'
+import { useToast } from '../components/toasts.js'
 
 const toast = useToast()
 toast.success('Changes saved.')

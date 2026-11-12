@@ -1,7 +1,7 @@
-import { initRouter, createApp } from '@go4cas/quiver'
-import routes, { notFound } from './routes.js'
-import { MainLayout } from './layout.js'
+import { createApp } from '@go4cas/quiver'
+// Written by `quiver app` from src/ (pages/, layouts/): no build step, so the
+// module is a committed file. Regenerate it with `bunx quiver app --watch`.
+import app from './app.gen.js'
 
-// No `base` option: initRouter() takes it from <base href> in index.html.
-await initRouter({ routes, notFound })
-createApp({ target: '#app', layouts: { main: MainLayout }, defaultLayout: 'main' })
+// No `base` option: the router takes it from <base href> in index.html.
+await createApp(app, { target: '#app' })

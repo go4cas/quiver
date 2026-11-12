@@ -1,18 +1,19 @@
 # Routing
 
-Quiver's router takes a **route manifest**, an object that maps a path pattern to a function loading the page module:
+Every file in `src/pages/` is a route. The build turns the folder into a **route manifest**, an object that maps each path pattern to a function that loads the page module, and puts it in the `quiver:app` module that `createApp(app, options)` starts ([app structure](./app-config)):
 
 ```js
-await initRouter({
+// what the build makes of src/pages/
+{
   routes: {
     '/': () => import('./pages/index.js'),
     '/users/:id': () => import('./pages/users/[id].js'),
   },
   notFound: () => import('./pages/not-found.js'),
-})
+}
 ```
 
-You rarely write it by hand. With file-based routing, every file in `src/pages/` is a route, and a plugin or the CLI builds the manifest for you.
+You don't write it by hand, though you can ([manual setup](./manual-setup)).
 
 ## File-based routes
 
@@ -148,7 +149,7 @@ Each returns a promise that settles when the navigation and its `afterEach` hook
 An app can live under a sub-path, such as `https://example.com/tools/app/`. Tell the router once:
 
 ```js
-await initRouter({ routes, notFound, base: '/tools/app/' })
+await createApp(app, { target: '#app', base: '/tools/app/' })
 ```
 
 Without the option, the base is the folder of `<base href>` if the page has one, else `/`. With Vite, pass `import.meta.env.BASE_URL` (Vite's `base`). With `Bun.build` or no bundler, set `<base href="/tools/app/">` in `index.html`; relative script and chunk URLs then resolve against it too.
@@ -161,7 +162,7 @@ url('logo.svg')         // '/tools/app/logo.svg'
 url('https://x.dev')    // unchanged
 ```
 
-A link to a path outside the base, such as `/other-app`, is not intercepted: the browser loads it as a normal page. If the page itself loads outside the base, `initRouter()` throws, so a misconfigured base fails loudly.
+A link to a path outside the base, such as `/other-app`, is not intercepted: the browser loads it as a normal page. If the page itself loads outside the base, starting the router throws, so a misconfigured base fails loudly.
 
 The starter runs under a sub-path with `QUIVER_BASE=/sub/app/ bun run dev`, and its e2e suite runs that way too.
 
@@ -189,7 +190,7 @@ beforeEach(({ from, to }) => {
 A user can bypass client-side guards. Enforce authorisation on the server.
 :::
 
-Register guards before `await initRouter()`, so they also run for the first page. Registered later, they apply from the next navigation.
+Register guards before `await createApp(app, options)`, so they also run for the first page. Registered later, they apply from the next navigation. For guards that live in files, by folder or for every route, use [middleware](./middleware); they run after `beforeEach` guards.
 
 ## Hooks
 
@@ -210,11 +211,11 @@ onError(({ error, from, to, phase }) => reportError(error, { to, phase }))  // '
 
 An unmatched path renders the `notFound` page in its layout (`status()` is `'not-found'`). Without a `notFound` page, the error view shows `No route matches "<path>".`
 
-When a guard, a loader or a render throws, the router renders the `error` view passed to `createApp()` with `{ message, error, retry }`. `retry()` runs the current navigation again: guards, load and render. The [`views` recipe](/recipes/views) has a styled `ErrorView` with a **Try again** button.
+When a guard, a loader or a render throws, the router renders the error view (`src/views/error.js`, or the `error` option of `createApp()`) with `{ message, error, retry }`. `retry()` runs the current navigation again: guards, load and render. The [`views` recipe](/recipes/views) has a styled `ErrorView` with a **Try again** button.
 
 ## Startup and teardown
 
-The order is fixed: `provide()` → `beforeEach()` / `afterEach()` / `onError()` → `await initRouter()` → `createApp()`. Mistakes throw with a message that says what to do: `createApp()` before `initRouter()` has resolved, a second `initRouter()` or `createApp()`, a missing `target`, `go()` before `initRouter()`.
+Register guards and hooks (`beforeEach()`, `afterEach()`, `onError()`), then `await createApp(app, { target })`. It rejects with a message that says what to do: a missing `target`, a base the URL is outside, a second call without `destroy()`. `go()` before the router has started throws. The step-by-step order behind it is on [manual setup](./manual-setup).
 
 `destroy()` (or `app.destroy()`) undoes all of it: it stops listening for navigations, clears guards, hooks, context and meta watchers, runs the current page's cleanups ([page cleanup](./troubleshooting#cleanup-never-runs)), puts back the host page's title and description, resets router state and empties the target. After it, the whole sequence can run again, which is handy in tests and for micro-frontends that come and go.
 
@@ -230,7 +231,7 @@ Quiver's router is built on the [Navigation API](https://developer.mozilla.org/e
 
 CI runs the router's browser tests in Chromium, Firefox and WebKit through Playwright, whose engines are newer than these minimums; the minimums themselves come from where each browser shipped the Navigation API. Playwright's WebKit is close to Safari but is not Safari itself.
 
-There is no fallback to the History API. In a browser without `window.navigation`, `initRouter()` throws:
+There is no fallback to the History API. In a browser without `window.navigation`, starting the router (`createApp(app, options)` or `initRouter()`) throws:
 
 ```
 Quiver needs the Navigation API (Chrome/Edge 102+, Safari 26.2+, Firefox 147+). See https://go4cas.github.io/quiver/guide/routing#browser-support
@@ -240,7 +241,7 @@ Catch it to show your own message:
 
 ```js
 try {
-  await initRouter({ routes, notFound })
+  await createApp(app, { target: '#app' })
 } catch (error) {
   document.body.textContent = 'Please update your browser.'
   throw error

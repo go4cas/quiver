@@ -82,17 +82,19 @@ watch(() => console.log(route.path(), route.status()))
 
 ## Shared services: `provide` / `inject`
 
-For values that main.js decides and components read (config, the current user, an API client), use the app-wide context instead of a store:
+For values the app sets once and components read (config, the current user, an API client), use the app-wide context instead of a store:
 
 ```js
-// main.js, before initRouter()
-provide('api', createApiClient(import.meta.env.VITE_API_URL))
+// src/app.config.js: each key is provided under its own name
+export default {
+  api: createApiClient(import.meta.env.VITE_API_URL),
+}
 
 // any component or page
 const api = inject('api')
 ```
 
-`inject(key, fallback)` returns `fallback` when the key is missing. Call it inside functions, not at module scope. The last `provide()` for a key wins, and `destroy()` clears them all. See the [API reference](/api/core#provide).
+`inject(key, fallback)` returns `fallback` when the key is missing. Call it inside functions, not at module scope. `provide(key, value)` sets one from code, and the last write for a key wins. `destroy()` clears them all. See the [API reference](/api/core#provide).
 
 ## Local state
 

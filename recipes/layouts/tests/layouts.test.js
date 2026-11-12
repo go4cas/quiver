@@ -1,7 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { html } from '@arrow-js/core'
 import { provide, destroy } from '@go4cas/quiver'
-import { layouts, BasicLayout, MenuLayout } from '../layouts.js'
+import BasicLayout from '../default.js'
+import MenuLayout from '../menu.js'
 
 afterEach(() => {
   destroy() // clears the provide() context
@@ -17,10 +18,6 @@ function render(template) {
 }
 
 describe('layouts', () => {
-  it('maps the names pages use in meta.layout', () => {
-    expect(layouts).toEqual({ basic: BasicLayout, menu: MenuLayout })
-  })
-
   it('BasicLayout wraps the page in a panel and mounts the toast container', () => {
     const el = render(BasicLayout(html`<p>page</p>`))
     expect(el.querySelector('.q-basic__card.q-panel')?.textContent?.trim()).toBe('page')

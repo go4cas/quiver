@@ -55,7 +55,7 @@ export const UserCard = component((user) => html`
 ```js
 // src/components/Counter.js
 import { component, html, onCleanup, watch } from '@arrow-js/core'
-import { hmrState } from '../quiver/hmrState/hmrState.js'
+import { hmrState } from '../composables/hmrState.js'
 
 export const Counter = component((props) => {
   const state = hmrState(`counter-${props.label}`, { count: 0 })
@@ -114,7 +114,7 @@ Each component has a CSS file beside it, imported from `src/style.css` (before `
 ```css
 /* src/style.css */
 @import "./components/Badge.css";
-@import "./quiver/theme/effects.css";
+@import "./styles/effects.css";
 ```
 
 - Every selector inside `:where()` (zero specificity), so one app class can override it.

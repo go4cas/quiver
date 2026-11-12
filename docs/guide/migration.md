@@ -2,14 +2,14 @@
 
 Quiver 2.x was a starter template: you scaffolded it with `degit go4cas/quiver my-app` and owned everything, framework included, under `src/framework/`. Quiver 3 splits that into a package you install and code you copy:
 
-| 2.x | 3.0 |
+| 2.x | 3.x |
 |---|---|
 | `src/framework/` (router, context, meta, `createApp`) | the `@go4cas/quiver` package |
 | `src/state/routerState.js`, `src/composables/useRoute.js`, `useRouter.js` | `useRoute()`, `useRouter()` from `@go4cas/quiver`; router state is private |
 | `src/composables/useFetch.js` | `useFetch` from the `arrow-use` package |
-| `src/composables/useForm.js`, `useToast.js`, `src/state/toastState.js`, `src/utils/hmrState.js` | the `useForm`, `toasts` and `hmrState` recipes, copied to `src/quiver/` |
+| `src/composables/useForm.js`, `useToast.js`, `src/state/toastState.js`, `src/utils/hmrState.js` | the `useForm`, `toasts` and `hmrState` recipes, installed into `src/composables/` and `src/components/` |
 | `src/components/Link.js`, `ToastContainer.js`, `ThemeSelector.js`, `ThemeToggle.js`, `LoadingCard.js`, `ErrorCard.js` | the `link`, `toasts`, `theme-switcher` and `views` recipes (`LoadingView`, `ErrorView`) |
-| `src/layouts/BasicLayout.js`, `MenuLayout.js` | the `layouts` recipe |
+| `src/layouts/BasicLayout.js`, `MenuLayout.js` | the `layouts` recipe: `src/layouts/default.js`, `src/layouts/menu.js` |
 | `src/state/uiState.js` | `themeState` in the `theme-switcher` recipe |
 | Tailwind CSS with `@theme` tokens | plain CSS on the `--q-*` token contract (the `theme` recipe) |
 | `/add-*` commands in `.claude/commands/` | the Quiver Claude Code plugin |
@@ -19,7 +19,7 @@ The 2.x template stays available at `bunx degit go4cas/quiver#v2.1.0 my-app`.
 
 ## Two ways to migrate
 
-**Start fresh and move your code in.** For an app that is mostly pages, stores and components, this is usually quicker: scaffold the 3.0 starter, then copy over `src/pages/`, `src/state/` (minus the 2.x built-ins), `src/components/` (minus the ones that became recipes) and your tests, and fix imports as below.
+**Start fresh and move your code in.** For an app that is mostly pages, stores and components, this is usually quicker: scaffold the 3.x starter, then copy over `src/pages/`, `src/state/` (minus the 2.x built-ins), `src/components/` (minus the ones that became recipes) and your tests, and fix imports as below.
 
 **Upgrade in place.** The steps below, in order. Run `bun run typecheck` after each: most breakages show up as unresolved imports.
 
@@ -35,7 +35,7 @@ Delete `src/framework/`, `src/state/routerState.js`, `src/composables/useRoute.j
 
 Install what your app used, with the Claude Code plugin (`/add-layout menu` brings `theme`, `link`, `toasts` and `theme-switcher`; then `/add-component views`, `/add-composable useForm`, `/add-composable hmrState`) or by hand ([installing a recipe](/recipes/#installing-a-recipe)). Then delete the 2.x copies: `src/components/{Link,ToastContainer,ThemeSelector,ThemeToggle,LoadingCard,ErrorCard}.js`, `src/composables/{useForm,useToast}.js`, `src/state/{toastState,uiState}.js`, `src/utils/hmrState.js` and `src/layouts/{BasicLayout,MenuLayout}.js`.
 
-If you changed any of those files, carry your changes over to the recipe copies in `src/quiver/`.
+If you changed any of those files, carry your changes over to the installed recipe files. `BasicLayout` is now `src/layouts/default.js`, so pages that named `layout: 'basic'` drop the key, and `MenuLayout` is `src/layouts/menu.js`.
 
 ## 3. Rewrite `main.js` and the Vite config
 
@@ -50,21 +50,22 @@ await initRouter()
 createApp()
 ```
 
-3.0:
+3.x:
 
 ```js
+// src/main.js
 import './style.css'
-import { provide, initRouter, createApp } from '@go4cas/quiver'
-import routes, { notFound } from 'quiver:routes'
-import './quiver/theme-switcher/theme-switcher.js'   // applies the stored theme early
-import { layouts } from './layouts/index.js'
-import { LoadingView, ErrorView } from './quiver/views/views.js'
+import { createApp } from '@go4cas/quiver'
+import app from 'quiver:app'
 
-provide('app', { name: 'Acme', tagline: 'Internal tools', logo: '/logo.svg' })
-provide('nav', [{ to: '/', label: 'Dashboard' }, { to: '/users', label: 'Team' }])
+await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
+```
 
-await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
-createApp({ target: '#app', layouts, defaultLayout: 'basic', loading: LoadingView, error: ErrorView })
+```js
+// src/app.config.js
+export default {
+  app: { name: 'Acme', tagline: 'Internal tools', logo: '/logo.svg' },
+}
 ```
 
 ```js
@@ -75,29 +76,30 @@ import quiver from '@go4cas/quiver/vite'
 export default defineConfig({ plugins: [quiver()] })
 ```
 
-- `initRouter()` takes a route manifest. The Vite plugin builds it from `src/pages/` with the same file rules as 2.x, served as `quiver:routes`. Add `"@go4cas/quiver/client"` to `compilerOptions.types` in `jsconfig.json`.
-- `createApp()` takes the mount target, the layouts and the loading and error views, instead of importing them from the app. It renders straight into `target` with no wrapper `<div>`, and replaces whatever the target held.
-- The sidebar links of `MenuLayout` come from `provide('nav', …)` now, instead of being hard-coded in the layout.
-- `src/layouts/index.js` becomes `export const layouts = { ...recipeLayouts, /* yours */ }` ([Layouts](./layouts#adding-a-layout)).
+- The Vite plugin reads `src/` and serves the whole app as `quiver:app`: the routes from `src/pages/` (with the same file rules as 2.x), the layouts in `src/layouts/`, the views in `src/views/` and `app.config.js` ([app structure](./app-config)). Add `"@go4cas/quiver/client"` to `compilerOptions.types` in `jsconfig.json`.
+- `createApp()` renders straight into `target` with no wrapper `<div>`, and replaces whatever the target held.
+- The values you passed to `provide()` move to `app.config.js`, one key each.
+- The sidebar links of the menu layout come from each page's `meta: { nav: { label, order } }` now, instead of being hard-coded in the layout.
+- For a step-by-step startup instead (`provide()`, `await initRouter()`, `createApp({ target, layouts })`), see [manual setup](./manual-setup).
 
 ## 4. Fix imports
 
-| 2.x import | 3.0 import |
+| 2.x import | 3.x import |
 |---|---|
 | `from '../framework/index.js'`, `'../framework/router.js'` | `from '@go4cas/quiver'` |
 | `import { routerState } from '../state/routerState.js'` | `const route = useRoute()`: `route.path()`, `route.params()`, `route.status()`, `route.meta()` |
 | `from '../composables/useRoute.js'`, `useRouter.js` | `from '@go4cas/quiver'` |
 | `from '../composables/useFetch.js'` | `from 'arrow-use'` |
-| `from '../composables/useToast.js'`, `'../state/toastState.js'` | `from '../quiver/toasts/toasts.js'` |
-| `from '../composables/useForm.js'` | `from '../quiver/useForm/useForm.js'` |
-| `from '../utils/hmrState.js'` | `from '../quiver/hmrState/hmrState.js'` |
-| `from '../components/Link.js'` | `from '../quiver/link/link.js'` |
+| `from '../composables/useToast.js'`, `'../state/toastState.js'` | `from '../components/toasts.js'` |
+| `from '../composables/useForm.js'` | unchanged: the recipe installs there |
+| `from '../utils/hmrState.js'` | `from '../composables/hmrState.js'` |
+| `from '../components/Link.js'` | `from '../components/link.js'` (lower-case file name) |
 | `uiState.theme = 'glass'`, `uiState.mode = 'dark'` | `themeState.setTheme('glass')`, `themeState.setMode('dark')`; read with `themeState.theme()`, `themeState.mode()` |
-| `LoadingCard`, `ErrorCard` | `LoadingView`, `ErrorView` from `../quiver/views/views.js` |
+| `LoadingCard`, `ErrorCard` | `src/views/loading.js` and `src/views/error.js`, which `createApp` picks up |
 
 ## 5. Replace Tailwind classes
 
-3.0 has no Tailwind. Markup uses plain classes, styled in a CSS file beside each component on the `--q-*` tokens ([Components](./components#styling-a-component), [Theming](./theming)). Token names map directly: `bg-surface-raised` → `background-color: var(--q-color-surface-raised)`, `rounded-panel` → `border-radius: var(--q-radius-panel)`, `shadow-panel` → `box-shadow: var(--q-shadow-panel)`.
+3.x has no Tailwind. Markup uses plain classes, styled in a CSS file beside each component on the `--q-*` tokens ([Components](./components#styling-a-component), [Theming](./theming)). Token names map directly: `bg-surface-raised` → `background-color: var(--q-color-surface-raised)`, `rounded-panel` → `border-radius: var(--q-radius-panel)`, `shadow-panel` → `box-shadow: var(--q-shadow-panel)`.
 
 To keep Tailwind instead, add it back yourself and expose the tokens to it ([Using Tailwind](./tailwind)). The recipes stay plain CSS either way.
 
@@ -132,3 +134,14 @@ Things you can adopt once you've migrated:
 - [`useStorage`, `useMediaQuery`, `useEventListener`](/arrow-use/) from `arrow-use`
 - [Bun and no-build setups](./getting-started#add-quiver-to-an-app) with the same pages
 - [`.d.ts` types](/api/) for TypeScript and JSDoc consumers
+
+## From 3.1 to the 3.2 conventions
+
+3.2 changes nothing a 3.1 app relies on: the startup in `main.js` and `quiver:routes` keep working ([manual setup](./manual-setup)). To move to the folder conventions:
+
+1. **Layouts.** Move each layout to `src/layouts/<name>.js` as the default export, and name the one pages get without `meta.layout` `default.js`. A page that named that layout drops the key. Delete `src/layouts/index.js`.
+2. **Views.** Move the loading and error views to `src/views/loading.js` and `src/views/error.js`, as default exports.
+3. **Config.** Move each `provide(key, value)` from `main.js` into `src/app.config.js` (`export default { key: value }`). For `'nav'`, either keep the list there or give each page `meta.nav: { label, order }`.
+4. **Guards.** A `beforeEach` that guards a group of routes can become `src/pages/<folder>/_middleware.js`, and one that guards everything can become a file in `src/middleware/` ([middleware](./middleware)). `beforeEach` still works.
+5. **Recipes.** The recipes now install by role ([recipes](/recipes/#installing-a-recipe)). Move the files out of `src/quiver/`: `theme/*` to `styles/`, `toasts`, `theme-switcher` and `link` to `components/`, `useForm` and `hmrState` to `composables/`, and the layouts and views as in steps 1 and 2. Then fix the imports and the `@import` lines in `style.css`. You can also keep `src/quiver/` as it is, since Quiver doesn't read it.
+6. **`main.js`.** Replace the startup with `await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })` and `import app from 'quiver:app'`.

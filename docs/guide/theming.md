@@ -22,7 +22,7 @@ Two independent attributes live on `<html>`:
 The [`theme-switcher` recipe](/recipes/theme-switcher) holds the choice and writes the attributes:
 
 ```js
-import { themeState, ThemeSelector, ThemeToggle } from './quiver/theme-switcher/theme-switcher.js'
+import { themeState, ThemeSelector, ThemeToggle } from './components/theme-switcher.js'
 
 themeState.setTheme('glass')
 themeState.setMode('dark')
@@ -83,11 +83,11 @@ The app has one CSS entry (`src/style.css` in the starter). It declares the laye
 ```css
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
 
-@import "./quiver/theme/tokens.css";     /* the token contract */
-@import "./quiver/theme/base.css";       /* the reset; skip it if you have one */
-@import "./quiver/toasts/toasts.css";    /* one line per recipe or component */
+@import "./styles/tokens.css";     /* the token contract */
+@import "./styles/base.css";       /* the reset; skip it if you have one */
+@import "./components/toasts.css";    /* one line per recipe or component */
 @import "./components/Badge.css";
-@import "./quiver/theme/effects.css";    /* optional per-theme effects */
+@import "./styles/effects.css";    /* optional per-theme effects */
 @import "./app.css";                     /* the app's own styles */
 ```
 
@@ -137,9 +137,9 @@ A dark-mode difference that isn't a colour nests `:where([data-mode="dark"]) &`:
 
 ## Adding a theme
 
-`/add-theme ocean — cool blues, soft shadows` does all of this. By hand, in your copies under `src/quiver/`:
+`/add-theme ocean — cool blues, soft shadows` does all of this. By hand, in your installed copies:
 
-1. Add a light and a dark block to `theme/tokens.css`, inside `@layer quiver.tokens`, overriding any subset of tokens:
+1. Add a light and a dark block to `styles/tokens.css`, inside `@layer quiver.tokens`, overriding any subset of tokens:
 
    ```css
    [data-theme="ocean"] {
@@ -152,8 +152,8 @@ A dark-mode difference that isn't a colour nests `:where([data-mode="dark"]) &`:
    }
    ```
 
-2. Optionally add a `[data-theme="ocean"]` block to `theme/effects.css`, inside `@layer quiver.effects`, selecting only the hook classes.
-3. Add `{ id: 'ocean', label: 'Ocean', swatch: '#0ea5e9' }` to `THEMES` in `theme-switcher/theme-switcher.js` (`swatchDark` is optional).
+2. Optionally add a `[data-theme="ocean"]` block to `styles/effects.css`, inside `@layer quiver.effects`, selecting only the hook classes.
+3. Add `{ id: 'ocean', label: 'Ocean', swatch: '#0ea5e9' }` to `THEMES` in `components/theme-switcher.js` (`swatchDark` is optional).
 
 In the Quiver repository, edit `recipes/` instead and run `bun run recipes:sync`.
 

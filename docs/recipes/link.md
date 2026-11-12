@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Command | `/add-component Link` |
-| Copies | `link.js` → `src/quiver/link/` |
+| Installs | `src/components/link.js` |
 | CSS | none: it passes your `class` through |
 | Needs | `@go4cas/quiver` |
 | Tokens | none |
@@ -13,7 +13,7 @@
 ## Use
 
 ```js
-import { Link } from '../quiver/link/link.js'
+import { Link } from '../components/link.js'
 
 html`
   <nav>

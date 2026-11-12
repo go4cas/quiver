@@ -6,7 +6,7 @@ A composable is a function you call inside a page or component that hands back r
 |---|---|---|
 | [`@go4cas/quiver`](/api/core) | `useRoute()`, `useRouter()`, `useMeta()` | the router |
 | [`arrow-use`](/arrow-use/) | `useFetch()`, `useStorage()`, `useMediaQuery()`, `useEventListener()` | only `@arrow-js/core` |
-| [recipes](/recipes/) (copied into `src/quiver/`) | `useToast()`, `useForm()`, `hmrState()` | only `@arrow-js/core` |
+| [recipes](/recipes/) (installed into `src/components/` and `src/composables/`) | `useToast()`, `useForm()`, `hmrState()` | only `@arrow-js/core` |
 
 Before writing your own, check these: use `useFetch` for API calls instead of a hand-rolled fetch with loading and error state, `useToast` for notifications instead of an ad-hoc banner, and `useStorage`, `useMediaQuery` and `useEventListener` instead of wiring `localStorage`, `matchMedia` or `addEventListener` by hand.
 
@@ -47,11 +47,11 @@ Every `arrow-use` composable returns getters plus `stop()`, cleans up when its `
 
 ## Toasts, forms, hot-reload state: recipes
 
-These are files in your app, not package exports. Install them with `/add-component toast` and `/add-composable useForm` (or by hand, see [recipes](/recipes/#installing-a-recipe)), then import them from `src/quiver/`:
+These are files in your app, not package exports. Install them with `/add-component toast` and `/add-composable useForm` (or by hand, see [recipes](/recipes/#installing-a-recipe)), then import them from where they were installed:
 
 ```js
-import { useToast } from '../quiver/toasts/toasts.js'
-import { useForm } from '../quiver/useForm/useForm.js'
+import { useToast } from '../components/toasts.js'
+import { useForm } from '../composables/useForm.js'
 
 export default function ProfilePage() {
   const toast = useToast()

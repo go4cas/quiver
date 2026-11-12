@@ -49,7 +49,7 @@ Plugin commands are namespaced, so they also answer to `/quiver:add-page` and so
 ```
 /add-component toast
 ```
-Copies the `toasts` and `theme` recipes into `src/quiver/`, adds their CSS to your entry stylesheet, and mounts `ToastContainer()`. In a plain Arrow app without Quiver's router this works too: the toasts recipe imports only `@arrow-js/core`.
+Installs the `toasts` and `theme` recipes into `src/components/` and `src/styles/`, adds their CSS to your entry stylesheet, and mounts `ToastContainer()`. In a plain Arrow app without Quiver's router this works too: the toasts recipe imports only `@arrow-js/core`.
 
 ```
 /add-page blog/[slug]
@@ -59,7 +59,7 @@ Creates `src/pages/blog/[slug].js` for `/blog/:slug`, reading the param with `us
 ```
 /add-theme ocean — cool blues, soft shadows
 ```
-Adds light and dark token blocks to `src/quiver/theme/tokens.css` and an entry in the theme switcher.
+Adds light and dark token blocks to `src/styles/tokens.css` and an entry in the theme switcher.
 
 ```
 /add-feature tickets — list, add and close support tickets
@@ -77,7 +77,7 @@ If your tool reads neither file, paste these into its instructions. They are the
 4. **`.key(id)` on components in a list.**
 5. **A slot that is sometimes a template is always a template**: ``` html`` ```, not `''`.
 6. **Paths are base-relative**; only `url(path)` adds the base, for `href`s. Never add an `@click` that calls `go()` to a link.
-7. **Startup order**: `provide()` → `beforeEach()`/`afterEach()`/`onError()` → `await initRouter()` → `createApp()`.
+7. **Startup**: `beforeEach()`/`afterEach()`/`onError()`, then `await createApp(app, { target })` with `quiver:app`; the step-by-step order is `provide()` → guards and hooks → `await initRouter()` → `createApp()`.
 8. **Use what exists**: `useFetch` (arrow-use) for API calls, `useToast` (recipe) for notifications, `--q-*` tokens for every colour.
 :::
 

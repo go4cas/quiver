@@ -1,5 +1,5 @@
 import { component, html, onCleanup, watch } from '@arrow-js/core'
-import { hmrState } from '../quiver/hmrState/hmrState.js'
+import { hmrState } from '../composables/hmrState.js'
 
 // Styles: Counter.css, plus the shared card/badge/btn classes in app.css.
 export const Counter = component(/** @param {{ label: string }} props */ (props) => {

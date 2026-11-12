@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { html } from '@arrow-js/core'
-import { LoadingView, ErrorView } from '../views.js'
+import LoadingView from '../loading.js'
+import ErrorView from '../error.js'
 
 /** @param {import('@arrow-js/core').ArrowTemplate} template */
 function render(template) {

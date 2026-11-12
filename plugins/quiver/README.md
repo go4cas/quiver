@@ -36,4 +36,4 @@ In a plain Arrow app (no Quiver router needed) with `@go4cas/quiver` installed:
 /add-component toast
 ```
 
-copies `toasts/` and `theme/` to `src/quiver/`, adds the stylesheets in layer order, mounts `ToastContainer()`, and shows how to call `useToast().success('Saved')`.
+installs the `toasts` and `theme` recipes into `src/components/` and `src/styles/`, adds the stylesheets in layer order, mounts `ToastContainer()`, and shows how to call `useToast().success('Saved')`.

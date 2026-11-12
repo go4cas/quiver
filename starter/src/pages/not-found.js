@@ -2,7 +2,6 @@ import { html } from '@arrow-js/core'
 import { useRouter } from '@go4cas/quiver'
 
 export const meta = {
-  layout: 'basic',
   title: '404 – Not Found',
 }
 

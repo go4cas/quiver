@@ -1,18 +1,18 @@
-/* CSS entry. Layer order first, then the theme recipe (tokens, reset), recipe
-   CSS, the optional theme effects, and the app's own CSS. Recipe JS never
-   imports CSS; this file does (planning/v3/DESIGN.md §3.2). The quiver/ folder
-   holds copies of the recipes (recipes/README.md). */
+/* CSS entry. Layer order first, then the theme styles (tokens, reset), the
+   recipe CSS beside its components, layouts and views, the optional theme
+   effects, and the app's own CSS. JS never imports CSS; this file does
+   (planning/v3/DESIGN.md §3.2). */
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
 
-@import "./quiver/theme/tokens.css";
-@import "./quiver/theme/base.css";
+@import "./styles/tokens.css";
+@import "./styles/base.css";
 
-@import "./quiver/toasts/toasts.css";
-@import "./quiver/theme-switcher/theme-switcher.css";
-@import "./quiver/views/views.css";
-@import "./quiver/layouts/layouts.css";
+@import "./components/toasts.css";
+@import "./components/theme-switcher.css";
+@import "./views/views.css";
+@import "./layouts/layouts.css";
 
-@import "./quiver/theme/effects.css";
+@import "./styles/effects.css";
 
 @import "./app.css";
 @import "./components/Counter.css";

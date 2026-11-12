@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Command | `/add-composable hmrState` (aliases: `hmr`, `hmr-state`) |
-| Copies | `hmrState.js` → `src/quiver/hmrState/` |
+| Installs | `src/composables/hmrState.js` |
 | CSS | none |
 | Needs | nothing |
 | Tokens | none |
@@ -14,7 +14,7 @@
 
 ```js
 import { component, html } from '@arrow-js/core'
-import { hmrState } from '../quiver/hmrState/hmrState.js'
+import { hmrState } from '../composables/hmrState.js'
 
 export const Counter = component((props) => {
   const state = hmrState(`counter-${props.label}`, { count: 0 })

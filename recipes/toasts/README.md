@@ -4,14 +4,14 @@ Toast notifications. `useToast()` shows them, `ToastContainer` renders them bott
 
 ## Install
 
-`/add-component toast` copies `toasts.js` and `toasts.css` to `src/quiver/toasts/`, plus the [theme](../theme/README.md) recipe for the `--q-*` tokens it reads. Load `toasts.css` after `tokens.css` (and `base.css`, if you use it).
+`/add-component toast` copies `toasts.js` and `toasts.css` to `src/components/`, plus the [theme](../theme/README.md) recipe for the `--q-*` tokens it reads. Load `toasts.css` after `tokens.css` (and `base.css`, if you use it).
 
 ## Use
 
 Mount the container once, near the root of the app (the [layouts](../layouts/README.md) recipe already does):
 
 ```js
-import { ToastContainer } from './quiver/toasts/toasts.js'
+import { ToastContainer } from './components/toasts.js'
 
 html`${App()}${ToastContainer()}`(document.getElementById('app'))
 ```
@@ -19,7 +19,7 @@ html`${App()}${ToastContainer()}`(document.getElementById('app'))
 Then, from any page, component or event handler:
 
 ```js
-import { useToast } from '../quiver/toasts/toasts.js'
+import { useToast } from '../components/toasts.js'
 
 const toast = useToast()
 toast.success('Changes saved.')
