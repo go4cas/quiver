@@ -24,6 +24,7 @@ These are symptoms of the template model, not Audition problems. v3 turns Quiver
 - G4. Opinionated UI and features ship as copy-in **recipes**, so apps (and agents) own and edit them.
 - G5. A separate, Arrow-only composables package (VueUse-style), usable without Quiver.
 - G6. AI tooling (AGENTS.md, slash commands) works for any Quiver app, not only `degit` forks.
+- G7. (3.2, D37) Folder conventions in the spirit of Nuxt: an app's `pages/`, `layouts/`, `middleware/`, `views/` and `app.config.js` are its configuration, read by the build tooling, so `main.js` holds no wiring.
 
 **Non-goals (v3)**
 
@@ -102,6 +103,14 @@ These are symptoms of the template model, not Audition problems. v3 turns Quiver
 | D34 | Boundary checks (core ↛ starter, arrow-use ↛ Quiver, no `workspace:` in starter, R7 grep) are Vitest tests, not ESLint. `engines.bun >=1.4.4` (from the 2026-11-06 spike; P4 confirms) | Agreed |
 | D35 | Screenshot tolerance (`maxDiffPixelRatio`, `threshold`) is proposed in DESIGN.md and approved by Cas in the Design PR; P1 can't loosen it. Fonts self-hosted (OFL), `document.fonts.ready`; baseline captured on CI Linux Chromium from 2.1 CSS as P1's first commit; `animations: 'disabled'` | Agreed |
 | D36 | P8 also rewrites every existing docs page and the landing page for v3, adds an API reference (core, `/vite`, `/bun`, CLI, `arrow-use`), `arrow-use` and recipe pages and an examples page, with Vitest checks for export coverage and leftover 2.x strings. P8 size M → L | Agreed |
+| D37 | 3.2 conventions layer: the build tooling reads `layouts/`, `middleware/`, `views/` and `app.config.js` beside `pages/` and generates one module; core stays small; additive, released as 3.2.0 (P9) | Agreed |
+| D38 | Each file in `layouts/` is a layout named after the file; `default.js` is the default; eager imports, no registry | Agreed |
+| D39 | Middleware: `pages/**/_middleware.js` guards its folder; every file in `middleware/` is global, in file-name order, no `.global` suffix; runs after `beforeEach`, before the page loads; no per-page `meta` middleware | Agreed |
+| D40 | `createApp(app, options)` (async) is the one taught startup call: config, router, mount. The 3.1 form stays as "Manual setup", to retire in 4.0. Still 13 exports | Agreed |
+| D41 | `app.config.js` keys are provided by name; menu links come from `meta.nav: { label, order? }` and are provided as `'nav'`; a config `nav` replaces them | Agreed |
+| D42 | Generated module `quiver:app`; `quiver:routes` unchanged | Agreed |
+| D43 | A literal `meta.layout` naming no layout file is a build warning, not an error | Agreed |
+| D44 | No recipes folder in apps: recipe files install into `components/`, `composables/`, `styles/`, `layouts/`, `views/` | Agreed |
 
 ### Questions resolved in the Decisions thread
 
@@ -191,6 +200,7 @@ Each phase is one build thread and one PR. A phase is done only when every **Don
 | P6 | Composables package | M | P3 |
 | P7 | Recipes + AI tooling | M | P1, P6 |
 | P8 | Docs, API reference, migration guide, release | L | P5, P7 |
+| P9 | Conventions layer (3.2): layouts, middleware, views, app config, nav | L | P8 |
 
 **P1 — Remove Tailwind.** First commit: self-host the four Google Fonts (OFL) and capture the screenshot baseline on the CI runner (Linux Chromium) from the untouched 2.1 CSS, waiting for `document.fonts.ready`, with `animations: 'disabled'` (D35). Then port `@theme` and the theme blocks to `tokens.css` (`--q-*`), add `base.css`, rewrite every `class` attribute (about 220 across 18 files) as plain CSS following §7, remove `tailwindcss`, `@tailwindcss/vite` and the Vite plugin, and update AGENTS.md, `/add-component`, `/add-theme`, `/add-layout` and the docs (index, theming, components, VitePress description).
 Done when:
@@ -257,6 +267,19 @@ Done when:
 Publishing happens only after Cas's go-ahead.
 
 **Audition** can adopt Quiver after P3 merges, using a hand-written manifest. P4 adds file-based routing later.
+
+**P9 — Conventions layer (3.2, D37–D44).** Four PRs in order, each green on its own with its docs in the same PR:
+1. Spec: D37–D44, this section, TECH-SPEC §12, NOTES N182–N187. Text only.
+2. Scanner and build tooling: `scanApp()` (layouts, middleware, views, `app.config.js`, `_middleware.js`, literal `meta` for `nav` and `layout`), the `quiver:app` module from the Vite and Bun plugins, the `quiver app` CLI command, `client.d.ts` (S-50…S-66).
+3. Core: middleware in `initRouter()` inside `decide()`, and the async `createApp(app, options)` form (C-70…C-77), with jsdom tests and browser-suite cases (section redirect, cancel, not-found) on all three engines.
+4. Starter, recipes, examples and docs: the starter moves to the conventions; recipe files install by role (D44) and `recipes:sync`, `/add-*`, the registry test follow; the Vite example uses `quiver:app`, the no-build example a CLI-written `app.gen.js`; guide pages for layouts, middleware and app config, a "Manual setup" page, AGENTS.md and `llms.txt`.
+Done when:
+- the starter's `main.js` is a `createApp(app, options)` call with no `provide()`, no layouts map and no view imports, and the starter has no `src/quiver/` and no `src/layouts/index.js`
+- the visual-parity screenshots match unchanged (only file locations move)
+- a 3.1-style app (manual `initRouter` + `createApp({ target })`, `quiver:routes`) passes its existing tests unchanged
+- the parity test (S-40) covers `quiver:app` across the Vite plugin, the Bun plugin and the CLI
+- typecheck, unit, e2e and the browser suite are green
+Releasing 3.2.0 happens only after the maintainer's go-ahead.
 
 ## 9. Orchestrator rules
 

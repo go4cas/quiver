@@ -328,7 +328,7 @@ Quiver has been refactored from a starter template into a drop-in library (v3); 
 
 In scope:
 
-- The phases P0–P8 in the spec, one phase per branch and PR, in dependency order
+- The phases P0–P9 in the spec, one phase per branch and PR, in dependency order (P9, the 3.2 conventions layer, is four PRs: SPEC §8)
 - Bug fixes in the framework code, test improvements and doc corrections, as before
 
 Out of scope (spec §2 non-goals): swapping Arrow.js, SSR/hydration, a plugin system (core has only `afterEach`/`onError` hooks), a Navigation API fallback, multiple Quiver apps on one page, and app-specific features or backend/auth (those belong in an app).
