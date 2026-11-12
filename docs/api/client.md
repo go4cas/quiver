@@ -38,4 +38,8 @@ declare module 'quiver:app' {
 }
 ```
 
+### Why `quiver:` and not `virtual:`
+
+Vite's docs suggest a `virtual:` prefix for the virtual modules a plugin exposes. Quiver's modules use their own `quiver:` scheme instead, as Astro does with `astro:content` and `astro:middleware`: npm package names can't contain `:`, so `quiver:app` can never collide with a package, and the same name works in Vite and in Bun. Outside a bundler, Node rejects the import straight away (`ERR_UNSUPPORTED_ESM_URL_SCHEME`) instead of resolving something else. The name was reviewed after 3.2.0 and kept (D42).
+
 With the [`quiver routes` and `quiver app` CLI](./cli) you import a real file (`./routes.gen.js`, `./app.gen.js`) instead, and need no client types.

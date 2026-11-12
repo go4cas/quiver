@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Claude Code plugin (N241): version 3.2.1 in `plugin.json` and `marketplace.json` (was 3.0.0, although its `/add-*` commands changed in 3.2.0 and 3.2.1), so `/plugin update` picks up the current commands. From now on the plugin's version follows core's (RELEASING.md)
+- Docs (N242): `docs/api/client.md` explains why the virtual modules are named `quiver:app` and `quiver:routes` rather than `virtual:…`. The name was reviewed after 3.2.1 and kept (D42); nothing changes for apps
 
 ## [3.2.1] - 2026-11-12
 
