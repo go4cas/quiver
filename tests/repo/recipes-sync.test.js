@@ -28,7 +28,7 @@ describe('starter/src holds the recipes installed by role', () => {
 
   it('rewrites imports between recipes to the installed places', () => {
     const menu = readFileSync(join(SRC, 'layouts', 'menu.js'), 'utf8')
-    expect(menu).toContain(`from '../components/link.js'`)
+    expect(menu).toContain(`from '../components/Link.js'`)
     expect(menu).not.toMatch(/from '\.\.\/(link|toasts|theme-switcher)\//)
   })
 })

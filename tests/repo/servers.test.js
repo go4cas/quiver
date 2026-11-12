@@ -64,7 +64,7 @@ const SERVERS = [
   {
     script: 'recipes/e2e/serve.js',
     base: '/',
-    ok: ['', 'main.js', 'quiver/toasts/toasts.js', 'quiver/theme/tokens.css', 'vendor/@arrow-js/core/dist/index.mjs'],
+    ok: ['', 'main.js', 'quiver/toasts/Toasts.js', 'quiver/theme/tokens.css', 'vendor/@arrow-js/core/dist/index.mjs'],
     denied: ['serve.js', 'quiver/e2e/serve.js', 'quiver/tests/registry.test.js', 'quiver/toasts/tests/toasts.test.js', 'quiver/index.json'],
   },
 ]

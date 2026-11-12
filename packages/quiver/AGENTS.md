@@ -32,6 +32,8 @@ beforeEach(({ to }) => { /* optional: guards and hooks before createApp */ })
 await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
 ```
 
+File names: `components/` PascalCase (`UserCard.js` with `UserCard.css` beside it), `composables/` camelCase, named for the export (`useForm.js`, `hmrState.js`), `state/` camelCase with a `State` suffix, and `pages/`, `layouts/`, `views/`, `middleware/` lower-case or kebab-case (the file name is the route or the layout name).
+
 `createApp(app, options)` provides the config and nav, starts the router with the routes and middleware, and mounts. It resolves to the `App` and rejects (after taking back what it provided) on a bad target or base. Guards run in this order: `beforeEach` guards, global middleware, then section middleware. Middleware has the `beforeEach` signature (`false` cancels, a path redirects) and runs before the page's code loads.
 
 `quiver:app` comes from the `quiver()` Vite plugin (`@go4cas/quiver/vite`), the Bun plugin (`@go4cas/quiver/bun`, for `Bun.build`), or `quiver app [--src src] [--out src/app.gen.js] [--watch]` for apps without a bundler (commit the file). `meta` is read at build time, so `meta.nav` and `meta.layout` must be plain literals; an unreadable `meta`, a misplaced `meta.nav` or an unknown `meta.layout` is a build warning. Page names may hold spaces and Unicode (`release notes.js` → `/release notes`); a `%` or `\` in a name is a scan error. With `@go4cas/quiver` installed, run the CLI as `bunx quiver app` or `npx quiver app`; without a local install, name the scoped package (`bunx --bun --package @go4cas/quiver@3 quiver app`, `npm exec --package=@go4cas/quiver@3 -- quiver app`), since a bare `quiver` resolves to an unrelated npm package. Never hand-edit a generated module. For types of `quiver:app`, add `"@go4cas/quiver/client"` to `compilerOptions.types`.
@@ -141,7 +143,7 @@ Recipe JS never imports CSS. The app's CSS entry imports, in order:
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
 @import "./styles/tokens.css";
 @import "./styles/base.css";
-@import "./components/toasts.css";        /* each component recipe */
+@import "./components/Toasts.css";        /* each component recipe */
 @import "./styles/effects.css";
 @import "./app.css";                          /* the app's own CSS last */
 ```

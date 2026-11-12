@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest'
 import { html, nextTick } from '@arrow-js/core'
-import { toastState, useToast, ToastContainer } from '../toasts.js'
+import { toastState, useToast, ToastContainer } from '../Toasts.js'
 
 // One container for the whole file: a container whose DOM is removed while
 // toastState still changes would be patched without a parent.

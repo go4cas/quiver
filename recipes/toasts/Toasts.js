@@ -1,7 +1,7 @@
 import { component, html, nextTick, reactive } from '@arrow-js/core'
 
 // Toasts recipe: toastState (the store), useToast() (the API pages call) and
-// ToastContainer (mount it once, e.g. in each layout). Styles: toasts.css
+// ToastContainer (mount it once, e.g. in each layout). Styles: Toasts.css
 // (classes q-toasts, q-toast, q-toast__*). Uses only @arrow-js/core, so it
 // works in any Arrow app, with or without Quiver.
 

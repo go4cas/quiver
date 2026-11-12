@@ -147,7 +147,8 @@ describe('no 2.x leftovers in the docs (D36, NOTES N115)', () => {
   // 2.x-only strings: paths and names that no longer exist in 3.0. Allowed only
   // in the migration guide (and CHANGELOG.md, which isn't scanned). `src/styles/`
   // and `src/composables/useForm` left the list in 3.2, where recipes install
-  // by role into those folders again (D44).
+  // by role into those folders again (D44); `src/components/Link.js` left it
+  // when component recipe files became PascalCase (D45).
   const LEFTOVERS = [
     'src/framework/',
     'routerState',
@@ -161,7 +162,6 @@ describe('no 2.x leftovers in the docs (D36, NOTES N115)', () => {
     'src/composables/useRoute',
     'src/composables/useRouter',
     'src/state/toastState',
-    'src/components/Link.js',
     'src/components/ThemeSelector',
     'src/components/ThemeToggle',
     'src/components/ToastContainer',

@@ -4,7 +4,7 @@ Two layouts. `default.js` is a centred card, used by every page that names no la
 
 ## Install
 
-`/add-layout menu` installs `default.js`, `menu.js` and `layouts.css` into `src/layouts/`, plus the recipes they import: `theme`, `link`, `toasts` and `theme-switcher`. In `menu.js`, the imports of those recipes point at where they are installed (`'../components/link.js'`). Needs `@go4cas/quiver` and `arrow-use`.
+`/add-layout menu` installs `default.js`, `menu.js` and `layouts.css` into `src/layouts/`, plus the recipes they import: `theme`, `link`, `toasts` and `theme-switcher`. In `menu.js`, the imports of those recipes point at where they are installed (`'../components/Link.js'`). Needs `@go4cas/quiver` and `arrow-use`.
 
 ## Use
 

@@ -13,7 +13,7 @@ Tailwind v4 puts its CSS in the cascade layers `theme`, `base`, `components` and
 @import "tailwindcss";
 
 @import "./styles/tokens.css";
-@import "./components/toasts.css";
+@import "./components/Toasts.css";
 @import "./styles/effects.css";
 ```
 

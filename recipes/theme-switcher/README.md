@@ -6,12 +6,12 @@ The choice is kept in `localStorage` (`ui-theme`, `ui-mode`, plain strings) thro
 
 ## Install
 
-Copy `theme-switcher.js` and `theme-switcher.css` to `src/components/`, plus the `theme` recipe (with `effects.css` for the per-theme effects). Needs `arrow-use`.
+Copy `ThemeSwitcher.js` and `ThemeSwitcher.css` to `src/components/`, plus the `theme` recipe (with `effects.css` for the per-theme effects). Needs `arrow-use`.
 
 ## Use
 
 ```js
-import { ThemeSelector, ThemeToggle, themeState } from '../components/theme-switcher.js'
+import { ThemeSelector, ThemeToggle, themeState } from '../components/ThemeSwitcher.js'
 
 html`<header>${ThemeSelector()} ${ThemeToggle()}</header>`
 

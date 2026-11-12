@@ -1,5 +1,5 @@
 import { html } from '@arrow-js/core'
-import { ToastContainer } from '../toasts/toasts.js'
+import { ToastContainer } from '../toasts/Toasts.js'
 
 // Layouts recipe, the default layout: a centred card. In an app it is
 // layouts/default.js, so pages without `meta.layout` get it. Styles:

@@ -30,8 +30,8 @@ The `/add-*` commands of the [Claude Code plugin](/guide/ai#the-claude-code-plug
 
 1. **Find it** in `node_modules/@go4cas/quiver/recipes/index.json`, by key or alias (`toast` → `toasts`, `ThemeToggle` → `theme-switcher`, `menu` → `layouts`).
 2. **Collect what it needs**: follow `requires`, recursively, and skip recipes you already have.
-3. **Copy** each entry in the recipe's `files`: the key is the file in `recipes/<name>/`, the value is where it goes under `src/` (a path ending in `/` is a folder). For example, `toasts.js` goes to `src/components/toasts.js` and the layouts recipe's `menu.js` to `src/layouts/menu.js`. Don't copy `tests/` or the README.
-4. **Fix imports between recipes.** In the repository a recipe imports another as `../<recipe>/<file>.js`. Point each one at where that file is now: `src/layouts/menu.js` imports `'../link/link.js'`, which becomes `'../components/link.js'`.
+3. **Copy** each entry in the recipe's `files`: the key is the file in `recipes/<name>/`, the value is where it goes under `src/` (a path ending in `/` is a folder). For example, `Toasts.js` goes to `src/components/Toasts.js` and the layouts recipe's `menu.js` to `src/layouts/menu.js`. Don't copy `tests/` or the README.
+4. **Fix imports between recipes.** In the repository a recipe imports another as `../<recipe>/<file>.js`. Point each one at where that file is now: `src/layouts/menu.js` imports `'../link/Link.js'`, which becomes `'../components/Link.js'`.
 5. **Install** the `packages` it lists that you don't have yet (`arrow-use` for the theme switcher; `@go4cas/quiver` for `link`, `layouts` and `views`).
 6. **Load the CSS** from your CSS entry, in the order of each recipe's `css` (at the places `files` gave them), with the layer statement first. Recipe JS never imports CSS, so it runs with or without a bundler:
 
@@ -39,7 +39,7 @@ The `/add-*` commands of the [Claude Code plugin](/guide/ai#the-claude-code-plug
    @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
    @import "./styles/tokens.css";
    @import "./styles/base.css";       /* skip if you have your own reset */
-   @import "./components/toasts.css";    /* one line per component recipe */
+   @import "./components/Toasts.css";    /* one line per component recipe */
    @import "./styles/effects.css";    /* optional per-theme effects */
    @import "./app.css";                      /* your own CSS stays last */
    ```

@@ -90,10 +90,10 @@ export default defineConfig({ plugins: [quiver()] })
 | `import { routerState } from '../state/routerState.js'` | `const route = useRoute()`: `route.path()`, `route.params()`, `route.status()`, `route.meta()` |
 | `from '../composables/useRoute.js'`, `useRouter.js` | `from '@go4cas/quiver'` |
 | `from '../composables/useFetch.js'` | `from 'arrow-use'` |
-| `from '../composables/useToast.js'`, `'../state/toastState.js'` | `from '../components/toasts.js'` |
+| `from '../composables/useToast.js'`, `'../state/toastState.js'` | `from '../components/Toasts.js'` |
 | `from '../composables/useForm.js'` | unchanged: the recipe installs there |
 | `from '../utils/hmrState.js'` | `from '../composables/hmrState.js'` |
-| `from '../components/Link.js'` | `from '../components/link.js'` (lower-case file name) |
+| `from '../components/Link.js'` | unchanged: the recipe installs there |
 | `uiState.theme = 'glass'`, `uiState.mode = 'dark'` | `themeState.setTheme('glass')`, `themeState.setMode('dark')`; read with `themeState.theme()`, `themeState.mode()` |
 | `LoadingCard`, `ErrorCard` | `src/views/loading.js` and `src/views/error.js`, which `createApp` picks up |
 

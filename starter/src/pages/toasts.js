@@ -1,5 +1,5 @@
 import { html, reactive } from '@arrow-js/core'
-import { useToast, toastState } from '../components/toasts.js'
+import { useToast, toastState } from '../components/Toasts.js'
 
 export const meta = {
   layout: 'menu',
