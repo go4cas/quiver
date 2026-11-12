@@ -9,7 +9,7 @@ A drop-in router, context and meta layer for [Arrow.js](https://arrow-js.com), w
 - **[`@go4cas/quiver`](packages/quiver)**: routing on the Navigation API with layouts, guards, `afterEach`/`onError`, base paths, `provide`/`inject` and `useMeta`. Folder conventions (`pages/`, `layouts/`, `middleware/`, `views/`, `app.config.js`) read into one `quiver:app` module by a Vite plugin, a `Bun.build` plugin or the `quiver` CLI. 13 exports, one peer dependency, no CSS.
 - **[`arrow-use`](packages/arrow-use)**: `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` for any Arrow app, with or without Quiver.
 - **[Recipes](recipes)**: theme tokens (`--q-*`), toasts, a theme switcher, layouts, loading and error views, `Link`, `useForm`, `hmrState`. Copied into your app, then yours.
-- **[The starter](starter)**: a full app with five themes in plain CSS, Vitest, Playwright and screenshot tests, and agent docs for Claude Code, Codex and Copilot.
+- **[The starter](starter)**: a full app with five themes in plain CSS, Vitest, Playwright and screenshot tests, and a `CLAUDE.md` that imports the agent guide shipped in `@go4cas/quiver`.
 
 **Docs:** <https://go4cas.github.io/quiver/>
 
@@ -88,7 +88,7 @@ tests/repo/          repo-wide checks; tests/pack/ checks the npm tarballs
 | `bun run test:browsers` | Core's router suite in Chromium, Firefox and WebKit (`bunx playwright install firefox webkit` first) |
 | `bun run test:visual` | Screenshot parity (only inside the pinned Playwright image) |
 | `bun run pack:check` | `npm pack --dry-run` file lists for both packages |
-| `bun run pack:try` | The examples and the starter, copied out, against the packed tarballs |
+| `bun run pack:try` | The examples, a small Bun-built `quiver:app` app and the starter, copied out, against the packed tarballs |
 | `bun run pack:types` | The packed `.d.ts` in fresh TypeScript projects, `skipLibCheck` off |
 | `bun run audit` | Dependency advisories in the lockfile, against `scripts/audit-exceptions.json` |
 | `bun run recipes:sync` | Install `recipes/` into `starter/src/` by role after editing a recipe |

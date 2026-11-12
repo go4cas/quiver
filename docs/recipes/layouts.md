@@ -4,7 +4,7 @@ Two layouts: `layouts/default.js` (a centred card, for every page that names no 
 
 | | |
 |---|---|
-| Command | `/add-layout menu` (or `basic`; aliases: `layout`, `MenuLayout`, `BasicLayout`) |
+| Command | `/add-layout menu` (aliases: `layouts`, `layout`, `basic`, `MenuLayout`, `BasicLayout`) |
 | Installs | `src/layouts/default.js`, `src/layouts/menu.js`, `src/layouts/layouts.css` |
 | CSS order | after the other component recipes, before `effects.css` |
 | Needs | `theme`, `link`, `toasts`, `theme-switcher`, `@go4cas/quiver`, `arrow-use` |

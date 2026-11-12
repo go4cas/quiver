@@ -4,7 +4,7 @@
 import quiver from '@go4cas/quiver/bun'
 ```
 
-A `Bun.build` plugin that scans a pages folder and serves the route manifest as the virtual module `quiver:routes`.
+A `Bun.build` plugin that serves the virtual modules `quiver:app` (since 3.2, the [app manifest](./vite#quiver-app) for a source folder) and `quiver:routes` (the route manifest for a pages folder).
 
 ## quiver
 

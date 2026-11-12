@@ -35,7 +35,7 @@ export default <Name>Page
 ```
 
    - Derive the title from the path (`posts/[id]` → `Post`).
-   - `meta.layout` names a layout registered in `createApp({ layouts })`. Use `'menu'` if the app has it (the layouts recipe), `'basic'` for standalone screens such as login; leave `layout` out to get the app's `defaultLayout`.
+   - `meta.layout` names a file in `src/layouts/` (`'menu'` is `src/layouts/menu.js`). Use `'menu'` if the app has it (the layouts recipe). Leave `layout` out for standalone screens such as login: they get `src/layouts/default.js` (the recipe's centred card). A name with no file there is a build warning, and the page renders bare. In a manual setup (`main.js` calls `initRouter()`), the name is a key of the `layouts` passed to `createApp()`, and pages without one get its `defaultLayout`.
    - Match the markup and classes of the app's existing pages (the starter uses `page`, `page__title`, `card`…).
    - For a dynamic segment, read it inside the function: `const route = useRoute()` then `${() => route.params().id}`.
    - Titles can be reactive: `useMeta({ title: () => \`Team (${state.users.length})\` })`.

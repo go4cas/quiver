@@ -22,7 +22,7 @@
     ]
   },
   "link": {
-    "description": "Link: an anchor with url() and aria-current=\"page\" on the active route",
+    "description": "Link: an anchor with url(), aria-current=\"page\" on the current page's link and data-active on it and its sections",
     "kind": "component",
     "files": {
       "Link.js": "components/Link.js"

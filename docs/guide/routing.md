@@ -72,7 +72,7 @@ A page module default-exports a function that returns an Arrow template, and may
 import { html } from '@arrow-js/core'
 
 export const meta = {
-  layout: 'menu',     // a key of createApp({ layouts }); omitted → defaultLayout
+  layout: 'menu',     // src/layouts/menu.js; omitted → src/layouts/default.js
   title: 'Team',      // document.title, set after the page loads
 }
 
@@ -131,7 +131,7 @@ import { url } from '@go4cas/quiver'
 html`<a href="${url('/users')}">Team</a>`
 ```
 
-The [`link` recipe](/recipes/link) wraps this with `aria-current="page"` for nav menus. Don't add an `@click` that calls `go()` to a link: it breaks modifier clicks, and the navigation already happens.
+The [`link` recipe](/recipes/link) wraps this for nav menus, with `aria-current="page"` on the current page's link and `data-active` on it and on links to the sections above it. Don't add an `@click` that calls `go()` to a link: it breaks modifier clicks, and the navigation already happens.
 
 From code, after a form submit for example, use `go()` or `useRouter()`:
 
@@ -218,7 +218,7 @@ When a guard, a loader or a render throws, the router renders the error view (`s
 
 ## Startup and teardown
 
-Register guards and hooks (`beforeEach()`, `afterEach()`, `onError()`), then `await createApp(app, { target })`. It rejects with a message that says what to do: a missing `target`, a base the URL is outside, a second call without `destroy()`. `go()` before the router has started throws. The step-by-step order behind it is on [manual setup](./manual-setup).
+Register guards and hooks (`beforeEach()`, `afterEach()`, `onError()`), then `await createApp(app, { target })`. It rejects with a message that says what to do: a missing `target`, a base the URL is outside, a second call without `destroy()`. A failed call takes back the keys it provided, stops the router it started and empties the target, so you can fix it and call it again. A `destroy()` before the first page is on screen makes it reject as abandoned. `go()` before the router has started throws. The step-by-step order behind it is on [manual setup](./manual-setup).
 
 `destroy()` (or `app.destroy()`) undoes all of it: it stops listening for navigations, clears guards, hooks, context and meta watchers, runs the current page's cleanups ([page cleanup](./troubleshooting#cleanup-never-runs)), puts back the host page's title and description, resets router state and empties the target. After it, the whole sequence can run again, which is handy in tests and for micro-frontends that come and go.
 

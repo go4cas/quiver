@@ -15,7 +15,7 @@ bun run dev
 |---|---|---|---|
 | [`examples/vite`](https://github.com/go4cas/quiver/tree/main/examples/vite) | Vite | the `quiver()` Vite plugin, dev server and production build | 5180, 5190 under `/sub/app/` |
 | [`examples/bun`](https://github.com/go4cas/quiver/tree/main/examples/bun) | `Bun.build` | the Bun plugin with page splitting | 5181, 5191 |
-| [`examples/no-build`](https://github.com/go4cas/quiver/tree/main/examples/no-build) | none | an import map and a hand-written manifest | 5182, 5192 |
+| [`examples/no-build`](https://github.com/go4cas/quiver/tree/main/examples/no-build) | none | an import map and `src/app.gen.js`, written by `quiver app` | 5182, 5192 |
 | [`packages/arrow-use/example`](https://github.com/go4cas/quiver/tree/main/packages/arrow-use/example) | none | all four `arrow-use` composables in a vanilla Arrow app, no Quiver | 5183 |
 | [`starter`](https://github.com/go4cas/quiver/tree/main/starter) | Vite | the full app: recipes, five themes, guards, forms, toasts, unit/e2e/screenshot tests | 5173, 5174 |
 

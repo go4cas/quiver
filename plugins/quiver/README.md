@@ -5,7 +5,7 @@ The `/add-*` commands for Quiver apps (and plain Arrow.js apps). They copy **rec
 | Command | Does |
 |---|---|
 | `/add-component <name>` | Installs a recipe (`toast`, `theme-switcher`, `views`, `link`, `theme`) with what it needs, or scaffolds a new component with its CSS |
-| `/add-layout <name>` | Installs the layouts recipe (`menu`, `basic`) or scaffolds and registers a new layout |
+| `/add-layout <name>` | Installs the layouts recipe (`menu`, `basic`) or scaffolds a new layout file in `src/layouts/` |
 | `/add-theme <id>` | Adds a theme: token blocks, optional effects, a theme switcher entry (installing the theme recipes first if needed) |
 | `/add-composable <name>` | Installs `useForm` or `hmrState`, points to `arrow-use`, or scaffolds a composable with a test |
 | `/add-page <path>` | Creates a file-based route page |

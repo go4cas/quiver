@@ -89,7 +89,7 @@ import { useToast } from '../../components/Toasts.js'
 import { TicketCard } from '../../components/TicketCard.js'
 import { ticketState } from '../../state/ticketState.js'
 
-export const meta = { layout: 'menu', title: 'Tickets' }
+export const meta = { layout: 'menu', title: 'Tickets', nav: { label: 'Tickets', order: 5 } }
 
 export default function TicketsPage() {
   const toast = useToast()

@@ -121,7 +121,7 @@ The component hard-codes a colour, or misses a hook class. Use `--q-*` tokens fo
 
 ## `npm run dev` fails with a Node error
 
-Vite 8 and the `quiver routes` CLI need Node 22.12+. The starter's tests (Vitest 5 with jsdom 31) need more: Node 22.22.2+ on the 22 line, 24.15+ on the 24 line, or 26+. Check `node --version`, or use Bun.
+Vite 8, Quiver's Vite plugin and the `quiver` CLI need Node 22.12+. The starter's tests (Vitest 5 with jsdom 31) need more: Node 22.22.2+ on the 22 line, 24.15+ on the 24 line, or 26+. Check `node --version`, or use Bun.
 
 ## Still stuck?
 

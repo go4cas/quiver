@@ -143,5 +143,14 @@ Things you can adopt once you've migrated:
 2. **Views.** Move the loading and error views to `src/views/loading.js` and `src/views/error.js`, as default exports.
 3. **Config.** Move each `provide(key, value)` from `main.js` into `src/app.config.js` (`export default { key: value }`). For `'nav'`, either keep the list there or give each page `meta.nav: { label, order }`.
 4. **Guards.** A `beforeEach` that guards a group of routes can become `src/pages/<folder>/_middleware.js`, and one that guards everything can become a file in `src/middleware/` ([middleware](./middleware)). `beforeEach` still works.
-5. **Recipes.** The recipes now install by role ([recipes](/recipes/#installing-a-recipe)). Move the files out of `src/quiver/`: `theme/*` to `styles/`, `toasts`, `theme-switcher` and `link` to `components/`, `useForm` and `hmrState` to `composables/`, and the layouts and views as in steps 1 and 2. Then fix the imports and the `@import` lines in `style.css`. You can also keep `src/quiver/` as it is, since Quiver doesn't read it.
+5. **Recipes.** The recipes now install by role ([recipes](/recipes/#installing-a-recipe)). Move the files out of `src/quiver/`: `theme/*` to `styles/`, `toasts`, `theme-switcher` and `link` to `components/` under PascalCase names (`toasts.js` and `toasts.css` become `Toasts.js` and `Toasts.css`, `theme-switcher.*` becomes `ThemeSwitcher.*`, `link.js` becomes `Link.js`), `useForm` and `hmrState` to `composables/`, and the layouts and views as in steps 1 and 2. Then fix the imports and the `@import` lines in `style.css`. You can also keep `src/quiver/` as it is, since Quiver doesn't read it.
 6. **`main.js`.** Replace the startup with `await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })` and `import app from 'quiver:app'`.
+
+### Recipes copied from 3.2.0
+
+Copies keep working, since a recipe in your app never changes on an upgrade. Two things differ from the 3.2.1 recipes:
+
+- **File names.** The component recipes' files are PascalCase, like your own components: `components/link.js` is `Link.js`, `toasts.js` and `toasts.css` are `Toasts.js` and `Toasts.css`, and `theme-switcher.js` and `.css` are `ThemeSwitcher.js` and `.css`. To match, rename yours and fix the imports and the `@import` lines in `style.css`.
+- **`Link`'s active state.** `aria-current="page"` is now only on the current page's own link. A link to a section above it (`/users` on `/users/42`) gets `data-active="section"` instead, and the current page's link `data-active="page"`. If your CSS styles `[aria-current="page"]` to highlight a parent section, style `[data-active]` instead (the layouts recipe's `layouts.css` does).
+
+The [CHANGELOG](https://github.com/go4cas/quiver/blob/main/CHANGELOG.md) lists the other recipe fixes, such as `useForm`'s deep snapshot of the values.

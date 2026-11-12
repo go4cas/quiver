@@ -3,7 +3,7 @@
 [Arrow.js](https://arrow-js.com) gives you reactive objects and tagged-template rendering in a few kilobytes, and nothing else. Quiver adds the application layer an SPA needs, in pieces you can take or leave:
 
 - **A router you install, not a template you fork.** `@go4cas/quiver` is a package with 13 exports and one peer dependency: routing on the Navigation API, layouts, guards, `afterEach`/`onError`, `provide`/`inject`, `useMeta`. It renders no CSS and no wrapper markup, so it drops into an existing Arrow app.
-- **Any build, or none.** The same `src/pages/` folder becomes routes through a Vite plugin, a `Bun.build` plugin, or a CLI that writes a plain module for an import-map app.
+- **Any build, or none.** The same `src/` folder (pages, layouts, middleware, views, `app.config.js`) becomes the app through a Vite plugin, a `Bun.build` plugin, or a CLI that writes a plain module for an import-map app.
 - **Composables for every Arrow app.** `arrow-use` has no Quiver dependency at all.
 - **UI you own.** Toasts, layouts, a theme switcher and the `--q-*` token contract are recipes: copied into your app, then yours to change, never a package you have to style around.
 - **Built for AI assistants.** An agent guide and `llms.txt` ship inside the package, and the `/add-*` commands for Claude Code install recipes and scaffold pages, components and tests.
