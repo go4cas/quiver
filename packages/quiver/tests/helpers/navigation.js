@@ -7,7 +7,10 @@
 // the handler, and rejects a superseded navigation's `finished` with an
 // AbortError. Navigations nobody intercepts are recorded in `documentLoads`
 // (a real browser would load a new document). jsdom's location follows the
-// current entry through history.replaceState().
+// current entry through history.replaceState(). With `{ precommit: true }` it
+// also runs a push's or a replace's `precommitHandler` before committing: a
+// throw (or a newer navigation) leaves the entries untouched, and
+// `controller.redirect()` changes the URL the navigation commits (N201).
 import { vi } from 'vitest'
 import { nextTick } from '@arrow-js/core'
 
@@ -17,7 +20,9 @@ import { nextTick } from '@arrow-js/core'
  * @typedef {'push' | 'replace' | 'reload' | 'traverse'} NavType
  */
 
-export function installNavigation() {
+/** @param {{ precommit?: boolean }} [options] */
+export function installNavigation({ precommit = false } = {}) {
+  if (precommit) vi.stubGlobal('NavigationPrecommitController', function NavigationPrecommitController() {})
   /** @type {Set<(event: any) => void>} */
   const listeners = new Set()
   /** @type {Promise<unknown>[]} */
@@ -46,16 +51,20 @@ export function installNavigation() {
       destination.hash !== current.hash
     /** @type {(() => Promise<void>) | null} */
     let handler = null
+    /** @type {((controller: { redirect: (url: string) => void }) => Promise<void>) | null} */
+    let precommitHandler = null
     const event = {
       canIntercept: sameDocument,
+      cancelable: precommit && sameDocument && (type === 'push' || type === 'replace'),
       hashChange,
       downloadRequest,
       formData,
       info,
       navigationType: type,
       destination: { url: destination.href },
-      intercept(/** @type {{ handler?: () => Promise<void> }} */ options) {
+      intercept(/** @type {{ handler?: () => Promise<void>, precommitHandler?: any }} */ options) {
         handler = options?.handler ?? (async () => {})
+        precommitHandler = options?.precommitHandler ?? null
       },
     }
     for (const listener of [...listeners]) listener(event)
@@ -66,22 +75,41 @@ export function installNavigation() {
     }
 
     const mine = ++token
-    if (type === 'push') {
-      entries = [...entries.slice(0, index + 1), { key: `k${keys++}`, url: destination.href }]
-      index = entries.length - 1
-    } else if (type === 'replace') {
-      entries[index] = { key: entries[index].key, url: destination.href }
-    } else if (type === 'traverse') {
-      index = target
+    const abort = () => Object.assign(new Error('aborted'), { name: 'AbortError' })
+    /** @param {string} href */
+    const commit = (href) => {
+      if (type === 'push') {
+        entries = [...entries.slice(0, index + 1), { key: `k${keys++}`, url: href }]
+        index = entries.length - 1
+      } else if (type === 'replace') {
+        entries[index] = { key: entries[index].key, url: href }
+      } else if (type === 'traverse') {
+        index = target
+      }
+      sync()
     }
-    sync()
     const run = /** @type {() => Promise<void>} */ (handler)
-    const finished = Promise.resolve().then(run).then(() => {
-      if (mine !== token) throw Object.assign(new Error('aborted'), { name: 'AbortError' })
+    /** @type {Promise<void>} */
+    let committed
+    if (precommitHandler && event.cancelable) {
+      let href = destination.href
+      const controller = { redirect: (/** @type {string} */ url) => { href = new URL(url, window.location.href).href } }
+      const pre = /** @type {NonNullable<typeof precommitHandler>} */ (precommitHandler)
+      committed = Promise.resolve().then(() => pre(controller)).then(() => {
+        if (mine !== token) throw abort()
+        commit(href)
+      })
+    } else {
+      commit(destination.href)
+      committed = Promise.resolve()
+    }
+    const finished = committed.then(run).then(() => {
+      if (mine !== token) throw abort()
     })
+    committed.catch(() => {})
     finished.catch(() => {})
     pending.push(finished)
-    return { committed: Promise.resolve(), finished }
+    return { committed, finished }
   }
 
   /**

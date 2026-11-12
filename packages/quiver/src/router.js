@@ -76,6 +76,9 @@ let currentNav = null
 let settled = null
 // True while a navigation has replaced the settled state with 'loading'.
 let unsettled = false
+// True between a same-document fragment navigation's navigate event and its
+// commit, so the settled entry can follow it (N201).
+let hashPending = false
 // The info objects Quiver passes to the Navigation API. Only these are read as
 // rollback/retry/redirect markers, so an app's own `info` is never mistaken for
 // one (N129).
@@ -378,9 +381,32 @@ function markSettled() {
 }
 
 /**
+ * A fragment navigation the browser handled itself (a `#top` link,
+ * `location.hash = …`) committed: the page didn't change, so the settled
+ * route now lives on the new entry and a cancel goes back to it, fragment
+ * included (N201).
+ */
+function onEntryChange() {
+  if (!hashPending) return
+  hashPending = false
+  const entry = navigation.currentEntry
+  if (!settled || !entry?.url) return
+  if (withoutHash(entry.url) !== withoutHash(settled.url)) return
+  settled.key = entry.key
+  settled.url = entry.url
+}
+
+/** @param {string} href @returns {string} */
+const withoutHash = (href) => href.split('#')[0]
+
+/**
  * A guard cancelled: put back the last committed route and its history entry.
- * A traversal or a push goes back to that entry, so no history entry is added
- * or rewritten; a replace puts its URL back in place (N126).
+ * With a precommit handler a cancelled push or replace never committed, so
+ * there is nothing to put back unless an earlier navigation had started
+ * loading (N201). Without one, a traversal or a push goes back to that entry,
+ * so no history entry is added or rewritten; a replace puts its URL back in
+ * place (N126). The browser has already dropped the Forward entries of a
+ * committed push (N201).
  * @param {NavOp} op
  */
 function rollback(op) {
@@ -551,10 +577,79 @@ async function pipeline(from, to, info, op) {
   await renderAndReport(nav, from, to, errors)
 }
 
+/** A cancelled navigation that never committed rejects with this, so settle() ignores it. */
+const aborted = () => new DOMException('A guard cancelled the navigation.', 'AbortError')
+
+/**
+ * Whether the guards for `event` can run before it commits (N201): a push or a
+ * replace, in a browser with the Navigation API's precommit handlers. A
+ * traversal or a reload, or a browser without them, commits first and is
+ * rolled back on cancel (N126).
+ * @param {NavigateEvent} event
+ * @returns {boolean}
+ */
+function canPrecommit(event) {
+  return typeof (/** @type {any} */ (globalThis).NavigationPrecommitController) === 'function' &&
+    event.cancelable && (event.navigationType === 'push' || event.navigationType === 'replace')
+}
+
+/**
+ * Steps 2–3 before the navigation commits (N201): run the guards and follow
+ * redirects inside the same navigation, so a push stays one entry. A cancel
+ * aborts it, so the URL, the history entries and the current position don't
+ * change; only a route still loading for an earlier navigation is put back.
+ * @param {Nav} nav
+ * @param {string | null} from
+ * @param {string} to
+ * @param {NavInfo | undefined} info
+ * @param {NavOp} op
+ * @param {{ redirect: (url: string) => void }} controller
+ * @returns {Promise<{ to: string, error?: unknown, failed: boolean }>}
+ */
+async function guardBeforeCommit(nav, from, to, info, op, controller) {
+  const first = info?.first ?? to
+  let hops = info?.redirects ?? 0
+  /** @type {string | null} */
+  let href = null
+  for (;;) {
+    const outcome = await decide(nav, from, to, hops, first)
+    if (nav !== currentNav || outcome.kind === 'superseded') throw aborted()
+    if (outcome.kind === 'cancel') {
+      rollback(op)
+      throw aborted()
+    }
+    if (outcome.kind === 'redirect') {
+      to = outcome.to
+      href = outcome.href
+      hops++
+      continue
+    }
+    if (href !== null) controller.redirect(href)
+    return outcome.kind === 'error' ? { to, error: outcome.error, failed: true } : { to, failed: false }
+  }
+}
+
+/**
+ * Steps 4–8 after a precommit-guarded navigation committed.
+ * @param {Nav} nav
+ * @param {string | null} from
+ * @param {{ to: string, error?: unknown, failed: boolean }} plan
+ */
+async function afterCommit(nav, from, plan) {
+  if (nav !== currentNav) return
+  const errors = plan.failed ? commitError(plan.error, 'guard', plan.to) : await load(nav, plan.to)
+  if (!errors) return
+  await renderAndReport(nav, from, plan.to, errors)
+}
+
 /** @param {NavigateEvent} event */
 function handleNavigate(event) {
   if (!event.canIntercept) return
-  if (event.hashChange) return
+  if (event.hashChange) {
+    // The browser scrolls to the fragment itself; remember to follow the entry (N201).
+    hashPending = true
+    return
+  }
   if (event.downloadRequest != null) return
   if (event.formData != null) return // a form POST is left to the browser
   const info = /** @type {NavInfo | undefined} */ (internal.has(event.info) ? event.info : undefined)
@@ -576,6 +671,22 @@ function handleNavigate(event) {
   // The route on screen, not one still loading for a superseded navigation (N126).
   const from = settled?.state.path || null
   const op = info?.op ?? { next: null }
+  if (canPrecommit(event)) {
+    const nav = begin()
+    /** @type {{ to: string, error?: unknown, failed: boolean } | null} */
+    let plan = null
+    // `precommitHandler` isn't in every TypeScript DOM lib yet.
+    const options = {
+      precommitHandler: async (/** @type {{ redirect: (url: string) => void }} */ controller) => {
+        plan = await guardBeforeCommit(nav, from, to, info, op, controller)
+      },
+      handler: async () => {
+        if (plan) await afterCommit(nav, from, plan)
+      },
+    }
+    event.intercept(/** @type {NavigationInterceptOptions} */ (options))
+    return
+  }
   event.intercept({ handler: () => pipeline(from, to, info, op) })
 }
 
@@ -616,6 +727,7 @@ export async function initRouter(options) {
   const gen = generation
 
   navigation.addEventListener('navigate', handleNavigate)
+  navigation.addEventListener('currententrychange', onEntryChange)
 
   // The navigate event doesn't fire for the initial load, so run the guards
   // here, following redirects by rewriting the URL in place.
@@ -666,6 +778,7 @@ export function bumpEpoch() {
 export function stopRouter() {
   if (phase !== 'off' && typeof navigation !== 'undefined') {
     navigation.removeEventListener('navigate', handleNavigate)
+    navigation.removeEventListener('currententrychange', onEntryChange)
   }
   guards.length = 0
   globalMiddleware = []
@@ -681,5 +794,6 @@ export function resetRouter() {
   currentNav = null
   settled = null
   unsettled = false
+  hashPending = false
   phase = 'off'
 }

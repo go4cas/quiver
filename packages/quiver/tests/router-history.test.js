@@ -32,6 +32,15 @@ async function flush() {
   await nextTick()
 }
 
+/**
+ * @param {{ idle: () => Promise<void> }} nav
+ * @param {{ finished: Promise<unknown> }} result
+ */
+async function settleAll(nav, result) {
+  await result.finished.catch(() => {})
+  await nav.idle()
+}
+
 afterEach(() => {
   destroy()
   target?.remove()
@@ -44,10 +53,10 @@ afterEach(() => {
 
 /**
  * @param {Record<string, any>} routes
- * @param {{ at?: string, base?: string }} [options]
+ * @param {{ at?: string, base?: string, precommit?: boolean }} [options]
  */
-async function boot(routes, { at = '/', base } = {}) {
-  const nav = installNavigation()
+async function boot(routes, { at = '/', base, precommit = false } = {}) {
+  const nav = installNavigation({ precommit })
   setLocation(at)
   await initRouter({ routes, base })
   target = document.createElement('div')
@@ -178,6 +187,98 @@ describe('cancel keeps history entries intact (N126)', () => {
     nav.navigate('/denied', { history: 'replace' })
     await nav.idle()
     expect(nav.stack()).toEqual({ urls: ['/?q=1'], index: 0 })
+  })
+})
+
+describe('guards before commit, where the browser has precommit handlers (N201)', () => {
+  const routes = () => ({
+    '/': mod(Page('overview')), '/details': mod(Page('details')), '/settings': mod(Page('settings')),
+    '/denied': mod(Page('d')), '/admin': mod(Page('admin')), '/login': mod(Page('login')),
+  })
+
+  it('a cancelled push from the middle of history keeps the Forward entries and the position', async () => {
+    const nav = await boot(routes(), { precommit: true })
+    guard(({ to }) => (to === '/denied' ? false : undefined))
+    await go('/details')
+    await go('/settings')
+    await useRouter().back()
+    await go('/denied')
+    expect(nav.stack()).toEqual({ urls: ['/', '/details', '/settings'], index: 1 })
+    expect(target.textContent).toBe('details')
+    await useRouter().forward()
+    expect(target.textContent).toBe('settings')
+  })
+
+  it('a cancelled replace changes nothing', async () => {
+    const nav = await boot(routes(), { at: '/?q=1', precommit: true })
+    guard(({ to }) => (to === '/denied' ? false : undefined))
+    await settleAll(nav, nav.navigate('/denied', { history: 'replace' }))
+    expect(nav.stack()).toEqual({ urls: ['/?q=1'], index: 0 })
+    expect(nav.navigate).toHaveBeenCalledTimes(1)
+  })
+
+  it('a redirect chain commits once, at its target, as one entry', async () => {
+    const nav = await boot(routes(), { precommit: true })
+    guard(({ to }) => (to === '/admin' ? '/details' : undefined))
+    guard(({ to }) => (to === '/details' ? '/login' : undefined))
+    /** @type {string[]} */
+    const seen = []
+    after(({ from, to, status }) => { seen.push(`${from}->${to}:${status}`) })
+    await go('/admin')
+    expect(nav.stack()).toEqual({ urls: ['/', '/login'], index: 1 })
+    expect(target.textContent).toBe('login')
+    expect(seen).toEqual(['/->/login:ready'])
+    expect(nav.navigate).toHaveBeenCalledTimes(1)
+  })
+
+  it('a guard error commits the URL and shows the error view', async () => {
+    const nav = await boot(routes(), { precommit: true })
+    const errors = vi.fn()
+    onError(errors)
+    guard(({ to }) => { if (to === '/denied') throw new Error('boom') })
+    await go('/denied')
+    expect(nav.stack()).toEqual({ urls: ['/', '/denied'], index: 1 })
+    expect(useRoute().status()).toBe('error')
+    expect(errors).toHaveBeenCalledWith(expect.objectContaining({ phase: 'guard', to: '/denied' }))
+  })
+
+  it('too many redirects is a guard error, not a loop', async () => {
+    await boot(routes(), { precommit: true })
+    guard(({ to }) => (to === '/admin' ? '/login' : '/admin'))
+    await go('/admin')
+    expect(useRoute().status()).toBe('error')
+  })
+
+  it('a cancel while an earlier navigation is loading puts back the settled route and entry', async () => {
+    const slow = gated('slow')
+    const nav = await boot({ ...routes(), '/slow': slow.loader }, { precommit: true })
+    guard(({ to }) => (to === '/denied' ? false : undefined))
+    const pending = go('/slow')
+    await flush()
+    expect(useRoute().status()).toBe('loading')
+    await go('/denied')
+    slow.release()
+    await pending
+    await nav.idle()
+    expect(useRoute().path()).toBe('/')
+    expect(target.textContent).toBe('overview')
+    expect(nav.stack()).toEqual({ urls: ['/', '/slow'], index: 0 })
+  })
+
+  it('a newer navigation during the guards wins, and the older one never commits', async () => {
+    const nav = await boot(routes(), { precommit: true })
+    /** @type {() => void} */
+    let open = () => {}
+    const held = new Promise((resolve) => { open = () => resolve(undefined) })
+    guard(async ({ to }) => { if (to === '/details') await held })
+    const first = go('/details')
+    await flush()
+    await go('/settings')
+    open()
+    await first
+    await nav.idle()
+    expect(nav.stack()).toEqual({ urls: ['/', '/settings'], index: 1 })
+    expect(target.textContent).toBe('settings')
   })
 })
 

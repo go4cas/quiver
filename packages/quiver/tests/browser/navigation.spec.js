@@ -55,6 +55,89 @@ test('R02: a cancelled Back keeps the entry it was going to, query and hash incl
   expect(new URL(page.url()).search + new URL(page.url()).hash).toBe('?tab=2#top')
 })
 
+/**
+ * The history entries as base-relative paths (query and hash kept), and the
+ * current position.
+ * @param {import('@playwright/test').Page} page
+ * @param {string | undefined} baseURL
+ */
+async function stack(page, baseURL) {
+  const base = new URL(/** @type {string} */ (baseURL)).pathname
+  return page.evaluate((base) => ({
+    urls: navigation.entries().map((e) => {
+      const u = new URL(/** @type {string} */ (e.url))
+      return '/' + (u.pathname + u.search + u.hash).slice(base.length)
+    }),
+    index: navigation.currentEntry?.index,
+  }), base)
+}
+
+/** @param {import('@playwright/test').Page} page @returns {Promise<boolean>} guards run before commit (N201) */
+const precommit = (page) => page.evaluate(() => typeof (/** @type {any} */ (window).NavigationPrecommitController) === 'function')
+
+test('R32-01: a cancelled push from the middle of history keeps the Forward entries', async ({ page, baseURL }) => {
+  await open(page)
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await page.getByRole('link', { name: 'Admin' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Login')
+  await page.goBack()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+
+  await page.getByRole('link', { name: 'Denied' }).click()
+  await expect(page).toHaveURL(/details$/)
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  // Without precommit handlers the denied push commits before the guards run,
+  // and the browser drops the Forward entries with it (documented, N201).
+  expect(await stack(page, baseURL)).toEqual(await precommit(page)
+    ? { urls: ['/', '/details', '/login'], index: 1 }
+    : { urls: ['/', '/details', '/denied'], index: 1 })
+
+  if (await precommit(page)) {
+    await page.goForward()
+    await expect(page.locator('#app h1')).toHaveText('Login')
+  }
+})
+
+test('R32-01: a cancel keeps a fragment the browser set natively', async ({ page, baseURL }) => {
+  await open(page)
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await page.evaluate(() => { location.hash = 'part' })
+  await expect(page).toHaveURL(/details#part$/)
+
+  await page.getByRole('link', { name: 'Denied' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await expect(page).toHaveURL(/details#part$/)
+  const { urls, index } = await stack(page, baseURL)
+  expect(urls.slice(0, 3)).toEqual(['/', '/details', '/details#part'])
+  expect(index).toBe(2)
+})
+
+test('R32-01: a cancelled Back keeps every entry and the position', async ({ page, baseURL }) => {
+  await open(page)
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await page.evaluate(() => { /** @type {any} */ (window).fixture.flags.denyOverview = true })
+  await page.evaluate(() => /** @type {any} */ (window).fixture.back())
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  expect(await stack(page, baseURL)).toEqual({ urls: ['/', '/details'], index: 1 })
+})
+
+test('R32-01: a cancel while a route is loading goes back to the settled entry', async ({ page, baseURL }) => {
+  await open(page)
+  await page.getByRole('link', { name: 'Slow' }).click()
+  await expect(page.locator('#app')).toHaveText('Loading…')
+  await page.getByRole('link', { name: 'Denied' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Overview')
+  await page.evaluate(() => /** @type {any} */ (window).fixture.release('slow'))
+  await expect(page.locator('#app h1')).toHaveText('Overview')
+  // The Slow push had committed; without precommit handlers the Denied push did too.
+  expect(await stack(page, baseURL)).toEqual(await precommit(page)
+    ? { urls: ['/', '/slow'], index: 0 }
+    : { urls: ['/', '/slow', '/denied'], index: 0 })
+})
+
 test('R03: await go() waits for the redirect target and its guards', async ({ page }) => {
   await open(page)
   const result = await page.evaluate(async () => {
@@ -194,7 +277,7 @@ test('C-71: a section cancel keeps the page, URL and history; the section ran af
   await expect(page.locator('#app h1')).toHaveText('Overview')
 })
 
-test('C-71: a section redirect replaces the entry, and await go() waits for the target', async ({ page }) => {
+test('C-71: a section redirect replaces the entry, and await go() waits for the target', async ({ page, baseURL }) => {
   await open(page)
   const result = await page.evaluate(async () => {
     const fixture = /** @type {any} */ (window).fixture
@@ -206,6 +289,7 @@ test('C-71: a section redirect replaces the entry, and await go() waits for the 
   expect(result).toEqual({ path: '/login', log: ['/login:ready'] })
   await expect(page).toHaveURL(/login$/)
   await expect(page.locator('#app h1')).toHaveText('Login')
+  expect(await stack(page, baseURL)).toEqual({ urls: ['/', '/login'], index: 1 })
   await page.goBack()
   await expect(page.locator('#app h1')).toHaveText('Overview')
 })
