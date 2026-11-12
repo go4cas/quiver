@@ -12,9 +12,9 @@ Tailwind v4 puts its CSS in the cascade layers `theme`, `base`, `components` and
 
 @import "tailwindcss";
 
-@import "./quiver/theme/tokens.css";
-@import "./quiver/toasts/toasts.css";
-@import "./quiver/theme/effects.css";
+@import "./styles/tokens.css";
+@import "./components/toasts.css";
+@import "./styles/effects.css";
 ```
 
 Utilities then beat recipe CSS, so `class="q-toast p-6"` gets Tailwind's padding, and recipe CSS beats Tailwind's preflight.

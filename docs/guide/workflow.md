@@ -10,7 +10,7 @@ The file path is the route; nothing to register.
 // src/pages/tickets/index.js → /tickets
 import { html } from '@arrow-js/core'
 
-export const meta = { layout: 'menu', title: 'Tickets' }
+export const meta = { layout: 'menu', title: 'Tickets', nav: { label: 'Tickets', order: 5 } }
 
 export default function TicketsPage() {
   return html`
@@ -21,7 +21,7 @@ export default function TicketsPage() {
 }
 ```
 
-In dev, the new file reloads the browser with the new route. `meta.layout` picks the menu layout and `meta.title` sets `document.title`.
+In dev, the new file reloads the browser with the new route. `meta.layout` picks the menu layout, `meta.title` sets `document.title`, and `meta.nav` adds a sidebar link ([app structure](./app-config#menu-links-from-pages)).
 
 ## 2. Add a store
 
@@ -85,7 +85,7 @@ export const TicketCard = component(/** @param {Ticket} ticket */ (ticket) => ht
 // src/pages/tickets/index.js
 import { html } from '@arrow-js/core'
 import { useMeta } from '@go4cas/quiver'
-import { useToast } from '../../quiver/toasts/toasts.js'
+import { useToast } from '../../components/toasts.js'
 import { TicketCard } from '../../components/TicketCard.js'
 import { ticketState } from '../../state/ticketState.js'
 
@@ -108,19 +108,9 @@ export default function TicketsPage() {
 }
 ```
 
-## 5. Add a nav link
+## 5. Check the nav link
 
-`MenuLayout` reads its links from the `'nav'` key, so add one in `src/main.js`:
-
-```js
-provide('nav', [
-  { to: '/', label: 'Dashboard' },
-  { to: '/users', label: 'Team' },
-  { to: '/tickets', label: 'Tickets' },
-])
-```
-
-The active link gets `aria-current="page"`, on `/tickets` and on any path below it.
+The `meta.nav` from step 1 put **Tickets** in the menu layout's sidebar, after the links with a lower `order`. The active link gets `aria-current="page"`, on `/tickets` and on any path below it. To put links in an order of your own, or to add one that isn't a page, set `nav` in `src/app.config.js` instead.
 
 ## 6. Test it
 

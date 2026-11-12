@@ -35,16 +35,15 @@ bun add @go4cas/quiver @arrow-js/core
 ```js
 // vite.config.js
 import quiver from '@go4cas/quiver/vite'
-export default { plugins: [quiver()] }      // routes from src/pages/
+export default { plugins: [quiver()] }      // the app from src/: pages/, layouts/, middleware/, views/
 ```
 
 ```js
 // src/main.js
-import { initRouter, createApp } from '@go4cas/quiver'
-import routes, { notFound } from 'quiver:routes'
+import { createApp } from '@go4cas/quiver'
+import app from 'quiver:app'
 
-await initRouter({ routes, notFound })
-createApp({ target: '#app' })
+await createApp(app, { target: '#app' })
 ```
 
 Using `Bun.build` or no bundler at all? See [Getting started](https://go4cas.github.io/quiver/guide/getting-started) and the [examples](https://go4cas.github.io/quiver/examples).
@@ -92,7 +91,7 @@ tests/repo/          repo-wide checks; tests/pack/ checks the npm tarballs
 | `bun run pack:try` | The examples and the starter, copied out, against the packed tarballs |
 | `bun run pack:types` | The packed `.d.ts` in fresh TypeScript projects, `skipLibCheck` off |
 | `bun run audit` | Dependency advisories in the lockfile, against `scripts/audit-exceptions.json` |
-| `bun run recipes:sync` | Copy `recipes/` into `starter/src/quiver/` after editing a recipe |
+| `bun run recipes:sync` | Install `recipes/` into `starter/src/` by role after editing a recipe |
 | `bun run docs:dev` / `docs:build` | Docs site |
 
 ## Contributing

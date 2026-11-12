@@ -1,20 +1,16 @@
 # views
 
-`LoadingView` and `ErrorView` for `createApp({ loading, error })`. Core's own defaults are bare (`<p>Loading…</p>`, `<p role="alert">message</p>`); these are styled cards.
+The loading view (`loading.js`) and the error view (`error.js`). Core's own defaults are bare (`<p>Loading…</p>`, `<p role="alert">message</p>`); these are styled cards.
 
 ## Install
 
-Copy `views.js` and `views.css` to `src/quiver/views/`, plus the `theme` recipe. Needs `@go4cas/quiver`.
+`/add-component views` installs `loading.js`, `error.js` and `views.css` into `src/views/`, plus the `theme` recipe. Needs `@go4cas/quiver`.
 
 ## Use
 
-```js
-import { LoadingView, ErrorView } from './quiver/views/views.js'
+`quiver:app` picks both files up from `src/views/`, and `createApp(app, options)` uses them, so there is nothing to wire. In a manual setup, import the default exports and pass them: `createApp({ target: '#app', loading: LoadingView, error: ErrorView })`.
 
-createApp({ target: '#app', layouts, loading: LoadingView, error: ErrorView })
-```
-
-`ErrorView` receives `{ message, error, retry }` from core when a guard, a page load or a render throws. **Try again** calls `retry()`, which re-resolves the current route; **Go home** is a plain link to `url('/')`, so it works even when the router is stuck.
+The error view receives `{ message, error, retry }` from core when a guard, a page load or a render throws. **Try again** calls `retry()`, which re-resolves the current route; **Go home** is a plain link to `url('/')`, so it works even when the router is stuck.
 
 ## Styling
 

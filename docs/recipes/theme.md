@@ -5,7 +5,7 @@ The design tokens and reset every other recipe styles itself with, and the five 
 | | |
 |---|---|
 | Command | `/add-theme` (or `/add-component theme`; `/add-theme <id>` also adds a new theme) |
-| Copies | `tokens.css`, `base.css`, `effects.css`, `fonts/` → `src/quiver/theme/` |
+| Installs | `src/styles/tokens.css`, `src/styles/base.css`, `src/styles/effects.css`, `src/styles/fonts/` |
 | CSS order | `tokens.css`, `base.css`, … component recipes …, `effects.css` |
 | Needs | nothing |
 
@@ -24,9 +24,9 @@ The design tokens and reset every other recipe styles itself with, and the five 
 
 ```css
 @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
-@import "./quiver/theme/tokens.css";
-@import "./quiver/theme/base.css";
-@import "./quiver/theme/effects.css";
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/effects.css";
 ```
 
 Then use the tokens in your own CSS (`color: var(--q-color-fg-soft)`), and put `q-panel` on cards so the effects reach them. Set the attributes from the [theme switcher](./theme-switcher), or by hand.

@@ -12,7 +12,7 @@ The app is the folder with the app's `package.json`; in the Quiver repository it
 |---|---|---|
 | `src/state/*.js`, `src/composables/*.js`, pure helpers | Unit (Vitest) | `tests/unit/<name>.test.js` |
 | `src/pages/**/*.js`, `src/components/*.js`, `src/layouts/*.js` | E2E (Playwright) | `tests/e2e/<name>.test.js` |
-| `src/quiver/<recipe>/…` (a copied recipe) | Unit or E2E as above; in the Quiver repository, recipe unit tests live in `recipes/<recipe>/tests/` | |
+| `src/components/…`, `src/composables/…`, `src/layouts/…`, `src/views/…` from a recipe | Unit or E2E as above; in the Quiver repository, recipe unit tests live in `recipes/<recipe>/tests/` | |
 | `packages/quiver/src/*.js` (Quiver repository only) | Unit | `packages/quiver/tests/<name>.test.js` |
 
 Extend an existing test file for the same source rather than adding a second one.

@@ -1,10 +1,9 @@
 import { html } from '@arrow-js/core'
-import { useForm } from '../quiver/useForm/useForm.js'
+import { useForm } from '../composables/useForm.js'
 import { useRouter } from '@go4cas/quiver'
 import { userState } from '../state/userState.js'
 
 export const meta = {
-  layout: 'basic',
   title: 'Sign In',
 }
 
@@ -39,7 +38,7 @@ function LoginPage() {
         // stored. A real app posts the credentials to its server, which sets the
         // session (e.g. an HttpOnly cookie), and keeps the signed-in user in a
         // store; MenuLayout's signOut must then end that session too (see
-        // src/quiver/layouts/README.md). Guards only hide pages: protect data on
+        // the layouts recipe README, "Sign-out"). Guards only hide pages: protect data on
         // the server.
         await new Promise((r) => setTimeout(r, 600))
         router.go('/')

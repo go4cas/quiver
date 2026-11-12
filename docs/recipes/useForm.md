@@ -5,7 +5,7 @@ Form state, validation and submit handling on one `reactive()` object. Imports o
 | | |
 |---|---|
 | Command | `/add-composable useForm` (aliases: `form`, `use-form`) |
-| Copies | `useForm.js` → `src/quiver/useForm/` |
+| Installs | `src/composables/useForm.js` |
 | CSS | none |
 | Needs | nothing |
 | Tokens | none |
@@ -16,7 +16,7 @@ Call it inside the page or component function, so each render gets fresh state:
 
 ```js
 import { html } from '@arrow-js/core'
-import { useForm } from '../quiver/useForm/useForm.js'
+import { useForm } from '../composables/useForm.js'
 
 export default function SignupPage() {
   const { form, handleSubmit, field } = useForm({ email: '', name: '' }, {

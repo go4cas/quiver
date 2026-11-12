@@ -66,12 +66,12 @@ describe('@go4cas/quiver tarball (X-4, X-10, X-11)', () => {
     const src = walk(join(ROOT, 'packages/quiver/src')).map((f) => `src/${f}`)
     const types = src.map((f) => f.replace(/^src\//, 'types/').replace(/\.js$/, '.d.ts'))
 
-    /** @type {Record<string, { files: string[] }>} */
+    /** @type {Record<string, { files: Record<string, string> }>} */
     const index = JSON.parse(readFileSync(join(ROOT, 'recipes/index.json'), 'utf8'))
     const recipes = ['recipes/index.json', 'recipes/README.md']
     for (const [name, recipe] of Object.entries(index)) {
       recipes.push(`recipes/${name}/README.md`)
-      for (const file of recipe.files) {
+      for (const file of Object.keys(recipe.files)) {
         const from = join(ROOT, 'recipes', name, file)
         if (file.endsWith('/')) recipes.push(...walk(from).map((f) => `recipes/${name}/${file}${f}`))
         else recipes.push(`recipes/${name}/${file}`)

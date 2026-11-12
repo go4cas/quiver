@@ -78,6 +78,22 @@ describe('API reference covers every public export (D36)', () => {
     }
   })
 
+  it('the 3.2 guide pages exist and are in the sidebar: app structure, middleware, manual setup (C-76)', () => {
+    for (const page of ['app-config', 'middleware', 'layouts', 'manual-setup']) {
+      expect(existsSync(join(ROOT, `docs/guide/${page}.md`)), page).toBe(true)
+      expect(CONFIG, page).toContain(`link: '/guide/${page}'`)
+    }
+    const manual = read('docs/guide/manual-setup.md')
+    expect(manual).toContain('await initRouter(')
+    expect(manual).toMatch(/createApp\(\{\s*\n?\s*target/)
+  })
+
+  it('the guide teaches createApp(app, options), and only the Manual setup page the 3.1 startup (C-76)', () => {
+    expect(read('docs/guide/getting-started.md')).toContain("await createApp(app, {")
+    const guides = readdirSync(join(ROOT, 'docs/guide')).filter((f) => f.endsWith('.md') && !['manual-setup.md', 'migration.md'].includes(f))
+    for (const f of guides) expect(read(`docs/guide/${f}`), f).not.toMatch(/await initRouter\(\{ routes/)
+  })
+
   it('the routing guide has the #browser-support anchor the initRouter() error links to (C-10)', () => {
     const message = read('packages/quiver/src/router.js').match(/https:\/\/go4cas\.github\.io\/quiver\/guide\/routing#([\w-]+)/)
     expect(message?.[1]).toBe('browser-support')
@@ -86,7 +102,7 @@ describe('API reference covers every public export (D36)', () => {
 })
 
 describe('every recipe, composable and example has a page (D36)', () => {
-  /** @type {Record<string, { files: string[] }>} */
+  /** @type {Record<string, { files: Record<string, string> }>} */
   const index = JSON.parse(read('recipes/index.json'))
   const folders = readdirSync(join(ROOT, 'recipes'), { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(ROOT, 'recipes', d.name, 'README.md')))
@@ -96,12 +112,12 @@ describe('every recipe, composable and example has a page (D36)', () => {
     expect(Object.keys(index).sort()).toEqual(folders.sort())
   })
 
-  it.each(Object.keys(index))('recipe %s: docs/recipes/<name>.md names its files and is in the sidebar and overview', (name) => {
+  it.each(Object.keys(index))('recipe %s: docs/recipes/<name>.md names where its files install and is in the sidebar and overview', (name) => {
     const file = `docs/recipes/${name}.md`
     expect(existsSync(join(ROOT, file)), file).toBe(true)
     const page = read(file)
-    for (const f of index[name].files) expect(page, `${file}: ${f}`).toContain(f)
-    expect(page, `${file}: install destination`).toContain(`src/quiver/${name}/`)
+    for (const to of Object.values(index[name].files)) expect(page, `${file}: ${to}`).toContain(`src/${to}`)
+    expect(page, `${file}: no recipes folder (D44)`).not.toContain('src/quiver/')
     expect(CONFIG).toContain(`link: '/recipes/${name}'`)
     expect(read('docs/recipes/index.md')).toContain(`(./${name})`)
   })
@@ -129,7 +145,9 @@ describe('every recipe, composable and example has a page (D36)', () => {
 
 describe('no 2.x leftovers in the docs (D36, NOTES N115)', () => {
   // 2.x-only strings: paths and names that no longer exist in 3.0. Allowed only
-  // in the migration guide (and CHANGELOG.md, which isn't scanned).
+  // in the migration guide (and CHANGELOG.md, which isn't scanned). `src/styles/`
+  // and `src/composables/useForm` left the list in 3.2, where recipes install
+  // by role into those folders again (D44).
   const LEFTOVERS = [
     'src/framework/',
     'routerState',
@@ -137,9 +155,7 @@ describe('no 2.x leftovers in the docs (D36, NOTES N115)', () => {
     'degit go4cas/quiver my-app',
     'starter template',
     'uiState',
-    'src/styles/',
     'src/utils/',
-    'src/composables/useForm',
     'src/composables/useToast',
     'src/composables/useFetch',
     'src/composables/useRoute',
@@ -187,15 +203,16 @@ describe('no 2.x leftovers in the docs (D36, NOTES N115)', () => {
 // (the no-bundler quickstart, the no-build README's CDN section, the CLI page)
 // must name the scoped package, and the quickstart must not use the bare form.
 describe('the CLI is run by its scoped package where nothing is installed (S02)', () => {
-  const BUNX = 'bunx --bun --package @go4cas/quiver@3 quiver routes'
-  const NPM = 'npm exec --package=@go4cas/quiver@3 -- quiver routes'
+  // `quiver app` (3.2) or `quiver routes`, by the same scoped package.
+  const BUNX = /bunx --bun --package @go4cas\/quiver@3 quiver (?:app|routes)\b/
+  const NPM = /npm exec --package=@go4cas\/quiver@3 -- quiver (?:app|routes)\b/
 
   it.each(['docs/guide/getting-started.md', 'docs/api/cli.md', 'examples/no-build/README.md', 'packages/quiver/AGENTS.md'])(
     '%s gives both scoped commands',
     (path) => {
       const text = read(path)
-      expect(text).toContain(BUNX)
-      expect(text).toContain(NPM)
+      expect(text).toMatch(BUNX)
+      expect(text).toMatch(NPM)
     },
   )
 

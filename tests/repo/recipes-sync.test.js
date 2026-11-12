@@ -1,39 +1,34 @@
-// The starter uses the recipes exactly as /add-* installs them: starter/src/quiver/
-// holds a byte-identical copy of the `files` of every recipe in recipes/index.json
-// (no tests/, no README.md; SPEC P7). After editing a recipe, run `bun run recipes:sync`.
+// The starter uses the recipes exactly as /add-* installs them (SPEC P7, D44):
+// each path in a recipe's `files` (recipes/index.json) is in starter/src/ at the
+// path it maps to, byte for byte as installRecipes() writes it (imports between
+// recipes rewritten), and there is no src/quiver/ any more. After editing a
+// recipe, run `bun run recipes:sync`.
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { installedContent, installedFiles, readIndex } from '../../scripts/copy-recipes.js'
 
 const ROOT = join(import.meta.dirname, '..', '..')
 const RECIPES = join(ROOT, 'recipes')
-const COPY = join(ROOT, 'starter', 'src', 'quiver')
+const SRC = join(ROOT, 'starter', 'src')
+const index = readIndex(RECIPES)
 
-/** @param {string} dir @returns {string[]} */
-function files(dir) {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
-    if (e.isDirectory()) return e.name === 'tests' ? [] : files(join(dir, e.name)).map((f) => `${e.name}/${f}`)
-    return [e.name]
-  })
-}
-
-/** @type {Record<string, { files: string[] }>} */
-const index = JSON.parse(readFileSync(join(RECIPES, 'index.json'), 'utf8'))
-const names = Object.keys(index)
-/** @param {string} name the recipe's files, folders expanded */
-const shipped = (name) =>
-  index[name].files.flatMap((f) => (f.endsWith('/') ? files(join(RECIPES, name, f)).map((x) => f + x) : [f]))
-
-describe('starter/src/quiver matches recipes/', () => {
-  it('holds exactly the recipes in index.json', () => {
-    expect(readdirSync(COPY).sort()).toEqual([...names].sort())
+describe('starter/src holds the recipes installed by role', () => {
+  it('has no recipes folder and no layouts map (D44)', () => {
+    expect(existsSync(join(SRC, 'quiver'))).toBe(false)
+    expect(existsSync(join(SRC, 'layouts', 'index.js'))).toBe(false)
   })
 
-  it.each(names)('%s is an exact copy', (name) => {
-    const expected = shipped(name).sort()
-    expect(files(join(COPY, name)).sort()).toEqual(expected)
-    for (const f of expected) {
-      expect(readFileSync(join(COPY, name, f)).equals(readFileSync(join(RECIPES, name, f))), f).toBe(true)
+  it.each(Object.keys(index))('%s is installed exactly', (name) => {
+    for (const [from, to] of installedFiles(RECIPES, index, name)) {
+      expect(existsSync(join(SRC, to)), to).toBe(true)
+      expect(readFileSync(join(SRC, to)).equals(installedContent(RECIPES, index, name, from)), to).toBe(true)
     }
+  })
+
+  it('rewrites imports between recipes to the installed places', () => {
+    const menu = readFileSync(join(SRC, 'layouts', 'menu.js'), 'utf8')
+    expect(menu).toContain(`from '../components/link.js'`)
+    expect(menu).not.toMatch(/from '\.\.\/(link|toasts|theme-switcher)\//)
   })
 })

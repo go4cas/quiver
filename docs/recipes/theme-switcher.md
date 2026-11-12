@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Command | `/add-component ThemeToggle` (aliases: `ThemeSelector`, `theme-switcher`, `dark-mode`, `mode-toggle`, …) |
-| Copies | `theme-switcher.js`, `theme-switcher.css` → `src/quiver/theme-switcher/` |
+| Installs | `src/components/theme-switcher.js`, `src/components/theme-switcher.css` |
 | CSS order | after `tokens.css` and `base.css`, before `effects.css` |
 | Needs | `theme`, `arrow-use` |
 | Tokens | `--q-color-{brand,fg,line,surface-inset,surface-raised}` |
@@ -14,11 +14,11 @@
 
 ```js
 // main.js: import early, so the stored theme is applied before anything renders
-import './quiver/theme-switcher/theme-switcher.js'
+import './components/theme-switcher.js'
 ```
 
 ```js
-import { ThemeSelector, ThemeToggle, themeState } from '../quiver/theme-switcher/theme-switcher.js'
+import { ThemeSelector, ThemeToggle, themeState } from '../components/theme-switcher.js'
 
 html`<header>${ThemeSelector()} ${ThemeToggle()}</header>`
 

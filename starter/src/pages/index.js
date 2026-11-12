@@ -4,6 +4,7 @@ import { userState } from '../state/userState.js'
 
 export const meta = {
   layout: 'menu',
+  nav: { label: 'Dashboard', order: 1 },
   title: 'Dashboard',
 }
 

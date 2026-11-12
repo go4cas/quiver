@@ -2,12 +2,12 @@
   "theme": {
     "description": "The --q-* token contract (tokens.css), the reset (base.css) and the optional per-theme effects (effects.css) with their fonts",
     "kind": "styles",
-    "files": [
-      "tokens.css",
-      "base.css",
-      "effects.css",
-      "fonts/"
-    ],
+    "files": {
+      "tokens.css": "styles/tokens.css",
+      "base.css": "styles/base.css",
+      "effects.css": "styles/effects.css",
+      "fonts/": "styles/fonts/"
+    },
     "css": [
       "tokens.css",
       "base.css",
@@ -24,9 +24,9 @@
   "link": {
     "description": "Link: an anchor with url() and aria-current=\"page\" on the active route",
     "kind": "component",
-    "files": [
-      "link.js"
-    ],
+    "files": {
+      "link.js": "components/link.js"
+    },
     "css": [],
     "requires": [],
     "packages": [
@@ -41,10 +41,10 @@
   "toasts": {
     "description": "Toast notifications: toastState, useToast() and ToastContainer",
     "kind": "component",
-    "files": [
-      "toasts.js",
-      "toasts.css"
-    ],
+    "files": {
+      "toasts.js": "components/toasts.js",
+      "toasts.css": "components/toasts.css"
+    },
     "css": [
       "toasts.css"
     ],
@@ -64,10 +64,10 @@
   "theme-switcher": {
     "description": "themeState (persisted theme and light/dark mode), ThemeSelector and ThemeToggle",
     "kind": "component",
-    "files": [
-      "theme-switcher.js",
-      "theme-switcher.css"
-    ],
+    "files": {
+      "theme-switcher.js": "components/theme-switcher.js",
+      "theme-switcher.css": "components/theme-switcher.css"
+    },
     "css": [
       "theme-switcher.css"
     ],
@@ -91,9 +91,9 @@
   "useForm": {
     "description": "useForm(values, { validate, onSubmit }): form state, validation and submit handling",
     "kind": "composable",
-    "files": [
-      "useForm.js"
-    ],
+    "files": {
+      "useForm.js": "composables/useForm.js"
+    },
     "css": [],
     "requires": [],
     "packages": [
@@ -107,9 +107,9 @@
   "hmrState": {
     "description": "hmrState(key, initial): component state that survives Vite hot reloads",
     "kind": "composable",
-    "files": [
-      "hmrState.js"
-    ],
+    "files": {
+      "hmrState.js": "composables/hmrState.js"
+    },
     "css": [],
     "requires": [],
     "packages": [
@@ -121,12 +121,13 @@
     ]
   },
   "layouts": {
-    "description": "BasicLayout (centred card) and MenuLayout (sidebar + header), with the layouts map for createApp()",
+    "description": "The default layout (a centred card) and the menu layout (sidebar + header), as layouts/default.js and layouts/menu.js",
     "kind": "layout",
-    "files": [
-      "layouts.js",
-      "layouts.css"
-    ],
+    "files": {
+      "default.js": "layouts/default.js",
+      "menu.js": "layouts/menu.js",
+      "layouts.css": "layouts/layouts.css"
+    },
     "css": [
       "layouts.css"
     ],
@@ -149,12 +150,13 @@
     ]
   },
   "views": {
-    "description": "LoadingView and ErrorView (with retry) for createApp({ loading, error })",
-    "kind": "component",
-    "files": [
-      "views.js",
-      "views.css"
-    ],
+    "description": "The loading view and the error view (with retry), as views/loading.js and views/error.js",
+    "kind": "view",
+    "files": {
+      "loading.js": "views/loading.js",
+      "error.js": "views/error.js",
+      "views.css": "views/views.css"
+    },
     "css": [
       "views.css"
     ],

@@ -4,35 +4,22 @@ import { Link } from '../link/link.js'
 import { ToastContainer } from '../toasts/toasts.js'
 import { ThemeSelector, ThemeToggle } from '../theme-switcher/theme-switcher.js'
 
-// Layouts recipe: BasicLayout (a centred card) and MenuLayout (sidebar + header),
-// registered under the names pages use in `meta.layout`. Styles: layouts.css
-// (classes q-basic*, q-menu*, q-user-menu*). Both mount the toast container.
+// Layouts recipe, the menu layout: sidebar + header. In an app it is
+// layouts/menu.js, so pages pick it with `meta: { layout: 'menu' }`. Styles:
+// layouts.css (classes q-menu*, q-user-menu*). Mounts the toast container.
 //
-// MenuLayout reads what it shows from provide() keys, so apps edit main.js, not
-// this file:
+// It reads what it shows from context keys, which app.config.js provides by
+// name (or provide() in a manual setup), so apps edit their config, not this file:
 //   'app'         { name, tagline?, logo?, footer? }   logo is a base-relative path
-//   'nav'         [{ to, label }]                      sidebar links
+//   'nav'         [{ to, label }]                      sidebar links; built from pages' meta.nav
 //   'currentUser' { name, email, avatar, signOut? }    signOut defaults to go('/login'), which ends no session (README: Sign-out)
 
 /** @typedef {{ name: string, tagline?: string, logo?: string, footer?: string }} AppInfo */
 /** @typedef {{ to: string, label: string }} NavItem */
 /** @typedef {{ name: string, email: string, avatar: string, signOut?: () => void }} CurrentUser */
-/** @typedef {import('@go4cas/quiver').Layout} Layout */
 
 /** @param {any} content */
-export function BasicLayout(content) {
-  return html`
-    <div class="q-basic">
-      <main class="q-basic__card q-panel">
-        ${content}
-      </main>
-    </div>
-    ${ToastContainer()}
-  `
-}
-
-/** @param {any} content */
-export function MenuLayout(content) {
+export default function MenuLayout(content) {
   const app = inject('app', /** @type {AppInfo} */ ({ name: 'Quiver' }))
   const nav = inject('nav', /** @type {NavItem[]} */ ([]))
   const currentUser = inject('currentUser', /** @type {CurrentUser} */ ({ name: 'Guest', email: 'guest@example.com', avatar: '' }))
@@ -93,13 +80,4 @@ export function MenuLayout(content) {
     </div>
     ${ToastContainer()}
   `
-}
-
-/**
- * The layouts by name, for createApp({ layouts }).
- * @type {Record<string, Layout>}
- */
-export const layouts = {
-  basic: BasicLayout,
-  menu: MenuLayout,
 }

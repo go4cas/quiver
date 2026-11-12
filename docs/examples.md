@@ -19,11 +19,11 @@ bun run dev
 | [`packages/arrow-use/example`](https://github.com/go4cas/quiver/tree/main/packages/arrow-use/example) | none | all four `arrow-use` composables in a vanilla Arrow app, no Quiver | 5183 |
 | [`starter`](https://github.com/go4cas/quiver/tree/main/starter) | Vite | the full app: recipes, five themes, guards, forms, toasts, unit/e2e/screenshot tests | 5173, 5174 |
 
-The three `examples/` apps are the same app (three routes, one layout, a not-found page), so they differ only in how the route manifest is made and how the app is served. Each runs its suite twice: at `/`, and under the base path `/sub/app/`.
+The three `examples/` apps are the same app (three routes, one layout, a not-found page), so they differ only in how the app module is made and how the app is served. The Vite and no-build apps use `quiver:app` and `createApp(app, options)`; the Bun app keeps the [manual setup](/guide/manual-setup) with `quiver:routes`. Each runs its suite twice: at `/`, and under the base path `/sub/app/`.
 
 ## Vite
 
-[`examples/vite`](https://github.com/go4cas/quiver/tree/main/examples/vite): `quiver()` from `@go4cas/quiver/vite` scans `src/pages/` and serves the manifest as `quiver:routes`. The base comes from Vite's `base` (`QUIVER_BASE`) through `import.meta.env.BASE_URL`.
+[`examples/vite`](https://github.com/go4cas/quiver/tree/main/examples/vite): `quiver()` from `@go4cas/quiver/vite` scans `src/` and serves the app as `quiver:app`. The base comes from Vite's `base` (`QUIVER_BASE`) through `import.meta.env.BASE_URL`.
 
 ```bash
 bun run dev                          # dev server at http://localhost:5173/
@@ -46,7 +46,7 @@ The base lives only in `<base href="%BASE%">` in `index.html`: `%BASE%` is a pla
 
 ## No build
 
-[`examples/no-build`](https://github.com/go4cas/quiver/tree/main/examples/no-build): the browser loads `src/` as it is. An import map maps exactly `@arrow-js/core` and `@go4cas/quiver`, so the app and Quiver share one Arrow copy (the e2e test checks it), and `src/routes.js` is the manifest, written by hand (or generated with `bunx quiver routes --watch`, which writes `src/routes.gen.js`; then import that file in `src/main.js`).
+[`examples/no-build`](https://github.com/go4cas/quiver/tree/main/examples/no-build): the browser loads `src/` as it is. An import map maps exactly `@arrow-js/core` and `@go4cas/quiver`, so the app and Quiver share one Arrow copy (the e2e test checks it), and `src/app.gen.js` is the app module, written by `bunx quiver app` (or `--watch`) and committed.
 
 ```bash
 bun run dev                                   # http://127.0.0.1:3000/

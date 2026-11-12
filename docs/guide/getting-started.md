@@ -12,7 +12,7 @@ Quiver comes in four parts. Use the ones you need:
 ## Requirements
 
 - **Browsers.** The router is built on the Navigation API: Chrome and Edge 102+, Safari 26.2+, Firefox 147+. There is no fallback; see [browser support](./routing#browser-support).
-- **Tooling.** [Bun](https://bun.com) 1.4.4+, or Node.js with npm. The `quiver routes` CLI and the Vite plugin run on Node 22.12+ or Bun; the Bun plugin needs Bun. The starter's test stack (Vitest with jsdom) needs Node 22.22.2+ on the 22 line, or 24.15+.
+- **Tooling.** [Bun](https://bun.com) 1.4.4+, or Node.js with npm. The `quiver` CLI and the Vite plugin run on Node 22.12+ or Bun; the Bun plugin needs Bun. The starter's test stack (Vitest with jsdom) needs Node 22.22.2+ on the 22 line, or 24.15+.
 - **Arrow.js.** `@arrow-js/core` 1.0.6+ is a peer dependency of both packages. Install it yourself, once, so the app and Quiver share one copy.
 
 ## Start from the starter
@@ -35,15 +35,18 @@ With npm: `npx degit go4cas/quiver/starter my-app`, then `npm install && npm run
 ```
 my-app/
 ├── index.html           # sets the stored theme before the app loads (no flash)
-├── vite.config.js       # quiver() from @go4cas/quiver/vite builds the route manifest
+├── vite.config.js       # quiver() from @go4cas/quiver/vite builds quiver:app from src/
 ├── public/              # served as-is: logo.svg, favicon
 ├── src/
-│   ├── main.js          # provide(), initRouter(), createApp()
-│   ├── pages/           # one file per route
-│   ├── layouts/         # index.js: the layouts map (recipe layouts + yours)
-│   ├── components/      # your components, each with its CSS beside it
+│   ├── main.js          # one call: createApp(app, { target, base })
+│   ├── app.config.js    # app name, logo, the demo user (provided by name)
+│   ├── pages/           # one file per route; meta.nav adds a menu link
+│   ├── layouts/         # default.js (centred card), menu.js (sidebar + header)
+│   ├── views/           # loading.js, error.js
+│   ├── components/      # your components and installed recipes (toasts, theme switcher, Link)
+│   ├── composables/     # useForm, hmrState
+│   ├── styles/          # the theme: tokens.css, base.css, effects.css, fonts
 │   ├── state/           # your global reactive() stores
-│   ├── quiver/          # recipe copies: theme, layouts, toasts, views, … (yours to edit)
 │   ├── assets/          # images imported from JS (hashed on build)
 │   ├── style.css        # CSS entry: layer order, then every stylesheet
 │   └── app.css          # the app's own page styles
@@ -62,11 +65,11 @@ my-app/
 | `bun run test:visual` | Screenshot parity; only matches inside the pinned Playwright image ([testing](./testing#screenshots)) |
 | `bun run typecheck` | `tsc` over the JSDoc types (`checkJs`, no build step) |
 
-`src/quiver/` holds copies of the [recipes](/recipes/). They are your code now: edit them, or delete the ones you don't use (and their `@import` lines in `style.css`).
+The layouts, views, `styles/`, and the toasts, theme switcher, `Link`, `useForm` and `hmrState` files are [recipes](/recipes/) installed into the folders where they belong. They are your code now: edit them, or delete the ones you don't use (and their `@import` lines in `style.css`). [App structure](./app-config) explains what each folder does.
 
 ## Add Quiver to an app
 
-Whatever the build, the app has an element to mount into and does the same four things, in this order:
+Whatever the build, the app has an element to mount into and a `src/` folder that Quiver reads:
 
 ```html
 <!-- index.html (the script tag for each build mode is below) -->
@@ -74,22 +77,25 @@ Whatever the build, the app has an element to mount into and does the same four 
 <script type="module" src="/src/main.js"></script>
 ```
 
-```js
-// src/main.js
-import { html } from '@arrow-js/core'
-import { provide, beforeEach, initRouter, createApp } from '@go4cas/quiver'
-import routes, { notFound } from 'quiver:routes'   // or './routes.gen.js', or a hand-written manifest
-
-/** @type {import('@go4cas/quiver').Layout} */
-const MainLayout = (page) => html`<main>${page}</main>`
-
-provide('app', { name: 'My app' })                  // 1. context, if any
-beforeEach(({ to }) => (to === '/admin' ? '/' : undefined))        // 2. guards and hooks, if any
-await initRouter({ routes, notFound })              // 3. the router resolves the first route
-createApp({ target: '#app', layouts: { main: MainLayout }, defaultLayout: 'main' })   // 4. mount
+```
+src/
+├── main.js
+├── pages/          # required: one file per route
+├── layouts/        # optional: default.js wraps every page that names no layout
+├── middleware/     # optional: guards for every navigation
+├── views/          # optional: loading.js, error.js
+└── app.config.js   # optional: values for inject()
 ```
 
-Steps 1 and 2 are optional, and so are `layouts` and `defaultLayout`: without them pages render bare into `#app` ([layouts](./layouts)).
+```js
+// src/main.js
+import { createApp } from '@go4cas/quiver'
+import app from 'quiver:app'          // or './app.gen.js' without a bundler
+
+await createApp(app, { target: '#app' })
+```
+
+`createApp(app, options)` provides the config, starts the router with the pages and middleware, and mounts the first page with its layout ([app structure](./app-config)). Register `beforeEach`, `afterEach` or `onError` before it if you need them.
 
 A page is a module in `src/pages/` that default-exports a function returning an Arrow template:
 
@@ -104,9 +110,20 @@ export default function Home() {
 }
 ```
 
-Every route is a page of the app, so the server must answer a deep link such as `/users/1` with `index.html` (an SPA fallback). Vite's dev server and `vite preview` do this; for the other modes it is spelled out below.
+A layout is a module in `src/layouts/` with the same shape, taking the page as its argument:
 
-The build mode only decides where `routes` comes from.
+```js
+// src/layouts/default.js
+import { html } from '@arrow-js/core'
+
+export default function DefaultLayout(page) {
+  return html`<main>${page}</main>`
+}
+```
+
+Every route is a page of the app, so the server must answer a deep link such as `/users/1` with `index.html` (an SPA fallback). Vite's dev server and `vite preview` do this. For the other modes, the steps are below.
+
+The build mode only decides where `app` comes from. To wire the router step by step instead, see [manual setup](./manual-setup).
 
 ### With Vite
 
@@ -120,19 +137,18 @@ bun add -d vite
 import { defineConfig } from 'vite'
 import quiver from '@go4cas/quiver/vite'
 
-export default defineConfig({ plugins: [quiver()] })   // scans src/pages/
+export default defineConfig({ plugins: [quiver()] })   // scans src/
 ```
 
 ```js
 // src/main.js
-import { initRouter, createApp } from '@go4cas/quiver'
-import routes, { notFound } from 'quiver:routes'
+import { createApp } from '@go4cas/quiver'
+import app from 'quiver:app'
 
-await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
-createApp({ target: '#app' })
+await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
 ```
 
-For types on `quiver:routes`, add `"@go4cas/quiver/client"` to `compilerOptions.types` in `jsconfig.json` ([details](/api/client)). Full app: [`examples/vite`](/examples#vite).
+For types on `quiver:app`, add `"@go4cas/quiver/client"` to `compilerOptions.types` in `jsconfig.json` ([details](/api/client)). Full app: [`examples/vite`](/examples#vite).
 
 ### With Bun.build
 
@@ -148,11 +164,11 @@ await Bun.build({
   entrypoints: ['src/main.js'],
   outdir: 'dist',
   splitting: true,          // one chunk per page
-  plugins: [quiver()],      // serves quiver:routes for src/pages/
+  plugins: [quiver()],      // serves quiver:app for src/
 })
 ```
 
-`src/main.js` is the same as with Vite, minus the `base` option: `initRouter()` reads the base from `<base href>`. `index.html` stays beside `build.js`, outside `dist/`, and loads the built entry by a relative URL, so it resolves against the base:
+`src/main.js` is the same as with Vite, minus the `base` option: the router reads the base from `<base href>`. (The [Bun example](/examples#bun) uses the [manual setup](./manual-setup) with `quiver:routes`; both work.) `index.html` stays beside `build.js`, outside `dist/`, and loads the built entry by a relative URL, so it resolves against the base:
 
 ```html
 <!-- index.html -->
@@ -179,7 +195,7 @@ The example's [`serve.js`](https://github.com/go4cas/quiver/blob/main/examples/b
 
 ### Without a bundler
 
-The browser loads your source as-is. An import map resolves the two bare names, and a route manifest comes from the CLI or is written by hand:
+The browser loads your source as-is. An import map resolves the two bare names, and the CLI writes the app module:
 
 ```html
 <!-- index.html -->
@@ -196,22 +212,21 @@ The browser loads your source as-is. An import map resolves the two bare names, 
 <script type="module" src="src/main.js"></script>
 ```
 
-Generate the manifest from `src/pages/` with the CLI. In a folder with no `node_modules`, name the scoped package so the runner can't pick up an unrelated package called `quiver`:
+Generate it from `src/` with the CLI. In a folder with no `node_modules`, name the scoped package so the runner can't pick up an unrelated package called `quiver`:
 
 ```bash
-bunx --bun --package @go4cas/quiver@3 quiver routes --watch          # with Bun
-npm exec --package=@go4cas/quiver@3 -- quiver routes --watch         # with npm
+bunx --bun --package @go4cas/quiver@3 quiver app --watch          # with Bun
+npm exec --package=@go4cas/quiver@3 -- quiver app --watch         # with npm
 ```
 
-Both write `src/routes.gen.js`. Import that file in `src/main.js`; a hand-written manifest (`src/routes.js` in the example) works the same way, but don't keep both:
+Both write `src/app.gen.js`. Commit it, since nothing builds it on the fly, and import it in `src/main.js`:
 
 ```js
 // src/main.js
-import { initRouter, createApp } from '@go4cas/quiver'
-import routes, { notFound } from './routes.gen.js'
+import { createApp } from '@go4cas/quiver'
+import app from './app.gen.js'
 
-await initRouter({ routes, notFound })
-createApp({ target: '#app' })
+await createApp(app, { target: '#app' })
 ```
 
 Serve the folder with the same fallback as for Bun: files as they are, a 404 for a missing file, and `index.html` for every other path under the base. The example's [`serve.js`](https://github.com/go4cas/quiver/blob/main/examples/no-build/serve.js) does this, and serves the two packages from `node_modules` instead of a CDN.
@@ -220,7 +235,7 @@ Map each package to its files, never to a bundled `+esm` build: Quiver imports `
 
 ## Add the UI pieces
 
-Core renders no CSS and no chrome: its default loading view is `<p>Loading…</p>`. The look of the starter comes from [recipes](/recipes/), which you copy into `src/quiver/`:
+Core renders no CSS and no chrome: its default loading view is `<p>Loading…</p>`. The look of the starter comes from [recipes](/recipes/), which you copy into the folders where they belong (`components/`, `layouts/`, `views/`, `styles/`, `composables/`):
 
 - with the Quiver Claude Code plugin: `/add-component toast`, `/add-layout menu`, `/add-theme ocean`, `/add-composable useForm` ([AI tooling](./ai))
 - by hand: the steps in [installing a recipe](/recipes/#installing-a-recipe)
@@ -229,7 +244,8 @@ Then style your own components on the same `--q-*` tokens ([theming](./theming))
 
 ## Next steps
 
+- [App structure](./app-config): the folders Quiver reads, `app.config.js` and menu links
 - [Routing](./routing): pages, params, guards, hooks, base paths
-- [Layouts](./layouts) and [Components](./components)
+- [Middleware](./middleware), [Layouts](./layouts) and [Components](./components)
 - [Composables](./composables): what comes from core, `arrow-use` and the recipes
 - [Migrating from 2.x](./migration), if you started from the 2.x template

@@ -9,22 +9,20 @@ bun add @go4cas/quiver @arrow-js/core
 ```js
 // vite.config.js
 import quiver from '@go4cas/quiver/vite'
-export default { plugins: [quiver()] }    // serves quiver:routes from src/pages/
+export default { plugins: [quiver()] }    // serves quiver:app from src/ (pages/, layouts/, middleware/, views/)
 ```
 
 ```js
 // src/main.js
-import { provide, beforeEach, onError, initRouter, createApp, url } from '@go4cas/quiver'
-import routes, { notFound } from 'quiver:routes'
+import { beforeEach, onError, createApp, url } from '@go4cas/quiver'
+import app from 'quiver:app'
 
-provide('app', { name: 'My app' })                                   // 1. context
-beforeEach(({ to }) => (to === '/admin' ? '/login' : undefined))      // 2. guards and hooks
+beforeEach(({ to }) => (to === '/admin' ? '/login' : undefined))      // guards and hooks, optional
 onError(({ error, phase }) => console.error(phase, error))
-await initRouter({ routes, notFound, base: import.meta.env.BASE_URL }) // 3. router
-const app = createApp({ target: '#app' })                            // 4. mount (layouts, defaultLayout, loading, error optional)
+const mounted = await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
 
-url('/users/42')   // the base-aware href, e.g. '/my/app/users/42'
-app.destroy()      // tear down; initRouter() + createApp() work again
+url('/users/42')     // the base-aware href, e.g. '/my/app/users/42'
+mounted.destroy()    // tear down; createApp() works again
 ```
 
 | Entry | |

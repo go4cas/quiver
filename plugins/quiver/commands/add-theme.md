@@ -13,9 +13,9 @@ The argument is a theme id and an optional description (`ocean — cool blues, s
 
 ## Step 1: make sure the recipes are there
 
-The theme lives in the `theme` recipe (`src/quiver/theme/tokens.css`, `effects.css`) and is picked with the `theme-switcher` recipe (`src/quiver/theme-switcher/theme-switcher.js`). If either folder is missing, install it as "Installing a recipe" in `recipes/README.md` describes (copy the files, load the CSS in order, `theme-switcher` needs `arrow-use`), then mount `ThemeSelector()` and `ThemeToggle()` somewhere visible (the `layouts` recipe's `MenuLayout` already does).
+The theme lives in the `theme` recipe (`src/styles/tokens.css`, `effects.css`) and is picked with the `theme-switcher` recipe (`src/components/theme-switcher.js`). If either folder is missing, install it as "Installing a recipe" in `recipes/README.md` describes (copy the files, load the CSS in order, `theme-switcher` needs `arrow-use`), then mount `ThemeSelector()` and `ThemeToggle()` somewhere visible (the `layouts` recipe's `MenuLayout` already does).
 
-## Step 2: token blocks in `src/quiver/theme/tokens.css`
+## Step 2: token blocks in `src/styles/tokens.css`
 
 Study the existing theme blocks (`[data-theme="mono"]`, `[data-theme="glass"]`, …) and add a light and a dark block for the new theme inside `@layer quiver.tokens { … }`:
 
@@ -37,11 +37,11 @@ Only set the `--q-*` contract tokens; never hard-code colours in components. Set
 
 ## Step 3: effects (optional)
 
-If the theme needs what a token can't express (blur, glow, heading type, thicker borders), add a `[data-theme="<id>"]` block inside `@layer quiver.effects { … }` in `src/quiver/theme/effects.css`. Select only the hook classes (`:where(.q-panel)`, `.q-sidebar`, `.q-header`, `.q-accent`), `h1`–`h3`, `button` and `:focus-visible`, never component classes. Self-hosted fonts go in `src/quiver/theme/fonts/` with an `@font-face` at the top of the file.
+If the theme needs what a token can't express (blur, glow, heading type, thicker borders), add a `[data-theme="<id>"]` block inside `@layer quiver.effects { … }` in `src/styles/effects.css`. Select only the hook classes (`:where(.q-panel)`, `.q-sidebar`, `.q-header`, `.q-accent`), `h1`–`h3`, `button` and `:focus-visible`, never component classes. Self-hosted fonts go in `src/styles/fonts/` with an `@font-face` at the top of the file.
 
 ## Step 4: register it in the switcher
 
-Add one entry to `THEMES` in `src/quiver/theme-switcher/theme-switcher.js`:
+Add one entry to `THEMES` in `src/components/theme-switcher.js`:
 
 ```js
 { id: '<id>', label: '<Label>', swatch: '#<brand-hex>' },   // add swatchDark if the brand flips in dark mode

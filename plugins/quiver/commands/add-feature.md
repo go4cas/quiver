@@ -14,7 +14,7 @@ Write a short plan and wait for the developer's go-ahead before writing code:
 - **State**: each store, its data and actions (`src/state/…`)
 - **Components**: new reusable ones (`src/components/…`)
 - **Recipes and composables** it uses: `useToast` (toasts recipe) for notifications, `useForm` (recipe) for forms, `useFetch`/`useStorage` from `arrow-use` for HTTP and persistence
-- **Navigation**: entries for the `'nav'` list in `main.js` if the app uses the menu layout
+- **Navigation**: `meta.nav: { label, order }` on the pages that belong in the menu layout's sidebar (or entries in `nav` in `src/app.config.js`, if it sets one)
 - **Tests**: the e2e scenarios for the main flow, plus unit tests for state
 
 ## Step 2: build it
