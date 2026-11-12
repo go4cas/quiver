@@ -3,7 +3,8 @@
 // `quiver:app` module through the Vite plugin, the Bun plugin and `quiver app`,
 // and each broken fixture fails the same way in all three.
 import { describe, it, expect, vi } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { runCli, viaBunApp, viaCliApp, viaViteApp } from './helpers/frontends.js'
 
@@ -69,5 +70,52 @@ describe('S-65: quiver:app front-end parity', () => {
     expect(bun).toBe(vite)
     expect(cli.status).toBe(1)
     expect(cli.stderr).toContain(vite)
+  })
+
+  /** @param {Record<string, string>} files path → content, under a fresh source dir */
+  function app(files) {
+    const src = mkdtempSync(join(tmpdir(), 'quiver-parity-'))
+    for (const [path, content] of Object.entries(files)) {
+      mkdirSync(join(src, path, '..'), { recursive: true })
+      writeFileSync(join(src, path), content)
+    }
+    return src
+  }
+  const PAGE = "export default () => ''\n"
+
+  it.each([
+    ['S32-01 section clash', { 'pages/[id]/a.js': PAGE, 'pages/[id]/_middleware.js': PAGE, 'pages/[slug]/b.js': PAGE, 'pages/[slug]/_middleware.js': PAGE },
+      '[quiver] [id]/_middleware.js and [slug]/_middleware.js differ only in parameter names ("/:id", "/:slug"), so both guard the same routes; keep one folder.'],
+    ['S32-01 middleware/ not a folder', { 'pages/index.js': PAGE, middleware: '' }, '[quiver] Cannot read middleware/: '],
+  ])('%s fails the same way in all three', async (_, files, expected) => {
+    const src = app(files)
+    const vite = await viaViteApp(src).then(() => '', (e) => e.message)
+    const bun = await viaBunApp(src).then(() => '', (e) => e.message)
+    const cli = runCli(['app', '--src', src, '--out', join(src, '..', `${src.split(/[\\/]/).pop()}.gen.js`)])
+    expect(vite.startsWith(expected)).toBe(true)
+    expect(bun).toBe(vite)
+    expect(cli.status).toBe(1)
+    expect(cli.stderr).toContain(vite)
+  })
+
+  it('R32-05: a commented-out meta and an expression meta give the same module and warning in all three', async () => {
+    const src = app({
+      'layouts/menu.js': PAGE,
+      'pages/index.js': "// export const meta = { nav: { label: 'Old' } }\nexport const meta = { layout: 'menu', nav: { label: 'Home' } }\n" + PAGE,
+      'pages/about.js': "export const meta = { nav: { label: 'About' } }.nav ? {} : {}\n" + PAGE,
+    })
+    const warning = '[quiver] about.js: meta is not a plain literal, so its nav and layout are not checked at build time.'
+    const vite = await viaViteApp(src)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const bun = await viaBunApp(src)
+    expect(warn.mock.calls.map((c) => c[0])).toEqual([warning])
+    warn.mockRestore()
+    const cli = viaCliApp(src)
+    expect(vite.warnings).toEqual([warning])
+    expect(cli.stderr).toBe(`${warning}\n`)
+    expect(vite.source).toContain("nav: [\n    { to: '/', label: 'Home' },\n  ],")
+    expect(bun).toBe(vite.source)
+    const rel = (/** @type {string} */ s, /** @type {string} */ from) => s.replace(/(from |import\()'([^']+)'/g, (_, lead, spec) => `${lead}'${relative(src, resolve(from, spec))}'`)
+    expect(rel(cli.source, dirname(cli.out))).toBe(rel(vite.source, '/'))
   })
 })

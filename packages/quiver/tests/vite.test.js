@@ -166,4 +166,76 @@ describe('Vite plugin', () => {
     await vi.waitFor(() => expect(server.ws.send).toHaveBeenCalledWith({ type: 'full-reload' }))
     expect(server.moduleGraph.invalidateModule).toHaveBeenCalledWith(mod)
   })
+
+  /** A dev server on a copy of the fixture app, with quiver:app loaded and a recording logger. */
+  async function editableApp() {
+    const root = mkdtempSync(join(tmpdir(), 'quiver-vite-'))
+    cpSync(join(FIXTURES, 'app'), join(root, 'app'), { recursive: true })
+    const plugin = quiver({ srcDir: join(root, 'app') })
+    plugin.configResolved({ root })
+    const watcher = new EventEmitter()
+    const mod = { id: '\0quiver:app' }
+    const logger = { warn: vi.fn(), error: vi.fn() }
+    const server = {
+      config: { root, logger },
+      watcher: /** @type {any} */ (watcher),
+      moduleGraph: { getModuleById: vi.fn((/** @type {string} */ id) => (id === mod.id ? mod : undefined)), invalidateModule: vi.fn() },
+      ws: { send: vi.fn() },
+    }
+    plugin.configureServer(server)
+    /** @type {string[]} */
+    const loadWarnings = []
+    await plugin.load.call({ warn: (/** @type {string} */ m) => loadWarnings.push(m) }, '\0quiver:app')
+    const about = join(root, 'app', 'pages', 'about.js')
+    /** @param {string} source */
+    const edit = (source) => {
+      writeFileSync(about, source)
+      watcher.emit('change', about)
+    }
+    return { plugin, server, logger, loadWarnings, edit }
+  }
+
+  const UNKNOWN = '[quiver] about.js: unknown layout "wide" (layouts: default, menu).'
+
+  it('R32-06: an edit to an unknown layout warns in the terminal once, without a reload', async () => {
+    const { server, logger, loadWarnings, edit } = await editableApp()
+    expect(loadWarnings).toHaveLength(5)
+
+    edit("export const meta = { layout: 'wide', nav: { label: 'About', order: 2 } }\nexport default () => 'about'\n")
+    await vi.waitFor(() => expect(logger.warn).toHaveBeenCalledWith(UNKNOWN))
+    expect(logger.warn).toHaveBeenCalledTimes(1) // the fixture's other warnings are not repeated
+    expect(server.ws.send).not.toHaveBeenCalled()
+
+    edit("export const meta = { layout: 'wide', nav: { label: 'About', order: 2 } }\nexport default () => 'about, edited'\n")
+    await new Promise((r) => setTimeout(r, 100))
+    expect(logger.warn).toHaveBeenCalledTimes(1)
+    expect(server.ws.send).not.toHaveBeenCalled()
+
+    // Fixed, then broken again: it is reported again.
+    edit("export const meta = { layout: 'menu', nav: { label: 'About', order: 2 } }\nexport default () => 'about'\n")
+    await new Promise((r) => setTimeout(r, 100))
+    edit("export const meta = { layout: 'wide', nav: { label: 'About', order: 2 } }\nexport default () => 'about'\n")
+    await vi.waitFor(() => expect(logger.warn).toHaveBeenCalledTimes(2))
+    expect(server.ws.send).not.toHaveBeenCalled()
+  })
+
+  it('R32-06: a reload after a nav change does not repeat unchanged warnings', async () => {
+    const { plugin, server, loadWarnings, edit } = await editableApp()
+    edit("export const meta = { layout: 'menu', nav: { label: 'About us', order: 2 } }\nexport default () => 'about'\n")
+    await vi.waitFor(() => expect(server.ws.send).toHaveBeenCalledWith({ type: 'full-reload' }))
+    await plugin.load.call({ warn: (/** @type {string} */ m) => loadWarnings.push(m) }, '\0quiver:app')
+    expect(loadWarnings).toHaveLength(5)
+  })
+
+  it('R32-06: a scan that a newer one overtakes reports nothing', async () => {
+    const { plugin, server, logger, edit } = await editableApp()
+    edit("export const meta = { layout: 'wide', nav: { label: 'About', order: 2 } }\nexport default () => 'about'\n")
+    /** @type {string[]} */
+    const warnings = []
+    await plugin.load.call({ warn: (/** @type {string} */ m) => warnings.push(m) }, '\0quiver:app') // starts after the edit's scan
+    await new Promise((r) => setTimeout(r, 100))
+    expect(warnings).toEqual([UNKNOWN])
+    expect(logger.warn).not.toHaveBeenCalled()
+    expect(server.ws.send).not.toHaveBeenCalled()
+  })
 })

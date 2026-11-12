@@ -5,7 +5,7 @@
 // Node/Bun only, never imported by browser code (C-4).
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, relative } from 'node:path'
-import { patternIssue } from '../match.js'
+import { patternIssue, routeSet } from '../match.js'
 import { readMeta } from './literal.js'
 import { fileToRoutePath, quote, scanPages, toPosix } from './scanner.js'
 
@@ -35,8 +35,35 @@ const skipped = (name) => name.startsWith('_') || name.startsWith('.')
 /** @param {string} a @param {string} b */
 const byCodeUnit = (a, b) => (a < b ? -1 : a > b ? 1 : 0)
 
-/** @param {string} path @returns {Promise<boolean>} */
-const isFile = (path) => stat(path).then((s) => s.isFile(), () => false)
+/** @param {unknown} error @returns {boolean} whether it says the path does not exist */
+const absent = (error) => /** @type {NodeJS.ErrnoException} */ (error)?.code === 'ENOENT'
+
+/** @param {unknown} error @returns {string} */
+const reason = (error) => (error instanceof Error ? error.message : String(error))
+
+/**
+ * Read a directory the scan relies on. An absent one is `null` (every convention
+ * folder is optional); any other failure is an error, never an empty folder, so
+ * an unreadable middleware/ can't drop its guards (S32-01, N211).
+ * @param {string} dir absolute
+ * @param {string} name how errors name it
+ * @param {string[]} errors
+ * @returns {Promise<import('node:fs').Dirent[] | null>}
+ */
+async function readFolder(dir, name, errors) {
+  try {
+    return await readdir(dir, { withFileTypes: true })
+  } catch (error) {
+    if (!absent(error)) errors.push(`Cannot read ${name}: ${reason(error)}`)
+    return null
+  }
+}
+
+// Symbolic links (S32-01, N211): the scan never follows one inside pages/,
+// layouts/, middleware/ or views/. A linked page or folder is not read, like a
+// file of another type; a linked `.js` file in layouts/, middleware/ or views/,
+// or a linked _middleware.js, is an error, so a guard is never silently left out.
+const LINKED = 'is a symbolic link, which Quiver does not follow; put the file itself there.'
 
 /**
  * The `.js` files directly in a convention folder (S-51, S-52, S-54). Names
@@ -49,7 +76,7 @@ const isFile = (path) => stat(path).then((s) => s.isFile(), () => false)
  * @returns {Promise<string[]>} sorted file names
  */
 async function folderFiles(srcDir, folder, errors) {
-  const entries = await readdir(join(srcDir, folder), { withFileTypes: true }).catch(() => null)
+  const entries = await readFolder(join(srcDir, folder), `${folder}/`, errors)
   if (!entries) return []
   /** @type {string[]} */
   const files = []
@@ -57,6 +84,8 @@ async function folderFiles(srcDir, folder, errors) {
     if (skipped(entry.name)) continue
     if (entry.isDirectory()) {
       errors.push(`${folder}/${entry.name}/ is a folder; ${folder}/ is read one level deep. Move its files up, or name it _${entry.name} for helpers.`)
+    } else if (entry.isSymbolicLink() && entry.name.endsWith('.js')) {
+      errors.push(`${folder}/${entry.name} ${LINKED}`)
     } else if (entry.isFile() && entry.name.endsWith('.js')) files.push(entry.name)
   }
   return files.sort(byCodeUnit)
@@ -64,21 +93,24 @@ async function folderFiles(srcDir, folder, errors) {
 
 /**
  * Every `_middleware.js` under the pages directory, in folders the scanner reads
- * (S-53), as POSIX paths relative to it.
+ * (S-53), as POSIX paths relative to it, sorted. A folder that can't be read is
+ * an error (S32-01).
  * @param {string} pagesDir
+ * @param {string[]} errors
  * @param {string} [prefix]
  * @returns {Promise<string[]>}
  */
-async function sectionFiles(pagesDir, prefix = '') {
-  const entries = await readdir(join(pagesDir, prefix), { withFileTypes: true }).catch(() => [])
+async function sectionFiles(pagesDir, errors, prefix = '') {
+  const entries = await readFolder(join(pagesDir, prefix), `pages/${prefix ? `${prefix}/` : ''}`, errors)
   /** @type {string[]} */
   const files = []
-  for (const entry of entries) {
+  for (const entry of entries ?? []) {
     const rel = prefix ? `${prefix}/${entry.name}` : entry.name
-    if (entry.isFile() && entry.name === SECTION_FILE) files.push(rel)
-    else if (entry.isDirectory() && !skipped(entry.name)) files.push(...(await sectionFiles(pagesDir, rel)))
+    if (entry.name === SECTION_FILE && entry.isSymbolicLink()) errors.push(`pages/${rel} ${LINKED}`)
+    else if (entry.isFile() && entry.name === SECTION_FILE) files.push(rel)
+    else if (entry.isDirectory() && !skipped(entry.name)) files.push(...(await sectionFiles(pagesDir, errors, rel)))
   }
-  return files
+  return files.sort(byCodeUnit)
 }
 
 /** @param {string} pattern @returns {number} */
@@ -128,15 +160,27 @@ export async function scanApp(srcDir, options = {}) {
   // middleware/ (S-52)
   const middleware = (await folderFiles(srcDir, 'middleware', errors)).map((file) => `middleware/${file}`)
 
-  // pages/**/_middleware.js (S-53)
+  // pages/**/_middleware.js (S-53). Two folders for one section, spelled
+  // differently (`café` and a decomposed `café`), or differing only in the
+  // parameter name (`[id]`, `[slug]`), would give one key two guard lists, and
+  // only one would run: an error naming both (S32-01, N211).
   /** @type {AppScanResult['sections']} */
   const sections = []
-  for (const file of await sectionFiles(pagesDir)) {
+  /** @type {ReturnType<typeof routeSet<string>>} */
+  const seenSections = routeSet()
+  for (const file of await sectionFiles(pagesDir, errors)) {
     const folder = file.slice(0, -SECTION_FILE.length)
     const pattern = fileToRoutePath(`${folder}index.js`)
     const issue = patternIssue(pattern)
     if (issue) {
       errors.push(`Section "${pattern}" from ${file} is not a valid route pattern (${issue.code}).`)
+      continue
+    }
+    const clash = seenSections.add(pattern, file)
+    if (clash) {
+      errors.push(clash.code === 'same'
+        ? `${clash.other} and ${file} are both the section "${pattern}"; keep one folder.`
+        : `${clash.other} and ${file} differ only in parameter names ("${fileToRoutePath(`${clash.other.slice(0, -SECTION_FILE.length)}index.js`)}", "${pattern}"), so both guard the same routes; keep one folder.`)
       continue
     }
     sections.push({ pattern, file: fromPages(file) })
@@ -153,7 +197,13 @@ export async function scanApp(srcDir, options = {}) {
   }
 
   // app.config.js (S-55)
-  const config = (await isFile(join(srcDir, 'app.config.js'))) ? 'app.config.js' : null
+  /** @type {string | null} */
+  let config = null
+  try {
+    if ((await stat(join(srcDir, 'app.config.js'))).isFile()) config = 'app.config.js'
+  } catch (error) {
+    if (!absent(error)) errors.push(`Cannot read app.config.js: ${reason(error)}`)
+  }
 
   // Literal meta: nav and layout (S-56…S-58)
   /** @type {(NavItem & { order: number })[]} */
@@ -166,8 +216,8 @@ export async function scanApp(srcDir, options = {}) {
     const meta = readMeta(source)
     if (!meta.found) continue
     if (!meta.readable) {
-      const after = source.slice(source.search(/\bexport\s+const\s+meta\b/))
-      if (/\b(nav|layout)\b/.test(after)) {
+      // R32-05: one warning when the initializer itself names nav or layout.
+      if (meta.mentions) {
         warnings.push(`${page.file}: meta is not a plain literal, so its nav and layout are not checked at build time.`)
       }
       continue

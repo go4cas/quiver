@@ -22,7 +22,7 @@ const APP_RESOLVED = '\0' + APP_ID
  * The parts of Vite's dev server the plugin uses. A local structural type, so the
  * published .d.ts needs no `vite` types and `vite` is not a peer (S-13).
  * @typedef {Object} ViteDevServerLike
- * @property {{ root: string }} config
+ * @property {{ root: string, logger?: { warn(message: string): void, error(message: string): void } }} config
  * @property {{ on(event: 'add' | 'unlink' | 'change', listener: (file: string) => void): unknown }} watcher
  * @property {{ getModuleById(id: string): unknown, invalidateModule(mod: any): void }} moduleGraph
  * @property {{ send(payload: { type: 'full-reload', path?: string }): void }} ws
@@ -54,11 +54,21 @@ export default function quiver(options = {}) {
   let absSrc = resolve(src)
   /** @type {string | undefined} the last `quiver:app` source served, to tell whether an edit changed it */
   let lastApp
+  // R32-06, N213: the diagnostics of the last `quiver:app` scan, so each one is
+  // reported when it first appears (on a load or an edit) and not again while
+  // it stays; and a counter, so only the newest scan reports or reloads.
+  /** @type {Set<string>} */
+  let reported = new Set()
+  let generation = 0
 
-  /** @returns {Promise<string>} */
-  const appSource = async () => {
-    const scan = await scanApp(absSrc, { pagesDir: absDir })
-    return generateApp(scan, (file) => toPosix(join(absSrc, file)))
+  /**
+   * Report the scan's warnings that the previous scan did not have.
+   * @param {string[]} diagnostics
+   * @param {(message: string) => void} warn
+   */
+  const report = (diagnostics, warn) => {
+    for (const message of diagnostics) if (!reported.has(message)) warn(message)
+    reported = new Set(diagnostics)
   }
 
   return {
@@ -82,11 +92,15 @@ export default function quiver(options = {}) {
         return generateManifest(scan, (file) => toPosix(join(absDir, file)))
       }
       if (id !== APP_RESOLVED) return undefined
+      const current = ++generation
       const scan = await scanApp(absSrc, { pagesDir: absDir })
       const warn = this?.warn ? this.warn.bind(this) : (/** @type {string} */ m) => console.warn(m)
-      for (const warning of scan.warnings) warn(warning)
-      lastApp = generateApp(scan, (file) => toPosix(join(absSrc, file)))
-      return lastApp
+      const source = generateApp(scan, (file) => toPosix(join(absSrc, file)))
+      if (current === generation) {
+        report(scan.warnings, warn)
+        lastApp = source
+      }
+      return source
     },
 
     // S-11: adding or removing a page changes the manifest, so invalidate it and
@@ -97,7 +111,9 @@ export default function quiver(options = {}) {
     // S-61: for `quiver:app`, adding or removing a page, a `_middleware.js`, a
     // file in layouts/, middleware/ or views/, or app.config.js invalidates it
     // and reloads; editing a page re-scans and reloads only when the module
-    // changed (its meta.nav or meta.layout). Only once the app has loaded it.
+    // changed (its meta.nav). Only once the app has loaded it. R32-06: the
+    // re-scan's new warnings (an unknown layout) and a scan error go to the
+    // terminal even when nothing reloads; unchanged ones are not repeated.
     configureServer(server) {
       /** @param {string} file */
       const isPage = (file) => {
@@ -122,15 +138,28 @@ export default function quiver(options = {}) {
           server.ws.send({ type: 'full-reload' })
         }
       }
+      const logger = server.config.logger
+      /** @param {string} message */
+      const warn = (message) => (logger ? logger.warn(message) : console.warn(message))
       /** @param {string} file */
       const onEdit = (file) => {
         if (!isPage(file) || lastApp === undefined || !server.moduleGraph.getModuleById(APP_RESOLVED)) return
-        appSource().then((source) => {
+        const current = ++generation
+        scanApp(absSrc, { pagesDir: absDir }).then((scan) => {
+          if (current !== generation) return // a newer scan or load supersedes this one
+          report(scan.warnings, warn)
+          const source = generateApp(scan, (f) => toPosix(join(absSrc, f)))
           if (source === lastApp) return
           lastApp = undefined
           invalidate(APP_RESOLVED)
           server.ws.send({ type: 'full-reload' })
-        }, () => {}) // a scan error shows on the next load
+        }, (error) => {
+          if (current !== generation) return
+          // The module stays as it is; the error shows again, in the overlay, on the next load.
+          const message = error instanceof Error ? error.message : String(error)
+          if (!reported.has(message)) (logger ? logger.error(message) : console.error(message))
+          reported = new Set([message])
+        })
       }
       server.watcher.on('add', onAddOrRemove)
       server.watcher.on('unlink', onAddOrRemove)

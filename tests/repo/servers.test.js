@@ -1,5 +1,5 @@
 // S03 (2026-11-11 audit): the local demo servers (examples/bun, examples/no-build,
-// the arrow-use example and the recipes' plain app) listen on loopback only, answer
+// tests/packed/bun-app, the arrow-use example and the recipes' plain app) listen on loopback only, answer
 // a malformed path with 400, serve only the folders the page needs, and refuse an
 // unsafe QUIVER_BASE. Spawns `bun`, so Bun must be on PATH (like routes-parity).
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
@@ -48,6 +48,12 @@ const SERVERS = [
     base: '/sub/app/',
     ok: ['', 'users/1'],
     denied: ['serve.js', 'index.html.bak', 'package.json'],
+  },
+  {
+    script: 'tests/packed/bun-app/serve.js',
+    base: '/sub/app/',
+    ok: ['', 'about'],
+    denied: ['serve.js', 'package.json', 'src/main.js'],
   },
   {
     script: 'examples/no-build/serve.js',
@@ -116,7 +122,7 @@ it('examples/no-build/serve.js does not follow a symlink out of src/ (S03)', asy
   }
 })
 
-describe.each(['examples/bun/serve.js', 'examples/no-build/serve.js'])('%s base (S03)', (script) => {
+describe.each(['examples/bun/serve.js', 'tests/packed/bun-app/serve.js', 'examples/no-build/serve.js'])('%s base (S03)', (script) => {
   it.each(['sub', '/sub', '/"><script>alert(1)</script>/', '/../', '/.hidden/', 'http://evil/'])(
     'refuses QUIVER_BASE=%j',
     (base) => {
