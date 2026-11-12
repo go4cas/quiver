@@ -2,6 +2,8 @@
 // repo, with @go4cas/quiver and arrow-use installed from the tarballs `npm pack`
 // makes, not from the workspace. Then typecheck (which reads the packed .d.ts)
 // and the e2e suite run in each copy. SPEC P8, X-4; carry-over from the P5 review.
+// tests/packed/bun-app is a conventions-mode (quiver:app) app built by a real
+// Bun.build with splitting (R32-12); examples/bun keeps the manual setup.
 //
 //   bun run pack:try                 # all of them
 //   bun run pack:try examples/vite   # some of them
@@ -18,7 +20,7 @@ import { join } from 'node:path'
 const ROOT = join(import.meta.dirname, '..')
 const APPS = process.argv.slice(2).length
   ? process.argv.slice(2)
-  : ['examples/vite', 'examples/bun', 'examples/no-build', 'starter']
+  : ['examples/vite', 'examples/bun', 'examples/no-build', 'tests/packed/bun-app', 'starter']
 const SKIP = new Set(['node_modules', 'dist', 'test-results', 'playwright-report'])
 
 const require = createRequire(join(ROOT, 'package.json'))

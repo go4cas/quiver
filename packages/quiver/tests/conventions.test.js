@@ -1,7 +1,7 @@
 // @vitest-environment node
 // TECH-SPEC §12.3, S-50…S-59: scanApp, generateApp and isAppFile.
 import { describe, it, expect } from 'vitest'
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { generateApp, isAppFile, scanApp } from '../src/node/conventions.js'
@@ -94,6 +94,76 @@ describe('scanApp', () => {
   it('S-51: non-.js files and _ helpers in layouts/ are ignored', async () => {
     const src = app({ 'pages/index.js': PAGE, 'layouts/menu.js': PAGE, 'layouts/menu.css': '', 'layouts/_util.js': PAGE })
     expect((await scanApp(src)).layouts).toEqual([{ name: 'menu', file: 'layouts/menu.js' }])
+  })
+})
+
+describe('S32-01: no guard is silently left out', () => {
+  // The decomposed spelling of café: a different folder name on disk, the same
+  // section once normalised. APFS and HFS+ refuse a second spelling, so there
+  // the test checks what the file system allows.
+  const NFD = 'cafe\u0301'
+
+  it('two folders that are one section, spelled differently, are an error naming both', async () => {
+    const src = app({ 'pages/café/a.js': PAGE, 'pages/café/_middleware.js': PAGE })
+    try {
+      mkdirSync(join(src, 'pages', NFD))
+    } catch {
+      return // the file system normalises names, so the clash cannot exist
+    }
+    writeFileSync(join(src, 'pages', NFD, 'b.js'), PAGE)
+    writeFileSync(join(src, 'pages', NFD, '_middleware.js'), PAGE)
+    await expect(scanApp(src)).rejects.toThrow(
+      `[quiver] ${NFD}/_middleware.js and café/_middleware.js are both the section "/café"; keep one folder.`,
+    )
+  })
+
+  it('two section folders that differ only in the parameter name are an error naming both', async () => {
+    const src = app({
+      'pages/[id]/a.js': PAGE, 'pages/[id]/_middleware.js': PAGE,
+      'pages/[slug]/b.js': PAGE, 'pages/[slug]/_middleware.js': PAGE,
+    })
+    await expect(scanApp(src)).rejects.toThrow(
+      '[quiver] [id]/_middleware.js and [slug]/_middleware.js differ only in parameter names ("/:id", "/:slug"), so both guard the same routes; keep one folder.',
+    )
+  })
+
+  it('absent convention folders are fine', async () => {
+    const scan = await scanApp(app({ 'pages/index.js': PAGE }))
+    expect(scan.middleware).toEqual([])
+    expect(scan.sections).toEqual([])
+    expect(scan.views).toEqual({ loading: null, error: null })
+    expect(scan.config).toBeNull()
+  })
+
+  it('a convention path that is not a folder is an error, not an empty folder', async () => {
+    const src = app({ 'pages/index.js': PAGE, middleware: 'not a folder' })
+    await expect(scanApp(src)).rejects.toThrow(/^\[quiver\] Cannot read middleware\/: .*ENOTDIR/)
+  })
+
+  // Root reads any directory, so the permission cases only run as a normal user.
+  it.skipIf(process.getuid?.() === 0 || process.platform === 'win32')('an unreadable middleware/ or section folder is an error', async () => {
+    const src = app({ 'pages/index.js': PAGE, 'middleware/auth.js': PAGE, 'pages/admin/_middleware.js': PAGE })
+    chmodSync(join(src, 'middleware'), 0o000)
+    try {
+      await expect(scanApp(src)).rejects.toThrow(/\[quiver\] Cannot read middleware\/: .*EACCES/)
+    } finally {
+      chmodSync(join(src, 'middleware'), 0o755)
+    }
+  })
+
+  it.skipIf(process.platform === 'win32')('a linked .js file in middleware/, layouts/ or views/, or a linked _middleware.js, is an error', async () => {
+    const src = app({ 'pages/index.js': PAGE, 'pages/admin/a.js': PAGE, 'shared/guard.js': PAGE })
+    for (const link of ['middleware/auth.js', 'layouts/menu.js', 'views/error.js', 'pages/admin/_middleware.js']) {
+      mkdirSync(join(src, link, '..'), { recursive: true })
+      symlinkSync(join(src, 'shared', 'guard.js'), join(src, link))
+    }
+    const error = await scanApp(src).then(() => null, (e) => e.message)
+    expect(error).toBe([
+      '[quiver] layouts/menu.js is a symbolic link, which Quiver does not follow; put the file itself there.',
+      '[quiver] middleware/auth.js is a symbolic link, which Quiver does not follow; put the file itself there.',
+      '[quiver] pages/admin/_middleware.js is a symbolic link, which Quiver does not follow; put the file itself there.',
+      '[quiver] views/error.js is a symbolic link, which Quiver does not follow; put the file itself there.',
+    ].join('\n'))
   })
 })
 
