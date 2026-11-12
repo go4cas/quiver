@@ -127,7 +127,7 @@ export async function scanPages(dir) {
  * @param {string} value
  * @returns {string}
  */
-function quote(value) {
+export function quote(value) {
   const inner = JSON.stringify(value)
     .slice(1, -1)
     .replace(/\\(.)|'/g, (match, escaped) => (escaped === undefined ? "\\'" : escaped === '"' ? '"' : match))

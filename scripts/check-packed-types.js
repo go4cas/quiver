@@ -46,22 +46,26 @@ const arrow = JSON.parse(readFileSync(join(ROOT, 'packages/quiver/package.json')
 
 // Every public entry point, with a use of each so the types are really read.
 const ALL = `import { createApp, initRouter, url, useRoute, useRouter, beforeEach } from '@go4cas/quiver'
-import type { RouteManifest, NavigationGuard } from '@go4cas/quiver'
+import type { RouteManifest, NavigationGuard, AppManifest, MiddlewareManifest, NavItem } from '@go4cas/quiver'
 import quiver from '@go4cas/quiver/vite'
 import quiverBun from '@go4cas/quiver/bun'
 import routes, { notFound } from 'quiver:routes'
+import app from 'quiver:app'
 import { useFetch, useStorage, useMediaQuery, useEventListener } from 'arrow-use'
 import { defineConfig } from 'vite'
 
 const manifest: RouteManifest = routes
 const guard: NavigationGuard = ({ to }) => (to === '/x' ? '/' : undefined)
+const appManifest: AppManifest = app
+const middleware: MiddlewareManifest = appManifest.middleware
+const nav: NavItem[] = appManifest.nav
 export const used = [createApp, initRouter, url('/'), useRoute, useRouter, beforeEach(guard), manifest, notFound,
-  useFetch, useStorage, useMediaQuery, useEventListener]
+  appManifest.routes, middleware.global, nav, useFetch, useStorage, useMediaQuery, useEventListener]
 
 // The plugins where consumers put them, so their return types must be assignable.
-export const viteConfig = defineConfig({ base: '/sub/app/', plugins: [quiver(), quiver({ dir: 'src/pages' })] })
+export const viteConfig = defineConfig({ base: '/sub/app/', plugins: [quiver(), quiver({ dir: 'src/pages' }), quiver({ srcDir: 'src' })] })
 export const bunBuild = () =>
-  Bun.build({ entrypoints: ['src/main.js'], outdir: 'dist', splitting: true, plugins: [quiverBun({ dir: 'src/pages' })] })
+  Bun.build({ entrypoints: ['src/main.js'], outdir: 'dist', splitting: true, plugins: [quiverBun({ dir: 'src/pages' }), quiverBun({ srcDir: 'src' })] })
 `
 // node10 ignores `exports`, so only the main entry resolves there (3.0.1, N124).
 const MAIN = `import { url, useRouter } from '@go4cas/quiver'

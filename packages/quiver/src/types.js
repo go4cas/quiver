@@ -43,6 +43,26 @@
 /** @typedef {{ error: unknown, from: string | null, to: string, phase: ErrorPhase }} ErrorContext */
 /** @typedef {(ctx: ErrorContext) => void} ErrorHook */
 
+/**
+ * Middleware for `initRouter()` (TECH-SPEC §12.2, M-20, M-21): global guards run
+ * on every navigation; a section's guards run for routes under its pattern.
+ * @typedef {{ global?: NavigationGuard[], sections?: Record<string, NavigationGuard[]> }} MiddlewareManifest
+ */
+
+/** @typedef {{ to: string, label: string }} NavItem */
+
+/**
+ * The app manifest the `quiver:app` module exports (TECH-SPEC §12.2, D42).
+ * @typedef {Object} AppManifest
+ * @property {RouteManifest} routes
+ * @property {RouteLoader} [notFound]
+ * @property {Record<string, Layout>} layouts
+ * @property {MiddlewareManifest} middleware
+ * @property {{ loading?: LoadingView, error?: ErrorView }} views
+ * @property {NavItem[]} nav
+ * @property {Record<string, unknown>} config
+ */
+
 /** @typedef {'idle' | 'loading' | 'ready' | 'not-found' | 'error'} RouteStatus */
 /** @typedef {string | (() => string)} MetaValue */
 

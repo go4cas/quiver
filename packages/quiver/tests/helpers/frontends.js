@@ -9,6 +9,41 @@ import bunQuiver from '../../src/node/bun.js'
 
 export const CLI = join(import.meta.dirname, '..', '..', 'bin', 'quiver.js')
 
+/** @param {string} src absolute source dir @returns {Promise<{ source: string, warnings: string[] }>} */
+export async function viaViteApp(src) {
+  const plugin = viteQuiver({ srcDir: src })
+  plugin.configResolved({ root: '/' })
+  const id = plugin.resolveId('quiver:app')
+  if (!id) throw new Error('quiver:app did not resolve')
+  /** @type {string[]} */
+  const warnings = []
+  const source = /** @type {string} */ (await plugin.load.call({ warn: (/** @type {string} */ m) => warnings.push(m) }, id))
+  return { source, warnings }
+}
+
+/** @param {string} src absolute source dir */
+export async function viaBunApp(src) {
+  const { build, resolvers, loaders } = fakeBunBuild()
+  bunQuiver({ srcDir: src }).setup(build)
+  const [resolver] = resolvers.filter((r) => r.options.filter.test('quiver:app'))
+  const resolved = resolver.callback({ path: 'quiver:app' })
+  const [loader] = loaders.filter((l) => l.options.namespace === resolved.namespace && l.options.filter.test(resolved.path))
+  const result = await loader.callback(resolved)
+  if (result.loader !== 'js') throw new Error(`unexpected loader ${result.loader}`)
+  return /** @type {string} */ (result.contents)
+}
+
+/**
+ * @param {string} src absolute source dir
+ * @returns {{ source: string, out: string, stderr: string }}
+ */
+export function viaCliApp(src) {
+  const out = join(mkdtempSync(join(tmpdir(), 'quiver-cli-')), 'gen', 'app.gen.js')
+  const { status, stderr } = runCli(['app', '--src', src, '--out', out])
+  if (status !== 0) throw new Error(`quiver app exited ${status}: ${stderr}`)
+  return { source: readFileSync(out, 'utf8'), out, stderr }
+}
+
 /** @param {string} dir absolute pages dir */
 export async function viaVite(dir) {
   const plugin = viteQuiver({ dir })

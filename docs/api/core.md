@@ -280,3 +280,6 @@ All importable from the package in JSDoc or TypeScript, e.g. `/** @typedef {impo
 | `ErrorPhase` | `'guard' \| 'load' \| 'render'` |
 | `RouteStatus` | `'idle' \| 'loading' \| 'ready' \| 'not-found' \| 'error'` |
 | `MetaValue` | `string \| (() => string)` |
+| `AppManifest` (3.2) | `{ routes, notFound?, layouts, middleware, views, nav, config }`, what [`quiver:app`](./vite#quiver-app) exports |
+| `MiddlewareManifest` (3.2) | `{ global?: NavigationGuard[], sections?: Record<string, NavigationGuard[]> }` |
+| `NavItem` (3.2) | `{ to: string, label: string }` |

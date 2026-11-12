@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `@go4cas/quiver` (3.2, D37, D42): the virtual module `quiver:app`, served by the Vite and Bun plugins and written by a new `quiver app [--src] [--out] [--watch]` CLI command. It holds an app's whole source folder: the routes, `layouts/` (file name = layout name, D38), global `middleware/` and section `pages/**/_middleware.js` (D39), `views/loading.js` and `views/error.js`, the menu links from each page's literal `meta.nav` (D41), and `app.config.js`. A `meta` that can't be read, a misplaced `meta.nav` or an unknown `meta.layout` is a build warning (D43). `quiver:routes` and `quiver routes` are unchanged (TECH-SPEC S-50…S-66)
+- `@go4cas/quiver`: a `srcDir` option (default `'src'`) on the Vite and Bun plugins; `dir` now defaults to `<srcDir>/pages`, which is `src/pages` as before
+- `@go4cas/quiver`: the types `AppManifest`, `MiddlewareManifest` and `NavItem`, and `quiver:app` in `@go4cas/quiver/client`
+
 ## [3.1.0] - 2026-11-11
 
 Published as `@go4cas/quiver` 3.1.0 and `arrow-use` 0.1.2 (README only, no code change, N180, N181). Pages and layouts get a cleanup scope, the router is refactored per the audit (R14), and the router's browser suite runs in all three engines.

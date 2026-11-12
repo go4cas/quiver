@@ -18,14 +18,18 @@ packages/quiver/     # @go4cas/quiver — the core package, edit with care
 │                    # state.js (private router state), route.js (useRoute/useRouter), context.js,
 │                    # meta.js, types.js (shared typedefs)
 │   └── node/        # Node/Bun only, never imported by browser code: scanner.js (pages/ → manifest),
+│                    # conventions.js (scanApp/generateApp: the source folder → `quiver:app`, 3.2),
+│                    # literal.js (reads a page's literal `meta` at build time),
 │                    # vite.js (@go4cas/quiver/vite), bun.js (@go4cas/quiver/bun)
-├── bin/quiver.js    # `quiver routes [--dir] [--out] [--watch]` CLI, writes routes.gen.js
-├── client.d.ts      # Types for `quiver:routes` (@go4cas/quiver/client, add to jsconfig "types")
+├── bin/quiver.js    # CLI: `quiver routes [--dir] [--out] [--watch]` writes routes.gen.js,
+│                    # `quiver app [--src] [--out] [--watch]` writes app.gen.js (3.2)
+├── client.d.ts      # Types for `quiver:routes` and `quiver:app` (@go4cas/quiver/client, add to jsconfig "types")
 ├── scripts/         # prepack.js copies recipes/ into the package (X-10), postpack.js removes it
 ├── AGENTS.md        # Agent guide for apps that USE Quiver (ships in the tarball; not this file)
 ├── llms.txt         # Short index for LLMs (ships in the tarball)
 └── tests/           # Unit tests for core (Vitest, jsdom; helpers/navigation.js fakes the Navigation API;
                      # fixtures/pages/ is the route parity fixture, fixtures/broken/ the scanner error cases;
+                     # fixtures/app/ the quiver:app parity fixture (app.manifest.txt), fixtures/broken-app/ its errors;
                      # route-rules.test.js runs one rule table against manual and scanned manifests;
                      # browser/ is a Playwright suite on the real Navigation API in Chromium, Firefox and WebKit,
                      # ports 5185 and 5195)
@@ -306,7 +310,7 @@ To add a theme: token blocks (light + dark) in `recipes/theme/tokens.css`, optio
 - Unit: Vitest in `packages/quiver/tests/` (core), `packages/arrow-use/tests/` (composables, against bare Arrow), `recipes/<name>/tests/` (each recipe, jsdom) and `starter/tests/unit/` (starter) — test pure functions with `describe`/`it`. Arrow flushes the DOM on a microtask: `await nextTick()` before reading it, and with fake timers fake only the timers (`toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date']`), or `nextTick()` never resolves
 - Recipes in a plain Arrow app: `recipes/e2e/` serves a no-Quiver, no-bundler app that uses the toasts recipe (port `5184`) and checks a toast shows with the theme tokens, closes, and goes at once under reduced motion (SPEC P7)
 - Route rules: a pattern rule belongs in `PATTERN_RULES` in `match.js` (a scanner-only rule in `FILE_RULES`), with a message in both front ends' tables and a row in `packages/quiver/tests/route-rules.test.js`, which runs every rule against a hand-written and a scanned manifest (N170). The router's guard outcomes are classified once, in `decide()`, for startup and in-app navigations; per-navigation state lives on the `Nav` record, not in module globals (N171)
-- Route discovery: `packages/quiver/tests/routes-parity.test.js` runs the Vite plugin, the Bun plugin and the CLI on `tests/fixtures/pages/` and compares each with `tests/fixtures/pages.manifest.txt` (TECH-SPEC S-40); update that file when the fixture or the manifest format changes. The Bun splitting test spawns `bun`, so Bun must be on `PATH`
+- Route discovery: `packages/quiver/tests/routes-parity.test.js` runs the Vite plugin, the Bun plugin and the CLI on `tests/fixtures/pages/` and compares each with `tests/fixtures/pages.manifest.txt` (TECH-SPEC S-40); `app-parity.test.js` does the same for `quiver:app` on `tests/fixtures/app/` against `tests/fixtures/app.manifest.txt`, with the same warnings from each (S-65). Update those files when a fixture or a module format changes. The Bun splitting test spawns `bun`, so Bun must be on `PATH`
 - E2E: Playwright in `starter/tests/e2e/` — test real browser flows; use `getByRole`, `getByLabel`, `getByTestId`. Every test runs twice, in the `root` project (port 5173) and the `subpath` project (port 5174, app under `/sub/app/`), so navigate with relative URLs (`page.goto('users')`, `page.goto('./')`, `toHaveURL('users')`), never a leading `/` (a repo test enforces it)
 - Core in a real browser: `packages/quiver/tests/browser/` serves a bare Quiver app from `src/` behind an import map (`tests/browser/serve.js`) and checks cancellation, history entries, redirect settlement, metadata, startup guards, `retry()`, `destroy()` during a load and the no-Navigation-API error, at `/` (port `5185`) and `/sub/app/` (port `5195`). Projects are `<engine>-root`/`<engine>-subpath` for `chromium`, `firefox` and `webkit`: `bun run test:e2e` runs the Chromium two, `bun run test:browsers` all six, and CI's `browsers` job runs all six in the pinned Playwright image (N155). A test that fails in one engine is a finding, never a skip. The jsdom fake (`tests/helpers/navigation.js`) keeps history entries with keys, but only a browser shows how entries commit (N126)
 - arrow-use example: `packages/arrow-use/example/` is a vanilla Arrow app (import map, no Quiver) whose Playwright smoke test runs from `bun run test:e2e` on port `5183`; it checks every composable and that Arrow loads from one URL (TECH-SPEC U-11)
