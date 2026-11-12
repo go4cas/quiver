@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Claude Code plugin (N241): version 3.2.1 in `plugin.json` and `marketplace.json` (was 3.0.0, although its `/add-*` commands changed in 3.2.0 and 3.2.1), so `/plugin update` picks up the current commands. From now on the plugin's version follows core's (RELEASING.md)
+
 ## [3.2.1] - 2026-11-12
 
 Published as `@go4cas/quiver` 3.2.1; `arrow-use` stays 0.1.2 (no change since). Fixes from the external 3.2.0 code review and security audit (R32-01…R32-12, S32-01…S32-06), plus the PascalCase recipe file names (D45). No API changes. The starter, `examples/vite` and `examples/no-build` depend on `^3.2.1`.

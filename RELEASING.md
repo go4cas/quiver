@@ -6,7 +6,7 @@ Releases are staged from CI: the `Publish` workflow (`.github/workflows/publish.
 
 ## Prepare the release (both ways)
 
-1. A release PR on its own branch: bump `version` in the package's `package.json`, move `## [Unreleased]` in `CHANGELOG.md` under the new version and date, add the compare link, and update the version check in `tests/repo/core-config.test.js` (core) or `tests/repo/packages.test.js` (arrow-use).
+1. A release PR on its own branch: bump `version` in the package's `package.json`, move `## [Unreleased]` in `CHANGELOG.md` under the new version and date, add the compare link, and update the version check in `tests/repo/core-config.test.js` (core) or `tests/repo/packages.test.js` (arrow-use). For a core release, also set `version` in `plugins/quiver/.claude-plugin/plugin.json` and the plugin's entry in `.claude-plugin/marketplace.json` to the core version, so `/plugin update` offers the `/add-*` commands that match it (N241).
 2. CI green on the PR (`Tests`, including `screenshots` and `pack`), then merge to `main`.
 
 ## Publish from CI (the default)
