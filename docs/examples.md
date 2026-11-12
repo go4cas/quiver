@@ -67,7 +67,7 @@ bun run test:e2e
 
 ## Starter
 
-[`starter`](https://github.com/go4cas/quiver/tree/main/starter): the app [Getting Started](/guide/getting-started#start-from-the-starter) scaffolds, with every recipe in `src/quiver/`.
+[`starter`](https://github.com/go4cas/quiver/tree/main/starter): the app [Getting Started](/guide/getting-started#start-from-the-starter) scaffolds, with every recipe installed by role (`src/styles/`, `src/components/`, `src/composables/`, `src/layouts/`, `src/views/`), `src/app.config.js` and the sidebar links from `meta.nav`.
 
 ```bash
 bunx degit go4cas/quiver/starter my-app

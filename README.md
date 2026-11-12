@@ -6,7 +6,7 @@ bunx degit go4cas/quiver/starter my-app
 
 A drop-in router, context and meta layer for [Arrow.js](https://arrow-js.com), with composables for any Arrow app, copy-in UI recipes, and a starter app that puts them together.
 
-- **[`@go4cas/quiver`](packages/quiver)**: routing on the Navigation API with layouts, guards, `afterEach`/`onError`, base paths, `provide`/`inject` and `useMeta`. File-based routes through a Vite plugin, a `Bun.build` plugin or the `quiver routes` CLI. 13 exports, one peer dependency, no CSS.
+- **[`@go4cas/quiver`](packages/quiver)**: routing on the Navigation API with layouts, guards, `afterEach`/`onError`, base paths, `provide`/`inject` and `useMeta`. Folder conventions (`pages/`, `layouts/`, `middleware/`, `views/`, `app.config.js`) read into one `quiver:app` module by a Vite plugin, a `Bun.build` plugin or the `quiver` CLI. 13 exports, one peer dependency, no CSS.
 - **[`arrow-use`](packages/arrow-use)**: `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` for any Arrow app, with or without Quiver.
 - **[Recipes](recipes)**: theme tokens (`--q-*`), toasts, a theme switcher, layouts, loading and error views, `Link`, `useForm`, `hmrState`. Copied into your app, then yours.
 - **[The starter](starter)**: a full app with five themes in plain CSS, Vitest, Playwright and screenshot tests, and agent docs for Claude Code, Codex and Copilot.

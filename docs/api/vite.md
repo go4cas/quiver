@@ -30,16 +30,18 @@ export default defineConfig({
 
 ```js
 // src/main.js
-import { initRouter } from '@go4cas/quiver'
-import routes, { notFound } from 'quiver:routes'
+import { createApp } from '@go4cas/quiver'
+import app from 'quiver:app'
 
-await initRouter({ routes, notFound, base: import.meta.env.BASE_URL })
+await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
 ```
 
-- The module's default export is the manifest (each page a dynamic `import()`, so Vite code-splits per page), and `notFound` is the root `not-found.js` loader or `undefined`. File rules: [routing](/guide/routing#file-based-routes).
-- In dev, adding or removing a page under `dir` rebuilds the module and reloads the page. Files the scanner skips (a name or folder starting with `_` or `.`) don't trigger a reload. Editing a page is normal HMR.
+A [manual setup](/guide/manual-setup) imports the routes alone instead: `import routes, { notFound } from 'quiver:routes'`, then `await initRouter({ routes, notFound, base })`.
+
+- `quiver:routes`' default export is the route manifest (each page a dynamic `import()`, so Vite code-splits per page), and `notFound` is the root `not-found.js` loader or `undefined`. File rules: [routing](/guide/routing#file-based-routes).
+- In dev, adding or removing a page under `dir` rebuilds the modules and reloads the page. Files the scanner skips (a name or folder starting with `_` or `.`) don't trigger a reload. Editing a page is normal HMR.
 - A scan error (duplicate routes, a nested `not-found.js`, an invalid param name) shows in Vite's error overlay in dev and fails `vite build`. Each message starts with `[quiver] ` and names the files.
-- It works in Vitest too: add it to `vitest.config.js` and tests can import `quiver:routes`.
+- It works in Vitest too: add it to `vitest.config.js` and tests can import `quiver:app` and `quiver:routes`.
 - The return type is a small structural type, not Vite's `Plugin`, so the package has no `vite` dependency or peer.
 - Tested with Vite 8 (`^8.3.6`, the range the starter and the example declare): the starter and [`examples/vite`](/examples#vite) build and run their e2e suites on it, and the packed types are checked inside Vite 8's `defineConfig()`. Earlier Vite versions are not tested.
 

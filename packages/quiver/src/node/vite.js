@@ -7,8 +7,8 @@
 //   export default { plugins: [quiver()] }
 //
 //   // main.js
-//   import routes, { notFound } from 'quiver:routes'
-//   await initRouter({ routes, notFound })
+//   import app from 'quiver:app'
+//   await createApp(app, { target: '#app' })
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import { generateManifest, scanPages, toPosix } from './scanner.js'
 import { generateApp, isAppFile, scanApp } from './conventions.js'

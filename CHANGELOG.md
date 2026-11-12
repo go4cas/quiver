@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-11-12
+
+Published as `@go4cas/quiver` 3.2.0; `arrow-use` stays 0.1.2 (no change since). The conventions layer (D37–D44): an app's folders become one `quiver:app` module, and `createApp(app, options)` starts it. Every 3.1 app keeps working unchanged (N199).
+
 ### Added
 
 - `@go4cas/quiver` (3.2, D37, D42): the virtual module `quiver:app`, served by the Vite and Bun plugins and written by a new `quiver app [--src] [--out] [--watch]` CLI command. It holds an app's whole source folder: the routes, `layouts/` (file name = layout name, D38), global `middleware/` and section `pages/**/_middleware.js` (D39), `views/loading.js` and `views/error.js`, the menu links from each page's literal `meta.nav` (D41), and `app.config.js`. A `meta` that can't be read, a misplaced `meta.nav` or an unknown `meta.layout` is a build warning (D43). `quiver:routes` and `quiver routes` are unchanged (TECH-SPEC S-50…S-66)
@@ -23,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Recipes (3.2): the `layouts` recipe is now two files with a default export each, `default.js` (the centred card, formerly `BasicLayout`, layout name `basic`) and `menu.js` (`MenuLayout`), and no `layouts` map; the `views` recipe is `loading.js` and `error.js` (formerly `LoadingView`, `ErrorView` in `views.js`). They install into `src/layouts/` and `src/views/`, where `quiver:app` finds them. The menu layout reads `nav` built from each page's `meta.nav`
 - Starter (3.2, D37–D44): `main.js` is one `await createApp(app, { target, base })` call with `quiver:app`; `app.config.js` holds `app` and `currentUser`; the sidebar comes from the pages' `meta.nav`; pages that used `layout: 'basic'` use the default layout; `src/quiver/` and `src/layouts/index.js` are gone. It looks and behaves the same (the screenshot baseline is unchanged)
 - Examples (3.2): `examples/vite` uses `quiver:app` and `createApp(app, options)`, with its layout in `src/layouts/default.js`; `examples/no-build` uses a committed `src/app.gen.js` written by `quiver app` instead of the hand-written `src/routes.js`. `examples/bun` keeps the manual setup with `quiver:routes`
+- Docs (3.2 release audit, N199): the Vite, Bun, client and CLI API pages, the API index, the routing and testing guides, the examples page, both READMEs and the root `AGENTS.md` now name `quiver:app` and `quiver app` beside `quiver:routes`; the Vite page's example uses `createApp(app, options)`; the layouts recipe's sign-out example puts `currentUser` in `app.config.js`
+- The starter depends on `@go4cas/quiver` `^3.2.0`, and `examples/vite` and `examples/no-build` too, since they use `quiver:app`; `examples/bun` keeps `^3.0.0`
 
 ## [3.1.0] - 2026-11-11
 
@@ -307,7 +313,8 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
-[Unreleased]: https://github.com/go4cas/quiver/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/go4cas/quiver/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/go4cas/quiver/releases/tag/v3.2.0
 [3.1.0]: https://github.com/go4cas/quiver/releases/tag/v3.1.0
 [3.0.3]: https://github.com/go4cas/quiver/releases/tag/v3.0.3
 [3.0.2]: https://github.com/go4cas/quiver/releases/tag/v3.0.2

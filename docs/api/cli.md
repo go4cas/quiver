@@ -1,11 +1,11 @@
-# quiver routes
+# quiver CLI
 
 ```
 quiver routes [--dir <pages dir>] [--out <file>] [--watch]
 quiver app [--src <source dir>] [--out <file>] [--watch]
 ```
 
-`quiver routes` writes the route manifest for a pages folder to a JavaScript module, for setups without the Vite or Bun plugin: an import-map app, another bundler, a test. The `quiver` binary comes with `@go4cas/quiver`.
+For setups without the Vite or Bun plugin (an import-map app, another bundler, a test), `quiver app` writes the [app manifest](#quiver-app) that `quiver:app` would give you, and `quiver routes` writes the route manifest for a pages folder. The `quiver` binary comes with `@go4cas/quiver`.
 
 How you run it depends on whether the package is installed:
 
