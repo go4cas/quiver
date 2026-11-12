@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- CI (audit S32-05, N230): a release tag now runs the full check suite on the tagged commit before anything is staged on npm. The checks moved into a reusable workflow, `.github/workflows/checks.yml`, which `Tests` runs on pull requests and `main` and `Publish` runs on each release tag; the `stage` job needs it to pass. Dry runs still only pack. Check names are now `checks / unit`, `checks / audit`, `checks / e2e`, `checks / browsers`, `checks / pack` and `checks / screenshots`
+- Repository settings (S32-05): `.github/settings/` holds the `main` ruleset (pull requests, the six checks), the release-tag ruleset (admins only) and the `npm` environment's tag policy, with the commands to apply them in RELEASING.md
+- `bun run audit` (S32-04, N231): an accepted advisory that matches no locked version, or an exception naming a version the advisory doesn't match, now fails with a diagnostic instead of passing. The VitePress dev-server exceptions stay accepted until 2027-02-11
+- Docs (S32-06, N232): the app-config and middleware guides say that `app.config.js`, layouts, views and middleware ship to the browser, and show a session checked on the server
+
 ### Fixed
 
 - Router (R32-01, N201): a navigation a guard cancels no longer loses history. Where the browser has the Navigation API's precommit handlers (Chromium), the guards for a link click, `go()` or a replace run before the navigation commits, so a cancel leaves the URL, every history entry and the current position as they were (after going Back, the Forward entries stay), and a guard redirect commits once, at its target. Elsewhere, and for Back/Forward, the entry commits first and a cancel moves back, as before. In every browser, a cancel now keeps a fragment the browser set itself (`#top`, `location.hash`) instead of going back to the entry before it

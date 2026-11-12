@@ -2,7 +2,9 @@
 // lockfile and fails on any advisory that scripts/audit-exceptions.json does not accept.
 // An exception names the advisory, the package and the exact locked versions it covers,
 // an owner and an expiry date. The check also fails when an exception has expired, when
-// the advisory now matches a locked version the exception doesn't name, or when the audit
+// the advisory now matches a locked version the exception doesn't name, when it matches
+// no locked version or the exception names a version it doesn't match (audit S32-04: the
+// lockfile and the advisory disagree, so nothing was really checked), or when the audit
 // no longer reports it (delete the entry). Runs on Bun (Bun.semver).
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
@@ -48,7 +50,15 @@ export function evaluate(report, exceptions, { today, locked, satisfies }) {
       const exception = exceptions.find((e) => e.id === id && e.package === pkg)
       if (!exception) { problems.push(`not accepted: ${label}`); continue }
       if (exception.expires < today) { problems.push(`exception expired ${exception.expires} (owner ${exception.owner}): ${label}`); continue }
-      const affected = locked(pkg).filter((v) => satisfies(v, advisory.vulnerable_versions))
+      const versions = locked(pkg)
+      const affected = versions.filter((v) => satisfies(v, advisory.vulnerable_versions))
+      const lockedList = versions.length ? versions.join(', ') : 'none'
+      // S32-04: an accepted advisory must account for at least one locked version, and
+      // every version the exception names must be locked and affected; otherwise the
+      // lockfile, the advisory range or the exception is wrong, and accepting would be blind.
+      if (!affected.length) { problems.push(`advisory matches no locked version of ${pkg} (locked: ${lockedList}; check bun.lock and the advisory range): ${label}`); continue }
+      const unmatched = exception.versions.filter((v) => !affected.includes(v))
+      if (unmatched.length) { problems.push(`exception names ${pkg}@${unmatched.join(', ')}, which is not a locked version in the advisory range (locked: ${lockedList}, affected: ${affected.join(', ')}): ${label}`); continue }
       const uncovered = affected.filter((v) => !exception.versions.includes(v))
       if (uncovered.length) { problems.push(`not accepted for ${pkg}@${uncovered.join(', ')}: ${label}`); continue }
       accepted.push(`${label} [owner ${exception.owner}, expires ${exception.expires}]`)
