@@ -38,7 +38,7 @@ The menu layout shows the sidebar brand and nav links, and a header with the cur
 | `'nav'` | `[{ to, label }]`, from each page's `meta.nav` (or a `nav` key in `app.config.js`) | no links |
 | `'currentUser'` | `{ name, email, avatar, signOut? }` | a guest; Sign out calls `go('/login')` |
 
-Classes: `q-basic`, `q-basic__card`, `q-menu`, `q-menu__{sidebar,brand,logo,name,tagline,nav,nav-link,footer,body,header,path,actions,content}`, `q-user-menu`, `q-user-menu__*`, with the hooks `q-panel`, `q-sidebar`, `q-header` and `q-accent`. The active nav link has `aria-current="page"`; the open user menu is `<details open>`.
+Classes: `q-basic`, `q-basic__card`, `q-menu`, `q-menu__{sidebar,brand,logo,name,tagline,nav,nav-link,footer,body,header,path,actions,content}`, `q-user-menu`, `q-user-menu__*`, with the hooks `q-panel`, `q-sidebar`, `q-header` and `q-accent`. The current page's nav link has `aria-current="page"`, and it and a link to the section above it (`/users` on `/users/42`) have `data-active`, which the CSS styles; the open user menu is `<details open>`.
 
 ## Sign-out
 

@@ -13,7 +13,7 @@ The argument is a theme id and an optional description (`ocean — cool blues, s
 
 ## Step 1: make sure the recipes are there
 
-The theme lives in the `theme` recipe (`src/styles/tokens.css`, `effects.css`) and is picked with the `theme-switcher` recipe (`src/components/ThemeSwitcher.js`). If either folder is missing, install it as "Installing a recipe" in `recipes/README.md` describes (copy the files, load the CSS in order, `theme-switcher` needs `arrow-use`), then mount `ThemeSelector()` and `ThemeToggle()` somewhere visible (the `layouts` recipe's `MenuLayout` already does).
+The theme lives in the `theme` recipe (`src/styles/tokens.css`, `effects.css`) and is picked with the `theme-switcher` recipe (`src/components/ThemeSwitcher.js`). If any of either recipe's files are missing, install it as "Installing a recipe" in `recipes/README.md` describes (copy the missing files and keep existing ones, as "Existing files" says, load the CSS in order, `theme-switcher` needs `arrow-use`), then mount `ThemeSelector()` and `ThemeToggle()` somewhere visible (the `layouts` recipe's `MenuLayout` already does).
 
 ## Step 2: token blocks in `src/styles/tokens.css`
 

@@ -182,7 +182,8 @@ beforeEach(({ from, to }) => {
 ```
 
 - Guards may be async. They run in registration order, and the first `false` or path wins.
-- Cancelling keeps the page that's on screen, with its URL, query and hash, and leaves history as it was: Back after a cancelled click goes where it went before. On the first load there is no previous page, so `false` redirects to `/`.
+- Cancelling keeps the page that's on screen, with its URL, query and hash (a fragment the browser set itself, like `#top`, included), and leaves history as it was: Back after a cancelled click goes where it went before. On the first load there is no previous page, so `false` redirects to `/`.
+- Where the browser supports [precommit handlers](#browser-support), the guards for a link click, `go()` or a replace run before the navigation commits: a cancel changes nothing, so after going Back, the Forward entries are still there, and a redirect commits once, at its target.
 - A redirect keeps its query and hash. A redirect to the path being navigated to just proceeds, so a guard without a `to !== '/login'` check still reaches `/login`.
 - A redirect stays inside the app. Returning an absolute URL or a path outside the base is a guard error, so a `?next=` value from the query string can't send users elsewhere. Check such values before using them in a link, too.
 - Redirect chains stop after 10 hops with an error (shown in the error view, reported to `onError` with `phase: 'guard'`).
@@ -232,6 +233,10 @@ Quiver's router is built on the [Navigation API](https://developer.mozilla.org/e
 | Firefox | 147 |
 
 CI runs the router's browser tests in Chromium, Firefox and WebKit through Playwright, whose engines are newer than these minimums; the minimums themselves come from where each browser shipped the Navigation API. Playwright's WebKit is close to Safari but is not Safari itself.
+
+### Guards before commit
+
+Where the browser has the Navigation API's precommit handlers ([`NavigationPrecommitController`](https://developer.mozilla.org/en-US/docs/Web/API/NavigationPrecommitController); Chromium has them at the time of writing), Quiver runs the guards for a link click, `go()` or a replace before the browser commits the new history entry. Where it doesn't, and for Back/Forward and reloads in every browser, the entry commits first and a cancel moves back to the entry the page was on. The page, URL, query and hash come back the same either way. The one difference: in a browser without precommit handlers, a link click cancelled after going Back loses the Forward entries, because the browser drops them as the click commits, before any guard can run.
 
 There is no fallback to the History API. In a browser without `window.navigation`, starting the router (`createApp(app, options)` or `initRouter()`) throws:
 

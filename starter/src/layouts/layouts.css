@@ -92,7 +92,7 @@
       }
     }
 
-    &[aria-current="page"] {
+    &[data-active] {
       background-color: var(--q-color-brand-tint);
       font-weight: 600;
       color: var(--q-color-brand);

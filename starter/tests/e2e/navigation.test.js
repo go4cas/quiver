@@ -37,8 +37,11 @@ test('active nav link has aria-current="page" and inactive links have no aria-cu
   await expect(teamLink).not.toHaveAttribute('aria-current')
 })
 
-test('deeper path activates the parent nav link', async ({ page }) => {
+test('deeper path marks the parent nav link as its section, not as the current page (R32-07)', async ({ page }) => {
   await page.goto('users')
+  const teamLink = page.getByRole('link', { name: 'Team' })
+  await expect(teamLink).toHaveAttribute('data-active', 'page')
   await page.locator('article').first().getByRole('button', { name: 'View profile' }).click()
-  await expect(page.getByRole('link', { name: 'Team' })).toHaveAttribute('aria-current', 'page')
+  await expect(teamLink).toHaveAttribute('data-active', 'section')
+  await expect(teamLink).not.toHaveAttribute('aria-current')
 })

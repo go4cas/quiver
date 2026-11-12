@@ -63,7 +63,7 @@ createApp({ target: '#app', layouts: { default: DefaultLayout }, loading, error 
 | `destroy()` | tears down router, guards, hooks, context, meta watchers and the mounted target; runs the page's cleanups and restores the host page's title and description |
 | `go(path)` | navigates; returns a promise that settles when the navigation finishes |
 | `url(path)` | adds the base to a base-relative path, for `href` and `src` |
-| `beforeEach(fn)` | guard `({ from, to })`: return `false` to cancel (the page on screen stays, history unchanged), a base-relative path to redirect (an absolute URL or a path outside the base is a guard error), anything else to proceed; returns an unregister function |
+| `beforeEach(fn)` | guard `({ from, to })`: return `false` to cancel (the page on screen stays, history unchanged; without the browser's precommit handlers a cancelled click after Back drops the Forward entries), a base-relative path to redirect (an absolute URL or a path outside the base is a guard error), anything else to proceed; returns an unregister function |
 | `afterEach(fn)` | `({ from, to, status })` after each committed navigation |
 | `onError(fn)` | `({ error, from, to, phase })` for `'guard'`, `'load'` and `'render'` errors |
 | `useRoute()` | `{ path(), params(), status(), meta() }`, reactive |
@@ -120,7 +120,7 @@ These are easy to get wrong and fail silently:
 
 ## Recipes
 
-Recipes ship in this package under `recipes/`: `index.json` is the registry, `README.md` explains how to install one, and each `recipes/<name>/README.md` says how to use it. Install a recipe by copying each path in its `files` to the place under the app's `src/` it maps to (`components/`, `composables/`, `layouts/`, `views/`, `styles/`), plus the recipes in its `requires`. Rewrite the imports between recipes (`../<recipe>/<file>.js` in `recipes/`) to the installed places, load its CSS and wire it as its README says. The `/add-*` commands of the Quiver Claude Code plugin do this (`/add-component toast`).
+Recipes ship in this package under `recipes/`: `index.json` is the registry, `README.md` explains how to install one, and each `recipes/<name>/README.md` says how to use it. Install a recipe by copying each path in its `files` to the place under the app's `src/` it maps to (`components/`, `composables/`, `layouts/`, `views/`, `styles/`), plus the recipes in its `requires`, copying only the files whose destination doesn't exist yet: an existing file is the app's and stays, unless the owner asks to replace that file (recipes/README.md, "Existing files"; one existing file never means the whole recipe is installed). Rewrite the imports between recipes (`../<recipe>/<file>.js` in `recipes/`) to the installed places, load its CSS and wire it as its README says. The `/add-*` commands of the Quiver Claude Code plugin do this (`/add-component toast`).
 
 | Recipe | Gives | Needs |
 |---|---|---|
@@ -129,7 +129,7 @@ Recipes ship in this package under `recipes/`: `index.json` is the registry, `RE
 | `theme-switcher` | `themeState`, `ThemeSelector`, `ThemeToggle` (persisted, follows the system mode) | `theme`, `arrow-use` |
 | `layouts` | `layouts/default.js` (centred card), `layouts/menu.js` (sidebar + header), which read `inject('app' / 'nav' / 'currentUser')`, from `app.config.js` and `meta.nav`; a real `currentUser.signOut` ends the server session and clears user state (README "Sign-out") | `theme`, `link`, `toasts`, `theme-switcher` |
 | `views` | `views/loading.js`, `views/error.js` (with `retry`) | `theme` |
-| `link` | `Link({ to, children, class })` with `aria-current="page"`; `to` is a path or an `http(s):`/`mailto:`/`tel:` URL, anything else gets no `href` | – |
+| `link` | `Link({ to, children, class })` with `aria-current="page"` on an exact match and `data-active` on it and its sections (canonical segments); `to` is a path that must resolve inside the app's origin and base, or an `http(s):`/`mailto:`/`tel:` URL, anything else gets no `href` | – |
 | `useForm` | `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` | – |
 | `hmrState` | `hmrState(key, initial)`: state kept across Vite hot reloads | – |
 
