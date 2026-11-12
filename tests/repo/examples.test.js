@@ -36,7 +36,7 @@ describe('examples (P5)', () => {
       expect(pkg.private).toBe(true)
       // vite and no-build use quiver:app and createApp(app, options), new in 3.2 (N199);
       // bun keeps the manual setup, which works on any 3.x.
-      const quiver = name === 'bun' ? '^3.0.0' : '^3.2.0'
+      const quiver = name === 'bun' ? '^3.0.0' : '^3.2.1'
       expect(pkg.dependencies).toEqual({ '@arrow-js/core': '^1.0.6', '@go4cas/quiver': quiver })
       const ranges = [pkg.dependencies, pkg.devDependencies].flatMap((deps) => Object.values(deps ?? {}))
       expect(ranges.filter((range) => String(range).startsWith('workspace:'))).toEqual([])

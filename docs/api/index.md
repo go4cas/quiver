@@ -27,7 +27,7 @@ let posts
 
 | Package | Version | Peer dependency | Runtime |
 |---|---|---|---|
-| `@go4cas/quiver` | 3.2.0 | `@arrow-js/core` `^1.0.6` | browsers with the Navigation API; the plugins and CLI on Node 22.12+ or Bun 1.4.4+ |
+| `@go4cas/quiver` | 3.2.1 | `@arrow-js/core` `^1.0.6` | browsers with the Navigation API; the plugins and CLI on Node 22.12+ or Bun 1.4.4+ |
 | `arrow-use` | 0.1.2 | `@arrow-js/core` `^1.0.6` | any browser; imports safely on a server |
 
 Neither package has runtime dependencies. Recipes are not an entry point: they ship as files under `node_modules/@go4cas/quiver/recipes/` for you to copy ([recipes](/recipes/)).
