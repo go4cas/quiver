@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-11-12
+
+Published as `@go4cas/quiver` 3.2.1; `arrow-use` stays 0.1.2 (no change since). Fixes from the external 3.2.0 code review and security audit (R32-01…R32-12, S32-01…S32-06), plus the PascalCase recipe file names (D45). No API changes. The starter, `examples/vite` and `examples/no-build` depend on `^3.2.1`.
+
 ### Fixed
 
 - `@go4cas/quiver` (3.2.0 audit S32-01, N211): two section folders that are one section, either differing only in the parameter name (`pages/[id]/`, `pages/[slug]/`) or spelled two ways in Unicode, each with a `_middleware.js`, are now a scan error naming both files. Before, `quiver:app` held the section key twice and only one guard list ran. A convention folder that exists but can't be read (`middleware/`, a folder under `pages/`, `app.config.js`) is now an error instead of an empty folder; an absent one is still fine. A symbolic link to a `.js` file in `layouts/`, `middleware/` or `views/`, or a linked `_middleware.js`, is an error instead of being skipped. Same in the Vite plugin, the Bun plugin and `quiver app`
@@ -345,7 +349,8 @@ First tagged release.
 - `useForm` awaits async `validate()` functions instead of silently passing validation
 - Blocked `localStorage` (embedded iframes, strict privacy modes) no longer crashes the app at startup
 
-[Unreleased]: https://github.com/go4cas/quiver/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/go4cas/quiver/compare/v3.2.1...HEAD
+[3.2.1]: https://github.com/go4cas/quiver/releases/tag/v3.2.1
 [3.2.0]: https://github.com/go4cas/quiver/releases/tag/v3.2.0
 [3.1.0]: https://github.com/go4cas/quiver/releases/tag/v3.1.0
 [3.0.3]: https://github.com/go4cas/quiver/releases/tag/v3.0.3
