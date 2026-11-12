@@ -59,9 +59,11 @@ const cleaned = []
 /** @param {unknown} content */
 const Shell = (content) => html`<div data-layout="shell">${content}</div>`
 
-const flags = { denyOverview: false, holdLogin: false, flakyLoads: false, vault: /** @type {'open' | 'locked' | 'login'} */ ('open') }
+const flags = { denyOverview: false, holdLogin: false, flakyLoads: false, bounce: '', vault: /** @type {'open' | 'locked' | 'login'} */ ('open') }
 // `?vault=login` on the first URL sets the section's mode before startup.
 const startMode = new URLSearchParams(location.search).get('vault')
+// `?bounce=<target>` on the first URL sets where /bounce redirects before startup.
+flags.bounce = new URLSearchParams(location.search).get('bounce') ?? ''
 if (startMode === 'locked' || startMode === 'login') flags.vault = startMode
 /** @type {string[]} */
 const log = []
@@ -91,6 +93,7 @@ async function start() {
     if (to === '/' && flags.denyOverview) return false
     if (to === '/admin') return '/login'
     if (to === '/login' && flags.holdLogin) await gate('login')
+    if (to === '/bounce') return flags.bounce || false
   })
   afterEach(({ to, status }) => { log.push(`${to}:${status}`) })
 

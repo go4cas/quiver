@@ -95,6 +95,15 @@ describe('C-70: validation', () => {
     expect(check({ sections: { '/admin': [page, null] } })).toThrow('initRouter(): middleware.sections["/admin"][1] must be a function.')
   })
 
+  it('R32-08: a hole in a guard array is named by its index, global and section alike', () => {
+    // eslint-disable-next-line no-sparse-arrays
+    expect(check({ global: [page, , page] })).toThrow('initRouter(): middleware.global[1] must be a function.')
+    const sparse = [page]
+    sparse.length = 3
+    expect(check({ sections: { '/admin': sparse } })).toThrow('initRouter(): middleware.sections["/admin"][1] must be a function.')
+    expect(check({ global: [], sections: { '/admin': [] } })).not.toThrow()
+  })
+
   it('initRouter rejects bad middleware before any navigation work, and a fixed call works', async () => {
     const nav = installNavigation()
     await expect(initRouter({ routes, middleware: /** @type {any} */ ({ global: [1] }) })).rejects.toThrow(TypeError)

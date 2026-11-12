@@ -4,8 +4,8 @@ import { restoreMetaDefaults } from './meta.js'
 import { clearContext, provideUndoable } from './context.js'
 import { setBase } from './base.js'
 import {
-  bumpEpoch, fireHooks, initRouter, isRouterReady, reportRenderError, resetRouter, retry,
-  stopRouter, takeInitialReport, takeRenderErrors,
+  bumpEpoch, fireHooks, initRouter, isRouterOff, isRouterReady, releaseRouter, reportRenderError, resetRouter, retry,
+  routerGeneration, stopRouter, takeInitialReport, takeRenderErrors,
 } from './router.js'
 
 /** @typedef {import('./types.js').CreateAppOptions} CreateAppOptions */
@@ -34,9 +34,16 @@ let current = null
  * @returns {Renderable}
  */
 function inScope(view) {
-  const cmp = /** @type {{ h?: unknown, p?: unknown }} */ (view)
+  const cmp = /** @type {{ h?: unknown, p?: unknown, e?: Record<string, unknown> }} */ (view)
   if (cmp && typeof cmp === 'object' && typeof cmp.h === 'function') {
-    return /** @type {(props: unknown, emit: () => void) => Renderable} */ (cmp.h)(cmp.p ?? {}, () => {})
+    // Arrow's emit (R32-04): call the handler passed as the component call's
+    // second argument, as Arrow's own createPropsProxy() does.
+    /** @param {string} event @param {unknown} payload */
+    const emit = (event, payload) => {
+      const handler = cmp.e?.[event]
+      if (typeof handler === 'function') handler(payload)
+    }
+    return /** @type {(props: unknown, emit: (event: string, payload: unknown) => void) => Renderable} */ (cmp.h)(cmp.p ?? {}, emit)
   }
   return view
 }
@@ -52,6 +59,7 @@ const asTemplate = (view) => (typeof view === 'function' ? view : html`${view}`)
 const messageOf = (error) => (error instanceof Error ? error.message : String(error))
 
 const ALREADY_MOUNTED = 'createApp() was already called. Call destroy() first.'
+const SUPERSEDED = 'createApp(): destroy() was called before this app mounted, so it was abandoned.'
 
 /**
  * @param {Element | string} target
@@ -96,8 +104,12 @@ export function createApp(appOrOptions, options) {
 }
 
 /**
- * The two-argument form (C-73, C-74). On failure it undoes its own provide()
- * calls before rejecting, so the caller can retry without destroy() (T22).
+ * The two-argument form (C-73, C-74). On failure it undoes what it did itself
+ * before rejecting: its provide() calls, and once its initRouter() has run, the
+ * router's listeners, middleware, state and metadata. Guards, hooks and keys
+ * the caller set up before stay, so the caller can retry without destroy()
+ * (T22, R32-02). A destroy() while it awaits the first route supersedes it: it
+ * rejects without touching what a newer app has set up (R32-03).
  * @param {AppManifest} app
  * @param {AppOptions} options
  * @returns {Promise<App>}
@@ -111,15 +123,19 @@ async function startApp(app, options) {
   }
   if (current) throw new Error(ALREADY_MOUNTED)
   const target = resolveTarget(options.target)
+  const generation = routerGeneration()
 
   /** @type {(() => void)[]} */
   const undo = []
+  let startedRouter = false
   try {
     const config = app.config ?? {}
     for (const key of Object.keys(config)) undo.push(provideUndoable(key, config[key]))
     if (!Object.hasOwn(config, 'nav') && app.nav !== undefined) undo.push(provideUndoable('nav', app.nav))
 
+    startedRouter = isRouterOff()
     await initRouter({ routes: app.routes, notFound: app.notFound, base: options.base, middleware: app.middleware })
+    if (routerGeneration() !== generation) throw new Error(SUPERSEDED)
 
     const views = app.views ?? {}
     return mount({
@@ -130,9 +146,24 @@ async function startApp(app, options) {
       error: options.error ?? views.error,
     })
   } catch (error) {
+    if (startedRouter && routerGeneration() === generation && !isRouterOff()) abandonRouter()
+    // Each undo checks that its own write is still the current one.
     for (const fn of undo.reverse()) fn()
     throw error
   }
+}
+
+/**
+ * Undo an initRouter() whose app failed to mount (R32-02): like destroy(), but
+ * the caller's guards, hooks and context stay.
+ */
+function abandonRouter() {
+  bumpEpoch()
+  releaseRouter()
+  restoreMetaDefaults()
+  resetRouterState()
+  setBase('/')
+  resetRouter()
 }
 
 /**
@@ -197,7 +228,15 @@ function mount(options) {
   // drops the page scope and runs its onCleanup callbacks (N160).
   const mount = reactive({ mounted: true })
   el.replaceChildren()
-  html`${() => (mount.mounted ? Outlet() : '')}`(el)
+  try {
+    html`${() => (mount.mounted ? Outlet() : '')}`(el)
+  } catch (err) {
+    // A view that throws while mounting (an error view, say) leaves nothing
+    // behind: the target is empty and createApp() can be called again (R32-02).
+    mount.mounted = false
+    el.replaceChildren()
+    throw err
+  }
   current = { target: el, mount }
 
   // Hooks for the initial navigation fire after the first mount (C-44).

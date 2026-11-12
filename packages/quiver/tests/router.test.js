@@ -217,7 +217,7 @@ describe('guards (C-32, C-33)', () => {
     guard(({ to }) => (to === '/users' ? '/login?next=users#form' : undefined))
     nav.navigate('/app/users')
     await nav.idle()
-    expect(nav.navigate).toHaveBeenCalledWith('/app/login?next=users#form', { history: 'replace', info: expect.objectContaining({ redirects: 1, first: '/users' }) })
+    expect(nav.navigate).toHaveBeenCalledWith(`${window.location.origin}/app/login?next=users#form`, { history: 'replace', info: expect.objectContaining({ redirects: 1, first: '/users' }) })
     expect(useRoute().path()).toBe('/login')
     expect(window.location.search).toBe('?next=users')
   })

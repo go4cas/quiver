@@ -261,9 +261,11 @@ export function validateMiddleware(middleware) {
    */
   const checkList = (list, name) => {
     if (!Array.isArray(list)) throw new TypeError(`initRouter(): ${name} must be an array of guard functions.`)
-    list.forEach((fn, i) => {
-      if (typeof fn !== 'function') throw new TypeError(`initRouter(): ${name}[${i}] must be a function.`)
-    })
+    // Every index, holes included: the router copies the list with spread,
+    // which turns a hole into an undefined guard (R32-08).
+    for (let i = 0; i < list.length; i++) {
+      if (typeof list[i] !== 'function') throw new TypeError(`initRouter(): ${name}[${i}] must be a function.`)
+    }
   }
   if (middleware.global !== undefined) checkList(middleware.global, 'middleware.global')
   const { sections } = middleware

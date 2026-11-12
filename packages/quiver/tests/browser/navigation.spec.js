@@ -4,7 +4,7 @@
 // WebKit (N155; `bun run test:browsers`).
 import { test, expect } from '@playwright/test'
 
-/** @typedef {{ flags: { denyOverview: boolean, holdLogin: boolean, flakyLoads: boolean }, log: string[], go: (p: string) => Promise<void>, back: () => Promise<void>, forward: () => Promise<void>, release: (name: string) => void, status: () => string, path: () => string, retry: () => Promise<void>, destroy: () => void, start: () => Promise<void> }} Fixture */
+/** @typedef {{ flags: { denyOverview: boolean, holdLogin: boolean, flakyLoads: boolean, bounce: string }, log: string[], go: (p: string) => Promise<void>, back: () => Promise<void>, forward: () => Promise<void>, release: (name: string) => void, status: () => string, path: () => string, retry: () => Promise<void>, destroy: () => void, start: () => Promise<void> }} Fixture */
 
 /** @param {import('@playwright/test').Page} page */
 async function open(page, path = './') {
@@ -311,4 +311,41 @@ test('C-71: a not-found path runs global middleware only', async ({ page }) => {
   })
   expect(ran).toEqual(['global:/vault-nowhere/deep'])
   await expect(page.getByRole('alert')).toHaveText('No route matches "/vault-nowhere/deep".')
+})
+
+test('S32-02: a guard redirect is checked as the browser parses it, after mount and on startup', async ({ page, baseURL }) => {
+  const origin = new URL(/** @type {string} */ (baseURL)).origin
+  await open(page)
+  const basePath = new URL(/** @type {string} */ (baseURL)).pathname
+  // Under a sub-path base, '\t//evil.example/x' and '/\evil.example/x' become '<base>/evil.example/x'-like paths:
+  // a path inside the app (not found), never another host.
+  for (const target of ['/\\evil.example/x', '\t//evil.example/x', '//evil.example/x', 'https://evil.example/']) {
+    await page.evaluate(async (t) => {
+      const f = /** @type {any} */ (window).fixture
+      f.flags.bounce = t
+      await f.go('/bounce')
+    }, target)
+    await expect(page.getByRole('alert')).toBeVisible()
+    expect(new URL(page.url()).origin).toBe(origin)
+    expect(new URL(page.url()).pathname.startsWith(basePath)).toBe(true)
+    if (basePath === '/' || target.startsWith('//') || target.startsWith('https:')) {
+      await expect(page.getByRole('alert')).toContainText('Redirects must be base-relative paths inside the app')
+    }
+    await page.getByRole('link', { name: 'Overview' }).click()
+    await expect(page.locator('#app h1')).toHaveText('Overview')
+  }
+
+  await page.evaluate(async () => {
+    const f = /** @type {any} */ (window).fixture
+    f.flags.bounce = 'details?from=bounce#top'
+    await f.go('/bounce')
+  })
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  expect(new URL(page.url()).pathname).toBe(new URL('details', /** @type {string} */ (baseURL)).pathname)
+  expect(new URL(page.url()).search + new URL(page.url()).hash).toBe('?from=bounce#top')
+
+  await page.goto(`bounce?bounce=${encodeURIComponent('//evil.example/')}`)
+  await expect(page.getByRole('alert')).toContainText('Redirects must be base-relative paths inside the app')
+  expect(new URL(page.url()).origin).toBe(origin)
+  await expect(page).toHaveURL(/bounce\?bounce=/)
 })
