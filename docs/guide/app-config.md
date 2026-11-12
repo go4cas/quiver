@@ -69,6 +69,22 @@ const apiBase = inject('apiBase', '/api')
 
 The keys are yours. Only the [menu layout](/recipes/layouts) reads any, and it reads `app`, `nav` and `currentUser`. The file is a normal module, so it can import assets or build values. For values that change at runtime, such as the signed-in user, provide a [store](./state) and read it reactively.
 
+::: warning Everything in `app.config.js` ships to the browser
+`quiver:app` imports `app.config.js`, the layouts, the views and all middleware into the app bundle up front, and pages load on demand. Every value in them, and every module they import, is public: anyone can read it in the browser's dev tools. Put only public settings here, such as names, links, feature switches and the API's address. API keys, tokens, database credentials and anything that decides who may see what belong on your server.
+:::
+
+Public settings that differ per deployment can come from the build environment. With Vite, only variables prefixed `VITE_` reach the code, and they too are public:
+
+```js
+// src/app.config.js
+export default {
+  app: { name: 'Acme' },
+  apiBase: import.meta.env.VITE_API_BASE ?? '/api',   // public: the address, never a key
+}
+```
+
+For the signed-in user, ask the server, which knows the session from its cookie, instead of putting a user or a token in the config. [Middleware](./middleware#sessions-are-checked-on-the-server) shows the pattern.
+
 ## Menu links from pages
 
 A page joins the menu with `meta.nav`:

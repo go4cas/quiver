@@ -39,6 +39,22 @@ describe('scripts/audit.js', () => {
     expect(r.problems[0]).toMatch(/not accepted for vite@5\.4\.22/)
   })
 
+  it('fails with a diagnostic when the advisory matches no locked version (S32-04)', () => {
+    const none = evaluate({ vite: [advisory('GHSA-a')] }, [exception], env(['8.3.6']))
+    expect(none.accepted).toEqual([])
+    expect(none.problems[0]).toMatch(/advisory matches no locked version of vite \(locked: 8\.3\.6; check bun\.lock/)
+    const unparsed = evaluate({ vite: [advisory('GHSA-a')] }, [exception], env([]))
+    expect(unparsed.problems[0]).toMatch(/matches no locked version of vite \(locked: none;/)
+    const outOfRange = evaluate({ vite: [advisory('GHSA-a')] }, [exception], { ...env(), satisfies: () => false })
+    expect(outOfRange.problems[0]).toMatch(/matches no locked version/)
+  })
+
+  it('fails when the exception names a version that is not locked or not affected (S32-04)', () => {
+    const r = evaluate({ vite: [advisory('GHSA-a')] }, [{ ...exception, versions: ['5.4.21', '5.4.20'] }], env())
+    expect(r.accepted).toEqual([])
+    expect(r.problems[0]).toMatch(/exception names vite@5\.4\.20, which is not a locked version in the advisory range \(locked: 5\.4\.21, 8\.3\.6, affected: 5\.4\.21\)/)
+  })
+
   it('fails a stale exception', () => {
     expect(evaluate({}, [exception], env()).problems[0]).toMatch(/stale exception.*GHSA-a/)
   })

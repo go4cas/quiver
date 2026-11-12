@@ -4,9 +4,12 @@ name: Publish
 # token is stored anywhere (audit S05, planning/v3/NOTES.md N165, RELEASING.md).
 #
 # A release tag (`v3.0.4` for @go4cas/quiver, `arrow-use-v0.1.2` for arrow-use) builds,
-# checks and packs the package, then stages it on npm with `npm stage publish`. Nothing
-# goes live until a maintainer approves the staged version on npmjs.com with 2FA.
-# A manual run on a branch, or with dry-run ticked, stops after packing.
+# checks and packs the package, runs the full Checks workflow (checks.yml: unit, audit,
+# e2e, the three-engine browser suite, packed consumers and screenshots) on the tagged
+# commit, and only when all of it passes stages it on npm with `npm stage publish`
+# (audit S32-05, planning/v3/NOTES.md N230). Nothing goes live until a maintainer approves
+# the staged version on npmjs.com with 2FA. A manual run on a branch, or with dry-run
+# ticked, stops after packing and skips the full checks.
 #
 # The staging job only runs when the repository variable NPM_PUBLISH_FROM_CI is "true".
 # Until then a release tag still builds and verifies the tarball, and the release is
@@ -95,8 +98,18 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  stage:
+  # S32-05: the exact commit being released passes every check a pull request needs,
+  # whatever happened on the branch before. Read-only, like the Tests run of the same file.
+  # A skipped or failed run here skips stage.
+  checks:
     needs: build
+    if: ${{ needs.build.outputs.publish == 'true' && vars.NPM_PUBLISH_FROM_CI == 'true' }}
+    uses: ./.github/workflows/checks.yml
+    permissions:
+      contents: read
+
+  stage:
+    needs: [build, checks]
     if: ${{ needs.build.outputs.publish == 'true' && vars.NPM_PUBLISH_FROM_CI == 'true' }}
     runs-on: ubuntu-latest
     environment: npm

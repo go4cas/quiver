@@ -61,6 +61,40 @@ Redirects follow the same rules as a `beforeEach` redirect: the path is base-rel
 Middleware decides what the app shows. A user can still call your API directly, so check permissions on the server too.
 :::
 
+## Sessions are checked on the server
+
+Middleware is not a server step. It runs in the browser, it is bundled into the app with every rule it holds, and a user can change or skip it in the dev tools. Pages load only when visited, which saves work, but a page's code is still public once someone asks for it. So keep secrets (API keys, tokens, role lists) out of middleware and [`app.config.js`](./app-config#app-config-js), and let the server decide:
+
+- The server keeps the session, for example in an `HttpOnly` cookie that scripts can't read, and checks it on **every** API request, together with what that user may do.
+- Middleware asks the server who is signed in and only uses the answer to pick a page. It never holds a credential.
+
+```js
+// src/state/authState.js
+import { reactive } from '@arrow-js/core'
+
+export const authState = reactive({
+  /** @type {{ name: string, admin: boolean } | null} */
+  user: null,
+  checked: false,
+})
+```
+
+```js
+// src/middleware/01.session.js: who is signed in, according to the server
+import { authState } from '../state/authState.js'
+
+export default async function session({ to }) {
+  if (!authState.checked) {
+    const res = await fetch('/api/session', { credentials: 'same-origin' })
+    authState.user = res.ok ? await res.json() : null
+    authState.checked = true
+  }
+  if (to !== '/login' && !authState.user) return `/login?next=${encodeURIComponent(to)}`
+}
+```
+
+If someone edits `authState.user` in the dev tools to look like an admin, they see the admin pages' layout, and every request those pages make is still refused by the server, because the server never trusted the browser's copy. Signing out is a server call too (it ends the session and clears the cookie), then `authState.user = null` and a navigation to `/login`.
+
 ## Without the folders
 
 `initRouter()` takes the same middleware as an object, for apps that wire Quiver by hand ([manual setup](./manual-setup)):
