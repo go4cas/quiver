@@ -6,7 +6,7 @@ This file fixes the public surface that the build phases (P1–P8) implement. SP
 
 Every rule below has an ID (`C-…` core, `M-…` manifest, `S-…` scanner, `X-…` exports, `W-…` workspace, `CI-…` CI, `U-…` composables). A build PR cites the IDs it implements, and the review checks each one against its **Check** line. Choices this file makes that DECISIONS.md does not already cover are listed in §10 for Cas to accept or change in this PR.
 
-Contents: §1 core API · §2 navigation pipeline · §3 route manifest · §4 scanner contract · §5 package exports · §6 workspace layout · §7 CI layout · §8 composables conventions · §9 typedef index · §10 choices beyond DECISIONS.md · §11 open questions.
+Contents: §1 core API · §2 navigation pipeline · §3 route manifest · §4 scanner contract · §5 package exports · §6 workspace layout · §7 CI layout · §8 composables conventions · §9 typedef index · §10 choices beyond DECISIONS.md · §11 open questions · §12 conventions layer (3.2, P9).
 
 ---
 
@@ -37,6 +37,8 @@ const app = createApp({ target, ... })       // 4. mount
 ```
 
 Guards and hooks registered after `initRouter()` still work for later navigations, but miss the initial one.
+
+Since 3.2 (D40, §12.4) the docs teach one call that runs steps 1, 3 and 4 from the generated app: `const app = await createApp(appManifest, { target, base })`. Steps 1–2 made by hand before it still count. The sequence above stays valid as "Manual setup".
 
 ### 1.3 `initRouter(options)`
 
@@ -148,6 +150,7 @@ export function createApp(options)
 export function destroy()
 ```
 
+- Since 3.2, `createApp` also has an async two-argument form, `createApp(app, options)`, specified in §12.4 (C-73…C-75). The rules below are about the one-argument form.
 - **C-40** `createApp()` before `initRouter()` resolved throws `createApp() needs a router. Call in this order: provide(), beforeEach()/afterEach()/onError(), await initRouter(), createApp().` (D26). *Check:* unit test.
 - **C-41** A second `createApp()` before `destroy()` throws `createApp() was already called. Call destroy() first.` (D12). *Check:* unit test.
 - **C-42** A selector `target` that matches nothing throws `createApp(): target "<selector>" not found.` A non-Element, non-string target throws `TypeError`. *Check:* unit test.
@@ -652,6 +655,13 @@ Accept or change these in the review of this PR. Each is the smallest rule that 
 | T13 | `recipes/` is a private workspace for tests and typecheck, copied into the core tarball at `prepack` (X-10) | D19 says "not a package" (not published); npm `files` can't reach outside the package (N24) |
 | T14 | `arrow-use` v0.1 signatures in §8.1, including `stop()` on `useFetch` and `useStorage`'s `storage: 'local' \| 'session'` | SPEC §7 rule 2 requires `stop()`; P6 needs a fixed API to build against |
 | T15 | Plugin return types are local structural typedefs (S-13, S-22) | keeps `vite`/`bun-types` out of the published `.d.ts` and out of peers |
+| T16 | `srcDir` option (default `src`) on both plugins, `--src` on the CLI; `dir` keeps meaning the pages directory (S-60, S-62, S-63) | Nuxt's name for the same thing; a `root` option would be confused with Vite's `root` |
+| T17 | A built-in literal reader for page `meta` instead of a JS parser (S-56) | §9 rule 5 forbids a new dependency; every starter `meta` is a literal (N186) |
+| T18 | A `quiver app` CLI command rather than a `--app` flag on `quiver routes` (S-63) | the module has its own inputs (`--src`) and output; one command per generated module keeps `quiver routes` unchanged |
+| T19 | The async `createApp` form is chosen by argument count (C-73) | the two shapes share no required key, and a count can't be mistaken; JSDoc `@overload` types both |
+| T20 | Global middleware and section middleware run after `beforeEach` guards (C-71) | code-registered guards are the app's escape hatch and should see every navigation first |
+| T21 | Layout and middleware folders read one level deep, other subfolders are errors (S-51, S-52) | a silently ignored `middleware/admin/auth.js` would be a guard that never runs |
+| T22 | A failed two-argument `createApp` undoes its own `provide()` calls (C-74) | lets a caller fix the options and retry without `destroy()` |
 
 ---
 
@@ -659,3 +669,141 @@ Accept or change these in the review of this PR. Each is the smallest rule that 
 
 - **Q-A (new dev dependency).** *Answered: yes (Cas, 2026-11-10); P4 adds it (N80).* The scanner, both plugins and the CLI import `node:fs/promises` and `node:path`. Under `checkJs` + `strict`, `tsc` fails with TS2591 ("Cannot find name 'node:fs/promises'… install type definitions for node") without `@types/node` (N19). Recommendation: add `@types/node` (22.x) as a **dev** dependency of `packages/quiver` only, used by `jsconfig.node.json`. The alternative is leaving `src/node/` and `bin/` out of typecheck, which weakens CI. This needs your OK under §9 rule 8.
 - **Q-B (plugin location).** *Answered by P7: `plugins/quiver/`, with a root `.claude-plugin/marketplace.json` (N101).* P7 must pick where the Claude Code plugin lives (`plugins/quiver/` vs a root `.claude-plugin/`). It doesn't affect any API here, so it's left to P7 unless you have a preference.
+
+---
+
+## 12. Conventions layer (3.2, P9, D37–D44)
+
+Additive to §1–§4: nothing above changes shape, and an app that uses `quiver:routes` with the 3.1 startup order keeps working. Rule IDs continue each prefix (`C-70…`, `M-20…`, `S-50…`). Choices this section makes beyond D37–D44 are T16–T22 in §10.
+
+### 12.1 App folders
+
+All paths are relative to the source directory `srcDir` (default `src`, T16). Every folder and `app.config.js` is optional except `pages/`.
+
+| Path | Holds | Becomes |
+|---|---|---|
+| `pages/` | routes (§4, unchanged) | `routes`, `notFound` |
+| `pages/**/_middleware.js` | a section guard | `middleware.sections[<folder pattern>]` |
+| `layouts/<name>.js` | a `Layout` (default export) | `layouts[<name>]` |
+| `middleware/<file>.js` | a global guard (default export) | `middleware.global`, in file-name order |
+| `views/loading.js`, `views/error.js` | a `LoadingView`, an `ErrorView` | `views.loading`, `views.error` |
+| `app.config.js` | a plain object (default export) | `config` |
+| each page's literal `meta.nav` | `{ label, order? }` | `nav` |
+
+### 12.2 The app manifest (`quiver:app`)
+
+```js
+/**
+ * @typedef {Object} AppManifest
+ * @property {RouteManifest} routes
+ * @property {RouteLoader} [notFound]
+ * @property {Record<string, Layout>} layouts
+ * @property {MiddlewareManifest} middleware
+ * @property {{ loading?: LoadingView, error?: ErrorView }} views
+ * @property {NavItem[]} nav
+ * @property {Record<string, unknown>} config
+ *
+ * @typedef {{ global?: NavigationGuard[], sections?: Record<string, NavigationGuard[]> }} MiddlewareManifest
+ * @typedef {{ to: string, label: string }} NavItem
+ */
+```
+
+- **M-20** The typedefs `AppManifest`, `MiddlewareManifest` and `NavItem` live in `types.js` and are re-exported from the entry as types only; C-1's 13 runtime names don't change. *Check:* C-1 still passes; `pack:types` compiles a consumer that imports the three types.
+- **M-21** `middleware.sections` keys are route patterns that pass M-2/M-3 (`'/'` covers every route). A section applies to a matched route when the section's segments are a prefix of the route pattern's segments, comparing static segments canonically (M-8) and treating any two parameter segments as equal. Sections apply in order of segment count, outermost first. *Check:* unit tests: `/admin` covers `/admin` and `/admin/users/:id`, not `/administrator`; `/users/:id` covers `/users/:slug/edit`.
+- **M-22** Hand-written app manifests are valid: everything the generator emits can be written by hand, so no-build apps without the CLI can use the async `createApp` form too.
+
+### 12.3 Scanner (`scanApp`)
+
+```js
+/**
+ * @typedef {Object} AppScanResult
+ * @property {ScanResult} pages                  §4.1, unchanged
+ * @property {{ name: string, file: string }[]} layouts
+ * @property {string[]} middleware               files, in run order
+ * @property {{ pattern: string, file: string }[]} sections
+ * @property {{ loading: string | null, error: string | null }} views
+ * @property {string | null} config
+ * @property {NavItem[]} nav
+ * @property {string[]} warnings                 each prefixed `[quiver] `
+ */
+/** @param {string} srcDir @param {{ pagesDir?: string }} [options] @returns {Promise<AppScanResult>} */
+export async function scanApp(srcDir, options)
+/** @param {AppScanResult} scan @param {(file: string) => string} specifier @returns {string} */
+export function generateApp(scan, specifier)
+```
+
+- **S-50** `scanApp` runs `scanPages` (§4) on `pagesDir` (default `<srcDir>/pages`) with every rule S-1…S-7 unchanged, and the same collect-then-throw error reporting (S-7) for the rules below.
+- **S-51** `layouts/`: each `*.js` file directly inside is a layout named after the file without `.js`. Names match `/^[A-Za-z0-9][A-Za-z0-9-]*$/`; another name is an error naming the file. Names starting with `_` or `.` are skipped (S-1), so `layouts/_parts/` holds helpers. Any other subdirectory is an error naming it.
+- **S-52** `middleware/`: each `*.js` file directly inside is global middleware, sorted by file name in code-unit order (S-6). `_`/`.` names are skipped; another subdirectory is an error. The docs recommend two-digit prefixes (`01.auth.js`), since `10.x.js` sorts before `2.x.js`.
+- **S-53** `pages/**/_middleware.js` is a section guard for its folder's pattern (`fileToRoutePath` of the folder, so `pages/users/[id]/_middleware.js` → `/users/:id`, `pages/_middleware.js` → `/`). It is the one `_` name the scanner reads; S-1 still keeps it out of `routes`. A section whose folder holds no route is allowed (it guards nothing until one is added).
+- **S-54** `views/`: only `loading.js` and `error.js` are read; another `*.js` name directly inside is an error naming the two allowed names. `_`/`.` names are skipped.
+- **S-55** `app.config.js` directly in `srcDir`, if present. The scanner does not read its contents.
+- **S-56** Literal `meta` reading (D41, D43, T17): for each page, the scanner looks for one `export const meta =` and reads the value with a small built-in reader that accepts object and array literals, single- or double-quoted strings without `${}`, numbers, `true`, `false`, `null`, quoted or bare keys, trailing commas and comments. Anything else (a call, an identifier, a template literal, a spread) makes the whole `meta` unreadable. No parser dependency (§9 rule 5).
+- **S-57** `nav`: a page whose readable `meta.nav` is `{ label: string, order?: number }` contributes `{ to: <pattern>, label }`. Items sort by `order` ascending (missing `order` sorts last), then by pattern (S-6). A `meta.nav` of another shape, on a pattern with a parameter, or on `not-found.js`, is a warning and is skipped.
+- **S-58** Warnings (never errors) are collected in `warnings`: an unreadable `meta` that mentions `nav` or `layout` (S-56), a skipped `nav` (S-57), and a readable `meta.layout` naming no file in `layouts/` when `layouts/` exists (D43), worded `[quiver] users.js: unknown layout "menuu" (layouts: default, menu)`.
+- **S-59** `generateApp` output, byte for byte except specifiers (LF, trailing newline; identifiers numbered in output order):
+  ```js
+  // Generated by Quiver. Do not edit.
+  import config from '<app.config.js>'
+  import layout0 from '<layouts/default.js>'
+  import layout1 from '<layouts/menu.js>'
+  import middleware0 from '<middleware/01.auth.js>'
+  import section0 from '<pages/admin/_middleware.js>'
+  import loading from '<views/loading.js>'
+  import error from '<views/error.js>'
+  export default {
+    routes: {
+      '/': () => import('<pages/index.js>'),
+    },
+    notFound: () => import('<pages/not-found.js>'),
+    layouts: { 'default': layout0, 'menu': layout1 },
+    middleware: { global: [middleware0], sections: { '/admin': [section0] } },
+    views: { loading, error },
+    nav: [{ to: '/', label: 'Dashboard' }],
+    config,
+  }
+  ```
+  An absent part is emitted empty: no `app.config.js` → `config: {}` and no import; `notFound: undefined`; `layouts: {}`; `views: {}`; `nav: []`.
+- **S-60** Vite plugin: `quiver({ dir?, srcDir? })` also resolves `quiver:app` to `\0quiver:app` and loads `generateApp(scanApp(...), absolute)`. `quiver:routes` is unchanged (S-10). Warnings go through the plugin context's `warn` (build and dev terminal). S-13 still holds.
+- **S-61** Vite dev: adding or removing a file that changes `scanApp`'s file lists (a page, a `_middleware.js`, a file in `layouts/`, `middleware/` or `views/`, or `app.config.js`) invalidates both virtual modules and full-reloads. Editing a page re-scans, and if `generateApp`'s output changed (its `meta.nav` or `meta.layout`), invalidates `quiver:app` and full-reloads; otherwise normal HMR (S-11).
+- **S-62** Bun plugin: `quiver({ dir?, srcDir? })` also resolves `quiver:app` (S-20), warnings to `console.warn`.
+- **S-63** CLI: a new command `quiver app [--src <dir>] [--out <file>] [--watch]` (T18), defaults `--src src`, `--out src/app.gen.js`, writing `generateApp` with relative specifiers (S-30). It shares S-31…S-34: atomic, content-compared writes; exit `1` on scan errors; `2` on usage errors, including an `--out` inside `pages/`, `layouts/`, `middleware/` or `views/`; `--watch` watches `--src` recursively. Warnings go to stderr with exit `0`. `quiver routes` is unchanged.
+- **S-64** `@go4cas/quiver/client` also declares `quiver:app` with a default export typed `AppManifest`.
+- **S-65** Parity (S-40 extended): the fixture gains `layouts/`, `middleware/`, `views/`, `app.config.js`, a `_middleware.js` and `meta.nav` on two pages; the Vite plugin, the Bun plugin and `quiver app` produce identical `quiver:app` sources, compared with a committed snapshot. Each error rule S-51…S-54 has a broken fixture, and each warning in S-58 a test.
+- **S-66** `scanApp`, `generateApp` and the literal reader live in `src/node/` and are not exported (§4.1).
+
+### 12.4 Core: middleware and the `createApp(app, options)` form
+
+```js
+/**
+ * @overload
+ * @param {CreateAppOptions} options
+ * @returns {App}
+ */
+/**
+ * @overload
+ * @param {AppManifest} app
+ * @param {AppOptions} options
+ * @returns {Promise<App>}
+ */
+export function createApp(appOrOptions, options)
+
+/**
+ * @typedef {Object} AppOptions
+ * @property {Element | string} target
+ * @property {string} [base]                   as InitRouterOptions.base
+ * @property {Record<string, Layout>} [layouts] merged over app.layouts
+ * @property {string} [defaultLayout]          default 'default'
+ * @property {LoadingView} [loading]           wins over app.views.loading
+ * @property {ErrorView} [error]               wins over app.views.error
+ */
+```
+
+- **C-70** `InitRouterOptions` gains `middleware?: MiddlewareManifest`. `initRouter` validates it with C-12's other checks: every entry a function, every section key a valid pattern (M-21), each failure a `TypeError` naming the key or index. *Check:* unit test per failure.
+- **C-71** Pipeline step 3 (§2) runs, in order: `beforeEach` guards, then `middleware.global`, then the sections that apply to the route `to` matches (M-21), outermost first. Each gets `{ from, to }` and has `beforeEach`'s outcomes, stale-epoch stop, error phase `'guard'`, redirect rules and cap (C-16, C-27), all classified by `decide()`. A path that matches no route (not-found) runs global middleware only. Matching for this step uses the same sorted routes as step 4 and loads nothing. *Check:* unit tests for order, a section `false` (rollback), a section redirect, not-found, and a throwing middleware (`onError` with `phase: 'guard'`); browser suite: a section redirect and a section cancel at `/` and `/sub/app/` in all three engines.
+- **C-72** Middleware registered through `initRouter` is cleared by `destroy()` (C-49 step 3) and can't be added later. *Check:* unit test: after `destroy()` + re-init without middleware, the old guard doesn't run.
+- **C-73** `createApp(app, options)` is chosen when called with two arguments; the one-argument call is the 3.1 form, unchanged (C-40…C-50). The two-argument form: (1) `provide(key, value)` for each own enumerable key of `app.config`; (2) `provide('nav', app.nav)` unless `app.config` has an own `nav` key; (3) `await initRouter({ routes, notFound, base, middleware })`; (4) the one-argument `createApp({ target, layouts: { ...app.layouts, ...options.layouts }, defaultLayout, loading: options.loading ?? app.views.loading, error: options.error ?? app.views.error })`; it resolves to that `App`. *Check:* unit tests for each step, including a config `nav` winning and an `options.layouts` entry winning.
+- **C-74** The two-argument form rejects with the error `initRouter` or the mount would throw (C-10…C-14, C-41, C-42), after undoing its own `provide()` calls, so a caller can fix and retry without `destroy()`. `provide()`, `beforeEach()`, `afterEach()` and `onError()` calls made before it still count (startup order §1.2 steps 1–2). *Check:* unit test: a bad target rejects and a second call with a good target mounts.
+- **C-75** The overloads type-check in both `jsconfig` setups and in `pack:types` (TS 5.9 and repo TypeScript, `skipLibCheck: false`): one argument returns `App`, two return `Promise<App>`. *Check:* `pack:types` consumer calls both.
+- **C-76** The docs and the starter teach only the two-argument form. A "Manual setup" page documents `initRouter` + the one-argument form for apps that need their own order. *Check:* `docs.test.js` finds the page.
+- **C-77** Core still renders no `class` (C-5) and imports nothing new (C-4).
