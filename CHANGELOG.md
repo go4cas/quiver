@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- CI (audit S32-05, N230): a release tag now runs the full check suite on the tagged commit before anything is staged on npm. The checks moved into a reusable workflow, `.github/workflows/checks.yml`, which `Tests` runs on pull requests and `main` and `Publish` runs on each release tag; the `stage` job needs it to pass. Dry runs still only pack. Check names are now `checks / unit`, `checks / audit`, `checks / e2e`, `checks / browsers`, `checks / pack` and `checks / screenshots`
+- Repository settings (S32-05): `.github/settings/` holds the `main` ruleset (pull requests, the six checks), the release-tag ruleset (admins only) and the `npm` environment's tag policy, with the commands to apply them in RELEASING.md
+- `bun run audit` (S32-04, N231): an accepted advisory that matches no locked version, or an exception naming a version the advisory doesn't match, now fails with a diagnostic instead of passing. The VitePress dev-server exceptions stay accepted until 2027-02-11
+- Docs (S32-06, N232): the app-config and middleware guides say that `app.config.js`, layouts, views and middleware ship to the browser, and show a session checked on the server
+
 ### Changed
 
 - Recipes (D45, N200): component recipe files are PascalCase, like the app's own components: `link.js` → `Link.js`, `toasts.js`/`toasts.css` → `Toasts.js`/`Toasts.css`, `theme-switcher.js`/`theme-switcher.css` → `ThemeSwitcher.js`/`ThemeSwitcher.css`, in `recipes/` and where they install (`src/components/`). Recipe names, `/add-*` names and every export are unchanged. An app that already copied a recipe keeps working; to match, rename the files and fix the imports and the `@import` lines in `style.css`

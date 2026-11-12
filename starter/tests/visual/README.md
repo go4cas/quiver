@@ -6,7 +6,8 @@ The baseline in `__screenshots__/` is only valid inside the pinned Playwright im
 (`@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27`). Captures from macOS, Windows or a plain
 Linux runner differ in fonts and anti-aliasing, so never commit them.
 
-- **CI** runs `bun run test:visual` in that image (`screenshots` job in `.github/workflows/test.yml`).
+- **CI** runs `bun run test:visual` in that image (`screenshots` job in `.github/workflows/checks.yml`,
+  which the `Tests` workflow runs on every pull request and `Publish` on every release tag).
 - **Re-capture** after an intended visual change: run the `Tests` workflow by hand on your
   branch with `update-screenshots` ticked. The `screenshots-capture` job renders them with a
   read-only token and uploads them; `screenshots-commit`, which installs and runs nothing,
@@ -29,8 +30,8 @@ for a Chromium build the old image doesn't have, and every test fails with
 `@playwright/test` for this reason, so bump it by hand in one PR:
 
 1. Set the same version in `package.json` and `starter/package.json`, then `bun install`.
-2. Change both `image:` references in `.github/workflows/test.yml` and the tag and digest in
-   this README. Keep the `v<version>-noble@sha256:…` form: the tag documents the pairing, the
+2. Change every `image:` reference in `.github/workflows/checks.yml` (`browsers`, `screenshots`)
+   and `.github/workflows/test.yml` (`screenshots-capture`), and the tag and digest in this README. Keep the `v<version>-noble@sha256:…` form: the tag documents the pairing, the
    digest is what Docker pulls. Read the new digest (the multi-arch index) with
    `docker buildx imagetools inspect mcr.microsoft.com/playwright:v<version>-noble`.
 3. Run the `Tests` workflow on the branch with `update-screenshots` ticked, and review
