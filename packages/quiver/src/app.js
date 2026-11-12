@@ -1,14 +1,16 @@
 import { html, reactive, component } from '@arrow-js/core'
 import { routerState, resetRouterState } from './state.js'
 import { restoreMetaDefaults } from './meta.js'
-import { clearContext } from './context.js'
+import { clearContext, provideUndoable } from './context.js'
 import { setBase } from './base.js'
 import {
-  bumpEpoch, fireHooks, isRouterReady, reportRenderError, resetRouter, retry,
+  bumpEpoch, fireHooks, initRouter, isRouterReady, reportRenderError, resetRouter, retry,
   stopRouter, takeInitialReport, takeRenderErrors,
 } from './router.js'
 
 /** @typedef {import('./types.js').CreateAppOptions} CreateAppOptions */
+/** @typedef {import('./types.js').AppOptions} AppOptions */
+/** @typedef {import('./types.js').AppManifest} AppManifest */
 /** @typedef {import('./types.js').App} App */
 /** @typedef {import('./types.js').LoadingView} LoadingView */
 /** @typedef {import('./types.js').ErrorView} ErrorView */
@@ -49,31 +51,106 @@ const asTemplate = (view) => (typeof view === 'function' ? view : html`${view}`)
 /** @param {unknown} error @returns {string} */
 const messageOf = (error) => (error instanceof Error ? error.message : String(error))
 
+const ALREADY_MOUNTED = 'createApp() was already called. Call destroy() first.'
+
 /**
- * Mount the route outlet into `target`. Call it after `await initRouter()`.
+ * @param {Element | string} target
+ * @returns {Element}
+ */
+function resolveTarget(target) {
+  if (typeof target === 'string') {
+    const el = document.querySelector(target)
+    if (!el) throw new Error(`createApp(): target "${target}" not found.`)
+    return el
+  }
+  if (typeof Element !== 'undefined' && target instanceof Element) return target
+  throw new TypeError('createApp(): target must be an Element or a selector string.')
+}
+
+/**
+ * Mount the app.
+ *
+ * With one argument (the manual form), mount the route outlet into `target`;
+ * call it after `await initRouter()`. With two (C-73), take the `quiver:app`
+ * manifest: provide its `config` keys and `nav`, start the router with its
+ * routes and middleware, then mount, resolving to the `App`.
+ * @overload
  * @param {CreateAppOptions} options
  * @returns {App}
  */
-export function createApp(options) {
+/**
+ * @overload
+ * @param {AppManifest} app the `quiver:app` module's default export
+ * @param {AppOptions} options
+ * @returns {Promise<App>}
+ */
+/**
+ * @param {CreateAppOptions | AppManifest} appOrOptions
+ * @param {AppOptions} [options]
+ * @returns {App | Promise<App>}
+ */
+export function createApp(appOrOptions, options) {
+  // Chosen by argument count (T19): the two shapes share no required key.
+  if (arguments.length > 1) return startApp(/** @type {AppManifest} */ (appOrOptions), /** @type {AppOptions} */ (options))
+  return mount(/** @type {CreateAppOptions} */ (appOrOptions))
+}
+
+/**
+ * The two-argument form (C-73, C-74). On failure it undoes its own provide()
+ * calls before rejecting, so the caller can retry without destroy() (T22).
+ * @param {AppManifest} app
+ * @param {AppOptions} options
+ * @returns {Promise<App>}
+ */
+async function startApp(app, options) {
+  if (app === null || typeof app !== 'object') {
+    throw new TypeError('createApp(app, options): app must be the quiver:app manifest object.')
+  }
+  if (options === null || typeof options !== 'object') {
+    throw new TypeError('createApp(app, options): options must be an object with a target.')
+  }
+  if (current) throw new Error(ALREADY_MOUNTED)
+  const target = resolveTarget(options.target)
+
+  /** @type {(() => void)[]} */
+  const undo = []
+  try {
+    const config = app.config ?? {}
+    for (const key of Object.keys(config)) undo.push(provideUndoable(key, config[key]))
+    if (!Object.hasOwn(config, 'nav') && app.nav !== undefined) undo.push(provideUndoable('nav', app.nav))
+
+    await initRouter({ routes: app.routes, notFound: app.notFound, base: options.base, middleware: app.middleware })
+
+    const views = app.views ?? {}
+    return mount({
+      target,
+      layouts: { ...app.layouts, ...options.layouts },
+      defaultLayout: options.defaultLayout,
+      loading: options.loading ?? views.loading,
+      error: options.error ?? views.error,
+    })
+  } catch (error) {
+    for (const fn of undo.reverse()) fn()
+    throw error
+  }
+}
+
+/**
+ * The one-argument form: mount the route outlet into `target`.
+ * @param {CreateAppOptions} options
+ * @returns {App}
+ */
+function mount(options) {
   if (!isRouterReady()) {
     throw new Error('createApp() needs a router. Call in this order: provide(), beforeEach()/afterEach()/onError(), await initRouter(), createApp().')
   }
-  if (current) throw new Error('createApp() was already called. Call destroy() first.')
+  if (current) throw new Error(ALREADY_MOUNTED)
 
   const { target, layouts = {}, loading = BareLoading, error = BareError } = options
   const explicitDefault = options.defaultLayout !== undefined
   const defaultLayout = options.defaultLayout ?? 'default'
 
-  /** @type {Element | null} */
-  let el
-  if (typeof target === 'string') {
-    el = document.querySelector(target)
-    if (!el) throw new Error(`createApp(): target "${target}" not found.`)
-  } else if (typeof Element !== 'undefined' && target instanceof Element) {
-    el = target
-  } else {
-    throw new TypeError('createApp(): target must be an Element or a selector string.')
-  }
+  const el = resolveTarget(target)
 
   /** @type {Set<string>} unknown layout names already warned about */
   const warned = new Set()

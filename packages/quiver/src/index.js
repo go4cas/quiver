@@ -18,6 +18,7 @@ export { createApp, destroy } from './app.js'
 /** @typedef {import('./types.js').ErrorViewProps} ErrorViewProps */
 /** @typedef {import('./types.js').InitRouterOptions} InitRouterOptions */
 /** @typedef {import('./types.js').CreateAppOptions} CreateAppOptions */
+/** @typedef {import('./types.js').AppOptions} AppOptions */
 /** @typedef {import('./types.js').App} App */
 /** @typedef {import('./types.js').NavigationGuard} NavigationGuard */
 /** @typedef {import('./types.js').GuardContext} GuardContext */

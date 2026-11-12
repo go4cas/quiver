@@ -18,6 +18,7 @@
  * @property {RouteManifest} routes   pattern → loader
  * @property {RouteLoader} [notFound] loader for unmatched paths
  * @property {string} [base]          absolute pathname, e.g. '/api/custom/app/'
+ * @property {MiddlewareManifest} [middleware] global and section guards, run after beforeEach (C-70, C-71)
  */
 
 /**
@@ -27,6 +28,17 @@
  * @property {string} [defaultLayout]            default 'default'
  * @property {LoadingView} [loading]             default `<p>Loading…</p>`
  * @property {ErrorView} [error]                 default `<p role="alert">message</p>`
+ */
+
+/**
+ * Options for the two-argument `createApp(app, options)` (TECH-SPEC §12.4, C-73).
+ * @typedef {Object} AppOptions
+ * @property {Element | string} target          element, or a selector for document.querySelector
+ * @property {string} [base]                    as InitRouterOptions.base
+ * @property {Record<string, Layout>} [layouts] merged over app.layouts
+ * @property {string} [defaultLayout]           default 'default'
+ * @property {LoadingView} [loading]            wins over app.views.loading
+ * @property {ErrorView} [error]                wins over app.views.error
  */
 
 /** @typedef {{ destroy: () => void }} App */

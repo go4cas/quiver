@@ -175,3 +175,56 @@ test('N160: a page inside a layout aborts its request in onCleanup when left, an
   expect(await page.evaluate(() => /** @type {any} */ (window).fixture.cleaned)).toEqual(['feed', 'feed'])
   await expect(page.locator('#app')).toBeEmpty()
 })
+
+test('C-71: a section cancel keeps the page, URL and history; the section ran after global middleware', async ({ page }) => {
+  await open(page)
+  await page.getByRole('link', { name: 'Details' }).click()
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  await page.evaluate(() => {
+    const fixture = /** @type {any} */ (window).fixture
+    fixture.flags.vault = 'locked'
+    fixture.ran.length = 0
+  })
+  await page.getByRole('link', { name: 'Vault item' }).click()
+  await expect(page).toHaveURL(/details$/)
+  await expect(page.locator('#app h1')).toHaveText('Details')
+  expect(await page.evaluate(() => /** @type {any} */ (window).fixture.ran)).toEqual(['global:/vault/7', 'root:/vault/7', 'vault:/vault/7'])
+
+  await page.goBack()
+  await expect(page.locator('#app h1')).toHaveText('Overview')
+})
+
+test('C-71: a section redirect replaces the entry, and await go() waits for the target', async ({ page }) => {
+  await open(page)
+  const result = await page.evaluate(async () => {
+    const fixture = /** @type {any} */ (window).fixture
+    fixture.flags.vault = 'login'
+    fixture.log.length = 0
+    await fixture.go('/vault/7')
+    return { path: fixture.path(), log: [...fixture.log] }
+  })
+  expect(result).toEqual({ path: '/login', log: ['/login:ready'] })
+  await expect(page).toHaveURL(/login$/)
+  await expect(page.locator('#app h1')).toHaveText('Login')
+  await page.goBack()
+  await expect(page.locator('#app h1')).toHaveText('Overview')
+})
+
+test('C-71: a section redirect on the initial load rewrites the URL in place', async ({ page }) => {
+  await page.goto('vault/3?vault=login')
+  await expect(page.locator('#app h1')).toHaveText('Login')
+  await expect(page).toHaveURL(/login$/)
+  expect(await page.evaluate(() => /** @type {any} */ (window).fixture.ran)).toEqual(['global:/vault/3', 'root:/vault/3', 'vault:/vault/3', 'global:/login', 'root:/login'])
+})
+
+test('C-71: a not-found path runs global middleware only', async ({ page }) => {
+  await open(page)
+  const ran = await page.evaluate(async () => {
+    const fixture = /** @type {any} */ (window).fixture
+    fixture.ran.length = 0
+    await fixture.go('/vault-nowhere/deep')
+    return [...fixture.ran]
+  })
+  expect(ran).toEqual(['global:/vault-nowhere/deep'])
+  await expect(page.getByRole('alert')).toHaveText('No route matches "/vault-nowhere/deep".')
+})

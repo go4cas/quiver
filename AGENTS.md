@@ -192,6 +192,8 @@ beforeEach(({ from, to }) => {
 
 Startup order is fixed: `provide()` → `beforeEach()`/`afterEach()`/`onError()` → `await initRouter({ routes, notFound, base })` → `createApp({ target, ... })`. `createApp()` before `initRouter()` resolves throws, and so does a second `initRouter()` or `createApp()` before `destroy()`. `destroy()` (or `app.destroy()`) tears everything down (listener, guards, hooks, context, meta watchers, router state, the mounted target), after which the sequence can run again.
 
+Middleware and the app form (3.2, C-70…C-74): `initRouter({ middleware: { global, sections } })` runs global guards and then each covering section (`sectionCovers` in `match.js`, outermost first) after the `beforeEach` guards, all inside `runGuards()`, so `decide()` classifies them like any guard; a section is matched against the route pattern without loading the page, and a not-found path runs only global middleware. `createApp(app, options)` with two arguments is async: it provides `app.config`'s keys and `app.nav`, awaits `initRouter`, then calls the one-argument form; a failure undoes its own `provide()` calls (`provideUndoable` in `context.js`) and rejects. Tests: `tests/middleware.test.js`, `tests/create-app-manifest.test.js`.
+
 ### State modules
 
 ```js

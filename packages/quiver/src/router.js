@@ -2,7 +2,9 @@ import { nextTick } from '@arrow-js/core'
 import { routerState } from './state.js'
 import { captureMetaDefaults, clearMeta, resetMeta } from './meta.js'
 import { resolveBase, setBase, stripBase, url } from './base.js'
-import { compareRoutes, matchPath, normalizePath, validateManifest } from './match.js'
+import {
+  compareRoutes, compareSections, matchPath, normalizePath, sectionCovers, validateManifest, validateMiddleware,
+} from './match.js'
 
 /** @typedef {import('./types.js').RouteLoader} RouteLoader */
 /** @typedef {import('./types.js').RouteManifest} RouteManifest */
@@ -51,6 +53,10 @@ let notFoundLoader
 
 /** @type {{ fn: NavigationGuard }[]} */
 const guards = []
+/** @type {NavigationGuard[]} global middleware from initRouter(), in order (C-71) */
+let globalMiddleware = []
+/** @type {{ pattern: string, guards: NavigationGuard[] }[]} sections, outermost first (M-21) */
+let sections = []
 /** @type {{ fn: AfterEachHook }[]} */
 const afterHooks = []
 /** @type {{ fn: ErrorHook }[]} */
@@ -259,6 +265,27 @@ export function traverse(direction) {
 // ---------------------------------------------------------------- pipeline (§2)
 
 /**
+ * Step 3's guards for `to`, in order (C-71, T20): `beforeEach` guards, global
+ * middleware, then the sections covering the route `to` matches, outermost
+ * first. Matching uses the sorted routes of step 4 and loads nothing; a path
+ * that matches no route (not-found) gets global middleware only.
+ * @param {string} to
+ * @returns {NavigationGuard[]}
+ */
+function guardsFor(to) {
+  const list = [...guards.map((g) => g.fn), ...globalMiddleware]
+  if (sections.length) {
+    const route = records.find((r) => matchPath(r.pattern, to))
+    if (route) {
+      for (const section of sections) {
+        if (sectionCovers(section.pattern, route.pattern)) list.push(...section.guards)
+      }
+    }
+  }
+  return list
+}
+
+/**
  * @param {Nav} nav
  * @param {string | null} from
  * @param {string} to
@@ -266,7 +293,7 @@ export function traverse(direction) {
  *   so a superseded navigation calls no further guards (N126)
  */
 async function runGuards(nav, from, to) {
-  for (const { fn } of [...guards]) {
+  for (const fn of guardsFor(to)) {
     const result = await fn({ from, to })
     if (nav !== currentNav) return null
     if (result === false || typeof result === 'string') return result
@@ -565,8 +592,9 @@ export async function initRouter(options) {
   if (typeof window === 'undefined' || !window.navigation) throw new Error(NO_NAVIGATION_API)
   if (phase !== 'off') throw new Error('initRouter() was already called. Call destroy() first.')
 
-  const { routes, notFound, base } = options ?? /** @type {Partial<InitRouterOptions>} */ ({})
+  const { routes, notFound, base, middleware } = options ?? /** @type {Partial<InitRouterOptions>} */ ({})
   validateManifest(routes, notFound)
+  validateMiddleware(middleware)
   const resolvedBase = resolveBase(base)
 
   const relative = stripBase(window.location.pathname, resolvedBase)
@@ -580,6 +608,10 @@ export async function initRouter(options) {
     .map(([pattern, loader]) => ({ pattern, loader }))
     .sort((a, b) => compareRoutes(a.pattern, b.pattern))
   notFoundLoader = notFound
+  globalMiddleware = [...(middleware?.global ?? [])]
+  sections = Object.entries(middleware?.sections ?? {})
+    .map(([pattern, list]) => ({ pattern, guards: [...list] }))
+    .sort((a, b) => compareSections(a.pattern, b.pattern))
   phase = 'starting'
   const gen = generation
 
@@ -630,12 +662,14 @@ export function bumpEpoch() {
   generation++
 }
 
-/** Steps 2–3 of destroy(): stop listening, clear guards and hooks. */
+/** Steps 2–3 of destroy(): stop listening, clear guards, middleware (C-72) and hooks. */
 export function stopRouter() {
   if (phase !== 'off' && typeof navigation !== 'undefined') {
     navigation.removeEventListener('navigate', handleNavigate)
   }
   guards.length = 0
+  globalMiddleware = []
+  sections = []
   afterHooks.length = 0
   errorHooks.length = 0
 }

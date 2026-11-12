@@ -45,6 +45,9 @@ const routes = {
       return html`<h1>Feed</h1>`
     },
   }),
+  // Section middleware (C-71): '/vault' guards itself and every route under it.
+  '/vault': () => ({ default: Page('Vault') }),
+  '/vault/:id': () => ({ default: Page('Vault item') }),
   '/flaky': () => {
     if (!flags.flakyLoads) throw new Error('Flaky failed to load')
     return { default: Page('Flaky') }
@@ -56,9 +59,27 @@ const cleaned = []
 /** @param {unknown} content */
 const Shell = (content) => html`<div data-layout="shell">${content}</div>`
 
-const flags = { denyOverview: false, holdLogin: false, flakyLoads: false }
+const flags = { denyOverview: false, holdLogin: false, flakyLoads: false, vault: /** @type {'open' | 'locked' | 'login'} */ ('open') }
+// `?vault=login` on the first URL sets the section's mode before startup.
+const startMode = new URLSearchParams(location.search).get('vault')
+if (startMode === 'locked' || startMode === 'login') flags.vault = startMode
 /** @type {string[]} */
 const log = []
+/** @type {string[]} which middleware ran, `<name>:<to>` */
+const ran = []
+
+/** @type {import('@go4cas/quiver').MiddlewareManifest} */
+const middleware = {
+  global: [({ to }) => { ran.push(`global:${to}`) }],
+  sections: {
+    '/': [({ to }) => { ran.push(`root:${to}`) }],
+    '/vault': [({ to }) => {
+      ran.push(`vault:${to}`)
+      if (flags.vault === 'locked') return false
+      if (flags.vault === 'login') return '/login'
+    }],
+  },
+}
 
 /** @type {(() => Promise<void>) | null} the error view's retry, for the tests */
 let retry = null
@@ -73,7 +94,7 @@ async function start() {
   })
   afterEach(({ to, status }) => { log.push(`${to}:${status}`) })
 
-  await initRouter({ routes })
+  await initRouter({ routes, middleware })
   createApp({
     target: '#app',
     layouts: { shell: Shell },
@@ -92,6 +113,7 @@ Object.assign(window, {
   fixture: {
     flags,
     log,
+    ran,
     go,
     back: router.back,
     forward: router.forward,
