@@ -27,7 +27,7 @@ Key facts:
 - [theme-switcher](recipes/theme-switcher/README.md): persisted theme and light/dark mode
 - [layouts](recipes/layouts/README.md): `layouts/default.js` (centred card), `layouts/menu.js` (sidebar + header)
 - [views](recipes/views/README.md): `views/loading.js`, `views/error.js` with retry
-- [link](recipes/link/README.md): `Link` with `aria-current`
+- [link](recipes/link/README.md): `Link` with `aria-current` and `data-active`
 - [useForm](recipes/useForm/README.md): form state, validation and submit
 - [hmrState](recipes/hmrState/README.md): state kept across Vite hot reloads
 

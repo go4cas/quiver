@@ -120,7 +120,7 @@ These are easy to get wrong and fail silently:
 
 ## Recipes
 
-Recipes ship in this package under `recipes/`: `index.json` is the registry, `README.md` explains how to install one, and each `recipes/<name>/README.md` says how to use it. Install a recipe by copying each path in its `files` to the place under the app's `src/` it maps to (`components/`, `composables/`, `layouts/`, `views/`, `styles/`), plus the recipes in its `requires`. Rewrite the imports between recipes (`../<recipe>/<file>.js` in `recipes/`) to the installed places, load its CSS and wire it as its README says. The `/add-*` commands of the Quiver Claude Code plugin do this (`/add-component toast`).
+Recipes ship in this package under `recipes/`: `index.json` is the registry, `README.md` explains how to install one, and each `recipes/<name>/README.md` says how to use it. Install a recipe by copying each path in its `files` to the place under the app's `src/` it maps to (`components/`, `composables/`, `layouts/`, `views/`, `styles/`), plus the recipes in its `requires`, copying only the files whose destination doesn't exist yet: an existing file is the app's and stays, unless the owner asks to replace that file (recipes/README.md, "Existing files"; one existing file never means the whole recipe is installed). Rewrite the imports between recipes (`../<recipe>/<file>.js` in `recipes/`) to the installed places, load its CSS and wire it as its README says. The `/add-*` commands of the Quiver Claude Code plugin do this (`/add-component toast`).
 
 | Recipe | Gives | Needs |
 |---|---|---|
@@ -129,7 +129,7 @@ Recipes ship in this package under `recipes/`: `index.json` is the registry, `RE
 | `theme-switcher` | `themeState`, `ThemeSelector`, `ThemeToggle` (persisted, follows the system mode) | `theme`, `arrow-use` |
 | `layouts` | `layouts/default.js` (centred card), `layouts/menu.js` (sidebar + header), which read `inject('app' / 'nav' / 'currentUser')`, from `app.config.js` and `meta.nav`; a real `currentUser.signOut` ends the server session and clears user state (README "Sign-out") | `theme`, `link`, `toasts`, `theme-switcher` |
 | `views` | `views/loading.js`, `views/error.js` (with `retry`) | `theme` |
-| `link` | `Link({ to, children, class })` with `aria-current="page"`; `to` is a path or an `http(s):`/`mailto:`/`tel:` URL, anything else gets no `href` | – |
+| `link` | `Link({ to, children, class })` with `aria-current="page"` on an exact match and `data-active` on it and its sections (canonical segments); `to` is a path that must resolve inside the app's origin and base, or an `http(s):`/`mailto:`/`tel:` URL, anything else gets no `href` | – |
 | `useForm` | `useForm(values, { validate, onSubmit })` → `{ form, handleSubmit, field(name) }` | – |
 | `hmrState` | `hmrState(key, initial)`: state kept across Vite hot reloads | – |
 

@@ -11,13 +11,13 @@ Add a layout to this app: $ARGUMENTS
 
 ## Step 1: is it the layouts recipe?
 
-If the argument is `menu`, `basic`, `layouts`, `MenuLayout` or `BasicLayout` (see the `layouts` entry and its `aliases` in `recipes/index.json`) and `src/layouts/menu.js` doesn't exist yet, install the `layouts` recipe:
+If the argument is `menu`, `basic`, `layouts`, `MenuLayout` or `BasicLayout` (see the `layouts` entry and its `aliases` in `recipes/index.json`), install the `layouts` recipe:
 
-1. Follow "Installing a recipe" in `recipes/README.md`: install `layouts` and everything it `requires` (`theme`, `link`, `toasts`, `theme-switcher`) by role, copying each path in a recipe's `files` to the place under `src/` it maps to and skipping recipes already present; rewrite the `../<recipe>/<file>.js` imports to the installed places; add `@go4cas/quiver` and `arrow-use` to the dependencies if missing; load the CSS in the documented order.
-2. If `src/layouts/default.js` already exists, ask before replacing it, and offer to install only `menu.js` and `layouts.css`.
+1. Follow "Installing a recipe" in `recipes/README.md`: take `layouts` and everything it `requires` (`theme`, `link`, `toasts`, `theme-switcher`), and for each of them check every destination in its `files` as "Existing files" there says. Copy only the missing files, by role; keep every file that exists (a custom `src/layouts/default.js` stays, and `menu.js` and `layouts.css` are still installed beside it); rewrite the `../<recipe>/<file>.js` imports in the copied files to the installed places; add `@go4cas/quiver` and `arrow-use` to the dependencies if missing; add the missing CSS lines in the documented order. One existing file, such as `src/layouts/menu.js`, never means the rest is installed.
+2. Replace an existing file only if the user asks for that file, after showing how it differs from the recipe's copy. If a kept `src/components/Link.js` (or another file the copied layouts import) lacks the export the import uses, report it instead of changing either file.
 3. Follow the **Use** section of `recipes/layouts/README.md`. With `createApp(app, options)` and `quiver:app`, the layouts need no registration: add the `app` and `currentUser` keys to `src/app.config.js`, and offer to add `meta.nav: { label, order }` to the pages that belong in the menu. In a manual setup (`main.js` calls `initRouter()`), add `default` and `menu` to the `layouts` passed to `createApp()` and `provide()` the keys there instead.
 
-If the recipe is already installed, say so and stop.
+If every destination already existed, say the recipe is installed, list anything step 1 still added (packages, CSS lines), and stop.
 
 ## Step 2: otherwise, scaffold a new layout
 

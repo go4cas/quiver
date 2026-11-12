@@ -65,6 +65,6 @@ useForm(initialValues?: object, options?: { validate?, onSubmit? }): { form, han
 
 - A second submit while one is running is ignored (`form.submitting`).
 - A throwing or rejecting `validate` or `onSubmit` is caught, its message goes to `form.message`, and `form.submitting` goes back to `false`, so the user can submit again.
-- Each submit clears `form.submitted` and `form.message` first. `validate` and `onSubmit` get the same copy of the values, taken when the submit starts.
+- Each submit clears `form.submitted` and `form.message` first. `validate` and `onSubmit` get the same deep copy of the values, taken when the submit starts and sharing nothing with `form`, so an edit made while an async `validate` runs, nested fields included, is neither validated late nor submitted unvalidated; it stays in `form.values` for the next submit. Supported values are strings, numbers, booleans, bigints, `null`, `undefined`, and plain objects and arrays of them. Anything else (a `Date`, `Map`, `Set`, `File`, class instance or function) stops the submit before `validate` runs, with a `useForm: form values must be …` message in `form.message`: keep such values outside `form.values`, or store a string (an ISO date, a file name) instead.
 - `onSubmit` may set `form.errors` itself (errors from the server), which keeps `form.submitted` false.
 - For schema validation, call Zod, Valibot or similar inside `validate` and map the issues to `{ field: message }`.

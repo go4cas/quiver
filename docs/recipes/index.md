@@ -14,7 +14,7 @@ node_modules/@go4cas/quiver/recipes/
 | Recipe | What it is | Command | Needs |
 |---|---|---|---|
 | [`theme`](./theme) | the `--q-*` token contract, the reset, optional per-theme effects and fonts | `/add-theme` | – |
-| [`link`](./link) | `Link`: an anchor with `url()` and `aria-current` | `/add-component Link` | `@go4cas/quiver` |
+| [`link`](./link) | `Link`: an anchor with `url()`, `aria-current` and `data-active` | `/add-component Link` | `@go4cas/quiver` |
 | [`toasts`](./toasts) | `useToast()`, `toastState`, `ToastContainer` | `/add-component toast` | `theme` |
 | [`theme-switcher`](./theme-switcher) | `themeState`, `ThemeSelector`, `ThemeToggle` | `/add-component ThemeToggle` | `theme`, `arrow-use` |
 | [`useForm`](./useForm) | form state, validation and submit | `/add-composable useForm` | – |
@@ -29,11 +29,11 @@ node_modules/@go4cas/quiver/recipes/
 The `/add-*` commands of the [Claude Code plugin](/guide/ai#the-claude-code-plugin) do this for you. By hand:
 
 1. **Find it** in `node_modules/@go4cas/quiver/recipes/index.json`, by key or alias (`toast` → `toasts`, `ThemeToggle` → `theme-switcher`, `menu` → `layouts`).
-2. **Collect what it needs**: follow `requires`, recursively, and skip recipes you already have.
-3. **Copy** each entry in the recipe's `files`: the key is the file in `recipes/<name>/`, the value is where it goes under `src/` (a path ending in `/` is a folder). For example, `Toasts.js` goes to `src/components/Toasts.js` and the layouts recipe's `menu.js` to `src/layouts/menu.js`. Don't copy `tests/` or the README.
+2. **Collect what it needs**: follow `requires`, recursively. Keep every recipe in the set, even one you seem to have: step 3 decides file by file.
+3. **Copy** each entry in the recipe's `files` whose destination doesn't exist yet: the key is the file in `recipes/<name>/`, the value is where it goes under `src/` (a path ending in `/` is a folder). For example, `Toasts.js` goes to `src/components/Toasts.js` and the layouts recipe's `menu.js` to `src/layouts/menu.js`. Don't copy `tests/` or the README, and never overwrite a file that is there (see [Existing files](#existing-files)).
 4. **Fix imports between recipes.** In the repository a recipe imports another as `../<recipe>/<file>.js`. Point each one at where that file is now: `src/layouts/menu.js` imports `'../link/Link.js'`, which becomes `'../components/Link.js'`.
-5. **Install** the `packages` it lists that you don't have yet (`arrow-use` for the theme switcher; `@go4cas/quiver` for `link`, `layouts` and `views`).
-6. **Load the CSS** from your CSS entry, in the order of each recipe's `css` (at the places `files` gave them), with the layer statement first. Recipe JS never imports CSS, so it runs with or without a bundler:
+5. **Install** the `packages` each recipe in the set lists that you don't have yet (`arrow-use` for the theme switcher; `@go4cas/quiver` for `link`, `layouts` and `views`).
+6. **Load the CSS** from your CSS entry, in the order of each recipe's `css` (at the places `files` gave them), with the layer statement first, adding only the lines you don't have. Recipe JS never imports CSS, so it runs with or without a bundler:
 
    ```css
    @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
@@ -47,6 +47,18 @@ The `/add-*` commands of the [Claude Code plugin](/guide/ai#the-claude-code-plug
    Without a bundler, use `<link rel="stylesheet">` tags in the same order.
 7. **Wire it up** as the recipe's page shows (mount `ToastContainer()` once, pick the menu layout with `meta.layout`, …). Layouts and views need no wiring: `quiver:app` finds them in their folders.
 8. **Check**: run your typecheck and tests.
+
+### Existing files
+
+Everything under your `src/` is yours, including recipe files you copied earlier and edited, and files of your own that share a recipe file's name (a custom `layouts/default.js`). So no single file says a recipe is installed: look at every destination in its `files`.
+
+| The destinations | Do this |
+|---|---|
+| none exist | Copy every file. |
+| all exist | The recipe is installed: copy nothing, but still add its missing packages and CSS lines. |
+| some exist | Copy only the missing files and keep the rest, so a custom `default.js` stays while `menu.js` and `layouts.css` are added. |
+
+Replace an existing file only on purpose, after diffing it against the recipe's copy. When a copied file imports one you kept (`layouts/menu.js` imports `components/Link.js`), check the kept file still exports what the import uses. The `/add-*` commands follow the same rules and report which files they copied and which they kept.
 
 ## Updating a recipe
 
