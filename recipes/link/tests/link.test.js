@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { html } from '@arrow-js/core'
-import { Link, linkHref } from '../link.js'
+import { Link, linkHref } from '../Link.js'
 
 describe('Link', () => {
   it('renders a plain anchor with the base-aware href, class and children, and no click handler', () => {

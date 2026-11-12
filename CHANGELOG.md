@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Recipes (D45, N200): component recipe files are PascalCase, like the app's own components: `link.js` → `Link.js`, `toasts.js`/`toasts.css` → `Toasts.js`/`Toasts.css`, `theme-switcher.js`/`theme-switcher.css` → `ThemeSwitcher.js`/`ThemeSwitcher.css`, in `recipes/` and where they install (`src/components/`). Recipe names, `/add-*` names and every export are unchanged. An app that already copied a recipe keeps working; to match, rename the files and fix the imports and the `@import` lines in `style.css`
+- Starter: `src/components/` holds only PascalCase files (`Counter.js`, `UserCard.js`, `Link.js`, `Toasts.js`, `ThemeSwitcher.js`)
+- Docs and both `AGENTS.md`: the file-name convention per folder (components PascalCase; composables and state camelCase; pages, layouts, views and middleware lower-case or kebab-case), in "App structure and config"; a new repo test, `tests/repo/naming.test.js`, checks the starter and the recipes
+
 ## [3.2.0] - 2026-11-12
 
 Published as `@go4cas/quiver` 3.2.0; `arrow-use` stays 0.1.2 (no change since). The conventions layer (D37–D44): an app's folders become one `quiver:app` module, and `createApp(app, options)` starts it. Every 3.1 app keeps working unchanged (N199).

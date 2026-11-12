@@ -23,7 +23,7 @@ If the recipe is already installed, say so and stop.
 
 The file name is the layout name, in kebab-case (`sidebar`, `wide-card`): letters, digits and `-`. Pages pick it with `meta: { layout: '<name>' }`; `default` is the layout for pages that name none.
 
-1. Create `src/layouts/<name>.js` with a default export. Check first whether `src/components/toasts.js` exists.
+1. Create `src/layouts/<name>.js` with a default export. Check first whether `src/components/Toasts.js` exists.
 
    Without the toasts recipe, the layout is:
 
@@ -44,7 +44,7 @@ export default function <Name>Layout(content) {
 
 ```js
 import { html } from '@arrow-js/core'
-import { ToastContainer } from '../components/toasts.js'
+import { ToastContainer } from '../components/Toasts.js'
 
 /** @param {any} content  the rendered page */
 export default function <Name>Layout(content) {

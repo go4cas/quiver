@@ -23,7 +23,7 @@ afterEach(() => {
 })
 
 /** Imports a fresh copy of the recipe (its state is a module singleton). */
-const load = () => import('../theme-switcher.js')
+const load = () => import('../ThemeSwitcher.js')
 const root = () => document.documentElement
 
 describe('themeState', () => {

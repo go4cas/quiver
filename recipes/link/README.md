@@ -4,12 +4,12 @@
 
 ## Install
 
-Copy `link.js` to `src/components/`. Needs `@go4cas/quiver`.
+Copy `Link.js` to `src/components/`. Needs `@go4cas/quiver`.
 
 ## Use
 
 ```js
-import { Link } from '../components/link.js'
+import { Link } from '../components/Link.js'
 
 html`<nav>${Link({ to: '/users', children: 'Team', class: 'nav-link' })}</nav>`
 ```

@@ -3,7 +3,7 @@ import { useStorage, useMediaQuery } from 'arrow-use'
 
 // Theme switcher recipe: themeState (the chosen theme and mode, persisted),
 // ThemeSelector (one swatch per theme) and ThemeToggle (light/dark).
-// Styles: theme-switcher.css (classes q-theme-select*, q-mode-toggle*).
+// Styles: ThemeSwitcher.css (classes q-theme-select*, q-mode-toggle*).
 // It sets data-theme and data-mode on <html>, which the theme recipe's
 // tokens.css and effects.css select on.
 

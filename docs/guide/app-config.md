@@ -22,6 +22,17 @@ await createApp(app, { target: '#app', base: import.meta.env.BASE_URL })
 
 Only `pages/` is required. `components/`, `composables/`, `state/` and `styles/` are folders for your own code and installed [recipes](/recipes/), and Quiver doesn't read them.
 
+### File names
+
+| Folder | Case | Example |
+|---|---|---|
+| `components/` | PascalCase, named for the component, CSS beside it | `UserCard.js`, `UserCard.css`, `Toasts.js` |
+| `composables/` | camelCase, named for the export | `useForm.js`, `hmrState.js` |
+| `state/` | camelCase, `State` suffix | `userState.js` |
+| `pages/`, `layouts/`, `views/`, `middleware/` | lower-case or kebab-case, since the name is the route or the layout | `users/[id].js`, `menu.js`, `01.auth.js` |
+
+The recipes and the `/add-*` commands follow this.
+
 The [Vite plugin](/api/vite#quiver-app) and the [Bun plugin](/api/bun) serve `quiver:app`. Without a bundler, `quiver app --watch` writes it to `src/app.gen.js` ([CLI](/api/cli#quiver-app)). For types, add `"@go4cas/quiver/client"` to `compilerOptions.types`.
 
 ## `createApp(app, options)`

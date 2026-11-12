@@ -13,7 +13,7 @@ The argument is a theme id and an optional description (`ocean — cool blues, s
 
 ## Step 1: make sure the recipes are there
 
-The theme lives in the `theme` recipe (`src/styles/tokens.css`, `effects.css`) and is picked with the `theme-switcher` recipe (`src/components/theme-switcher.js`). If either folder is missing, install it as "Installing a recipe" in `recipes/README.md` describes (copy the files, load the CSS in order, `theme-switcher` needs `arrow-use`), then mount `ThemeSelector()` and `ThemeToggle()` somewhere visible (the `layouts` recipe's `MenuLayout` already does).
+The theme lives in the `theme` recipe (`src/styles/tokens.css`, `effects.css`) and is picked with the `theme-switcher` recipe (`src/components/ThemeSwitcher.js`). If either folder is missing, install it as "Installing a recipe" in `recipes/README.md` describes (copy the files, load the CSS in order, `theme-switcher` needs `arrow-use`), then mount `ThemeSelector()` and `ThemeToggle()` somewhere visible (the `layouts` recipe's `MenuLayout` already does).
 
 ## Step 2: token blocks in `src/styles/tokens.css`
 
@@ -41,7 +41,7 @@ If the theme needs what a token can't express (blur, glow, heading type, thicker
 
 ## Step 4: register it in the switcher
 
-Add one entry to `THEMES` in `src/components/theme-switcher.js`:
+Add one entry to `THEMES` in `src/components/ThemeSwitcher.js`:
 
 ```js
 { id: '<id>', label: '<Label>', swatch: '#<brand-hex>' },   // add swatchDark if the brand flips in dark mode

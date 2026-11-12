@@ -85,7 +85,7 @@ export const TicketCard = component(/** @param {Ticket} ticket */ (ticket) => ht
 // src/pages/tickets/index.js
 import { html } from '@arrow-js/core'
 import { useMeta } from '@go4cas/quiver'
-import { useToast } from '../../components/toasts.js'
+import { useToast } from '../../components/Toasts.js'
 import { TicketCard } from '../../components/TicketCard.js'
 import { ticketState } from '../../state/ticketState.js'
 

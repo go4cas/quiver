@@ -25,7 +25,7 @@
     "description": "Link: an anchor with url() and aria-current=\"page\" on the active route",
     "kind": "component",
     "files": {
-      "link.js": "components/link.js"
+      "Link.js": "components/Link.js"
     },
     "css": [],
     "requires": [],
@@ -42,11 +42,11 @@
     "description": "Toast notifications: toastState, useToast() and ToastContainer",
     "kind": "component",
     "files": {
-      "toasts.js": "components/toasts.js",
-      "toasts.css": "components/toasts.css"
+      "Toasts.js": "components/Toasts.js",
+      "Toasts.css": "components/Toasts.css"
     },
     "css": [
-      "toasts.css"
+      "Toasts.css"
     ],
     "requires": [
       "theme"
@@ -65,11 +65,11 @@
     "description": "themeState (persisted theme and light/dark mode), ThemeSelector and ThemeToggle",
     "kind": "component",
     "files": {
-      "theme-switcher.js": "components/theme-switcher.js",
-      "theme-switcher.css": "components/theme-switcher.css"
+      "ThemeSwitcher.js": "components/ThemeSwitcher.js",
+      "ThemeSwitcher.css": "components/ThemeSwitcher.css"
     },
     "css": [
-      "theme-switcher.css"
+      "ThemeSwitcher.css"
     ],
     "requires": [
       "theme"

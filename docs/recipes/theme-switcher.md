@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Command | `/add-component ThemeToggle` (aliases: `ThemeSelector`, `theme-switcher`, `dark-mode`, `mode-toggle`, …) |
-| Installs | `src/components/theme-switcher.js`, `src/components/theme-switcher.css` |
+| Installs | `src/components/ThemeSwitcher.js`, `src/components/ThemeSwitcher.css` |
 | CSS order | after `tokens.css` and `base.css`, before `effects.css` |
 | Needs | `theme`, `arrow-use` |
 | Tokens | `--q-color-{brand,fg,line,surface-inset,surface-raised}` |
@@ -14,11 +14,11 @@
 
 ```js
 // main.js: import early, so the stored theme is applied before anything renders
-import './components/theme-switcher.js'
+import './components/ThemeSwitcher.js'
 ```
 
 ```js
-import { ThemeSelector, ThemeToggle, themeState } from '../components/theme-switcher.js'
+import { ThemeSelector, ThemeToggle, themeState } from '../components/ThemeSwitcher.js'
 
 html`<header>${ThemeSelector()} ${ThemeToggle()}</header>`
 

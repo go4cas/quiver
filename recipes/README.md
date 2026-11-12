@@ -31,7 +31,7 @@ The `/add-*` commands of the Quiver Claude Code plugin copy them for you (`/add-
 1. **Find the recipe.** Look the name up in `index.json`, case-insensitively, against each key and its `aliases` (`toast` → `toasts`, `ThemeToggle` → `theme-switcher`, `menu` → `layouts`).
 2. **Collect what it needs.** Follow `requires` recursively. Skip recipes the app already has.
 3. **Copy by role.** A recipe's `files` maps each file in `recipes/<name>/` to its place under the app's `src/`: `components/`, `composables/`, `layouts/`, `views/` or `styles/` (a path ending in `/` is a folder). Copy each one there, and nothing else: not `tests/`, and not the README, which stays here for reference. Skip a recipe whose files the app already has.
-   **Then fix imports between recipes.** In this folder a recipe imports another as `../<recipe>/<file>.js`. Rewrite each to the path of that file's new place, relative to the importing file: in `src/layouts/menu.js`, `'../link/link.js'` becomes `'../components/link.js'`.
+   **Then fix imports between recipes.** In this folder a recipe imports another as `../<recipe>/<file>.js`. Rewrite each to the path of that file's new place, relative to the importing file: in `src/layouts/menu.js`, `'../link/Link.js'` becomes `'../components/Link.js'`.
 4. **Install packages** listed in `packages` that the app doesn't depend on yet (`@arrow-js/core` always; `arrow-use` for the theme switcher; `@go4cas/quiver` for `link`, `layouts`, `views`).
 5. **Load the CSS.** Recipe JS never imports CSS (it must work without a bundler). Add each file in `css` to the app's CSS entry, in this order, with the layer statement first:
 
@@ -39,7 +39,7 @@ The `/add-*` commands of the Quiver Claude Code plugin copy them for you (`/add-
    @layer quiver.tokens, quiver.base, quiver.components, quiver.effects;
    @import "./styles/tokens.css";
    @import "./styles/base.css";          /* skip if the app has its own reset */
-   @import "./components/toasts.css";       /* one line per component recipe */
+   @import "./components/Toasts.css";       /* one line per component recipe */
    @import "./styles/effects.css";       /* optional: per-theme effects */
    @import "./app.css";                         /* the app's own CSS stays last */
    ```

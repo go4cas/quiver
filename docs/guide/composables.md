@@ -50,7 +50,7 @@ Every `arrow-use` composable returns getters plus `stop()`, cleans up when its `
 These are files in your app, not package exports. Install them with `/add-component toast` and `/add-composable useForm` (or by hand, see [recipes](/recipes/#installing-a-recipe)), then import them from where they were installed:
 
 ```js
-import { useToast } from '../components/toasts.js'
+import { useToast } from '../components/Toasts.js'
 import { useForm } from '../composables/useForm.js'
 
 export default function ProfilePage() {

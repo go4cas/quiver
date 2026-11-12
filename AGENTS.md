@@ -43,7 +43,8 @@ recipes/             # Copy-in recipes (private workspace quiver-recipes; shippe
 ├── index.json       # Registry: files, css, requires, packages, aliases per recipe
 ├── README.md        # How to install a recipe (the procedure the /add-* commands follow)
 ├── <name>/          # theme, link, toasts, theme-switcher, useForm, hmrState, layouts, views:
-│                    # <name>.js (theme: CSS only), <name>.css, README.md, tests/ (never copied)
+│                    # JS and CSS named by role (Toasts.js, useForm.js, menu.js; theme: CSS only),
+│                    # README.md, tests/ (never copied)
 ├── tests/           # registry.test.js: index.json matches the folders, imports, layer headers
 └── e2e/             # A plain Arrow app (no Quiver, no bundler) using the toasts recipe; port 5184
 
@@ -85,7 +86,7 @@ tests/repo/          # Repo-wide checks (Vitest): R7 grep, package boundaries, s
 tests/pack/          # `bun run pack:check`: npm pack --dry-run file lists for both packages (X-4)
 ```
 
-The `/add-*` slash commands live in the Quiver plugin (`plugins/quiver/commands/`); `.claude/settings.json` offers it in this repo (or run `claude --plugin-dir plugins/quiver`). In this repo they work on the starter, so their `src/` and `tests/` paths are relative to `starter/`, and they read recipes from `recipes/`. Recipe files in the starter (`styles/`, `components/link.js`, `toasts.*`, `theme-switcher.*`, `composables/`, `layouts/`, `views/`) are installed copies: change `recipes/<name>/`, then run `bun run recipes:sync`.
+The `/add-*` slash commands live in the Quiver plugin (`plugins/quiver/commands/`); `.claude/settings.json` offers it in this repo (or run `claude --plugin-dir plugins/quiver`). In this repo they work on the starter, so their `src/` and `tests/` paths are relative to `starter/`, and they read recipes from `recipes/`. Recipe files in the starter (`styles/`, `components/Link.js`, `Toasts.*`, `ThemeSwitcher.*`, `composables/`, `layouts/`, `views/`) are installed copies: change `recipes/<name>/`, then run `bun run recipes:sync`.
 
 ---
 
@@ -149,6 +150,8 @@ These are non-obvious constraints. Violating them causes silent bugs or runtime 
 ---
 
 ## Conventions
+
+File names follow the folder (D45): `components/` PascalCase, named for the component (`UserCard.js`, `Toasts.js`, with `UserCard.css` beside it); `composables/` camelCase, named for the export (`useForm.js`, `hmrState.js`); `state/` camelCase with a `State` suffix (`userState.js`); `pages/`, `layouts/`, `views/` and `middleware/` lower-case or kebab-case, because the file name is the route or the layout name. `tests/repo/naming.test.js` checks the starter and the recipes.
 
 ### Pages
 
@@ -250,7 +253,7 @@ For local component state that should survive Vite hot reloads in dev, use `hmrS
 
 ### Composables
 
-Call these inside a page or component function, never at module scope; the exception is shared state built on `arrow-use` (a module-level `useStorage` singleton, see below). `useRoute` and `useRouter` come from `@go4cas/quiver`; `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` from `arrow-use`; `useForm` and `useToast` are recipes (`src/composables/useForm.js`, `src/components/toasts.js` in the starter):
+Call these inside a page or component function, never at module scope; the exception is shared state built on `arrow-use` (a module-level `useStorage` singleton, see below). `useRoute` and `useRouter` come from `@go4cas/quiver`; `useFetch`, `useStorage`, `useMediaQuery` and `useEventListener` from `arrow-use`; `useForm` and `useToast` are recipes (`src/composables/useForm.js`, `src/components/Toasts.js` in the starter):
 
 - `useRoute()` → `{ path(), params(), status(), meta() }` — reactive route accessors
 - `useRouter()` → `{ go(path), back(), forward() }` — navigation; each returns a promise that resolves when the navigation finishes
@@ -266,7 +269,7 @@ Keep **one** `useStorage` instance per key for the whole app (a module-level sin
 
 Opinionated UI and helpers ship as copy-in recipes (SPEC G4, D32), not as package exports: `theme`, `link`, `toasts`, `theme-switcher`, `useForm`, `hmrState`, `layouts`, `views`. Rules for a recipe:
 
-- One folder `recipes/<name>/` with its JS (the theme recipe is CSS only; layouts and views have one default-exported file each: `default.js`, `menu.js`, `loading.js`, `error.js`), its CSS, a `README.md` with `## Install` and `## Use` sections, and `tests/` (never copied into apps or the tarball). List it in `recipes/index.json`: `files` (a map from each file in the folder to where it installs under an app's `src/`: `<kind folder>/<same name>`, kind `styles` → `styles/`, `component` → `components/`, `composable` → `composables/`, `layout` → `layouts/`, `view` → `views/`, D44), `css` (load order), `requires` (other recipes), `packages`, `aliases` (names `/add-*` accepts, unique case-insensitively). `recipes/tests/registry.test.js` checks all of it
+- One folder `recipes/<name>/` (the folder and the registry key keep the recipe's name, which `/add-*` accepts) with its JS, named by the folder it installs into (a component recipe's file is PascalCase: `link/Link.js`, `toasts/Toasts.js`, `theme-switcher/ThemeSwitcher.js`; D45) (the theme recipe is CSS only; layouts and views have one default-exported file each: `default.js`, `menu.js`, `loading.js`, `error.js`), its CSS, a `README.md` with `## Install` and `## Use` sections, and `tests/` (never copied into apps or the tarball). List it in `recipes/index.json`: `files` (a map from each file in the folder to where it installs under an app's `src/`: `<kind folder>/<same name>`, kind `styles` → `styles/`, `component` → `components/`, `composable` → `composables/`, `layout` → `layouts/`, `view` → `views/`, D44), `css` (load order), `requires` (other recipes), `packages`, `aliases` (names `/add-*` accepts, unique case-insensitively). `recipes/tests/registry.test.js` checks all of it
 - Imports are `@arrow-js/core`, the packages in `packages`, or `../<recipe>/<file>.js` for a recipe in `requires`. `useForm` never imports `@go4cas/quiver` (W-10), and `toasts`/`useForm`/`hmrState` import only Arrow, so plain Arrow apps can use them
 - Recipe JS never imports CSS; CSS follows the component rules above, with `q-` classes (DESIGN §6). Class names are part of what apps copy, so treat them as stable
 - `scripts/copy-recipes.js` holds both copies: `installRecipes()` (`recipes:sync`) writes each recipe's `files` into the starter's `src/` by role, rewriting `../<recipe>/<file>.js` imports to the installed places; `copyRecipes()` (core's `prepack`) copies the same `files` plus each `README.md` into the tarball in the repository layout, so a file not in `files` ships nowhere (N143)
@@ -299,7 +302,7 @@ Two orthogonal attributes on `<html>`: `data-theme` (`default` · `mono` · `gla
 - **Layers**: `@layer quiver.tokens, quiver.base, quiver.components, quiver.effects;` starts every stylesheet. Later layers win; unlayered app CSS beats all of them.
 - **Effects** (`recipes/theme/effects.css`, `@layer quiver.effects`): per-theme blur, glow, scanlines, heading type and borders. They select only the hook classes `q-panel`, `q-sidebar`, `q-header`, `q-accent`, plus `<html>`, `h1`–`h3`, `button`, `:focus-visible`. A one-component tweak for one theme goes in that component's CSS: `[data-theme="brutalist"] :where(.btn)[data-variant="primary"] { … }`. Dark-mode non-colour differences nest `:where([data-mode="dark"]) &`.
 
-To add a theme: token blocks (light + dark) in `recipes/theme/tokens.css`, optional effects in `recipes/theme/effects.css`, and an entry `{ id, label, swatch, swatchDark? }` in the `THEMES` array in `recipes/theme-switcher/theme-switcher.js`, then `bun run recipes:sync` (in an app, `src/styles/tokens.css`, `src/styles/effects.css` and `src/components/theme-switcher.js`). See the Theming guide or the `/add-theme` command.
+To add a theme: token blocks (light + dark) in `recipes/theme/tokens.css`, optional effects in `recipes/theme/effects.css`, and an entry `{ id, label, swatch, swatchDark? }` in the `THEMES` array in `recipes/theme-switcher/ThemeSwitcher.js`, then `bun run recipes:sync` (in an app, `src/styles/tokens.css`, `src/styles/effects.css` and `src/components/ThemeSwitcher.js`). See the Theming guide or the `/add-theme` command.
 
 ### Dependency injection
 

@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | Command | `/add-component Link` |
-| Installs | `src/components/link.js` |
+| Installs | `src/components/Link.js` |
 | CSS | none: it passes your `class` through |
 | Needs | `@go4cas/quiver` |
 | Tokens | none |
@@ -13,7 +13,7 @@
 ## Use
 
 ```js
-import { Link } from '../components/link.js'
+import { Link } from '../components/Link.js'
 
 html`
   <nav>

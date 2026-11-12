@@ -1,5 +1,5 @@
 import { html } from '@arrow-js/core'
-import { ToastContainer, useToast } from './quiver/toasts/toasts.js'
+import { ToastContainer, useToast } from './quiver/toasts/Toasts.js'
 
 const toast = useToast()
 const app = document.getElementById('app')

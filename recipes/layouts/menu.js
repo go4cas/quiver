@@ -1,8 +1,8 @@
 import { html } from '@arrow-js/core'
 import { inject, go, url, useRoute } from '@go4cas/quiver'
-import { Link } from '../link/link.js'
-import { ToastContainer } from '../toasts/toasts.js'
-import { ThemeSelector, ThemeToggle } from '../theme-switcher/theme-switcher.js'
+import { Link } from '../link/Link.js'
+import { ToastContainer } from '../toasts/Toasts.js'
+import { ThemeSelector, ThemeToggle } from '../theme-switcher/ThemeSwitcher.js'
 
 // Layouts recipe, the menu layout: sidebar + header. In an app it is
 // layouts/menu.js, so pages pick it with `meta: { layout: 'menu' }`. Styles:
