@@ -9,7 +9,7 @@
       "name": "quiver",
       "source": "./plugins/quiver",
       "description": "Quiver's /add-* commands: copy recipes from @go4cas/quiver and scaffold Arrow.js app code.",
-      "version": "3.0.0",
+      "version": "3.2.1",
       "license": "MIT"
     }
   ]
